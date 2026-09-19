@@ -49,6 +49,14 @@ no third-party request on first paint, and it works offline in development.
 contains names like `Jovanović` and `Petrović`. A `latin`-only subset drops
 those glyphs and falls back mid-word, which looks like a bug and is one.
 
+All three are installed as variable fonts. One file per subset covers the whole
+weight axis, so a weight is a number rather than another download, and each
+package declares every subset with its own `unicode-range` — `latin-ext` is
+therefore fetched exactly when a glyph needs it and never otherwise. The
+variable builds name their family with a `Variable` suffix (`Inter Variable`),
+which is what `docs/tokens.css` asks for; the static name sits behind it in the
+stack as a fallback.
+
 ## 2. Buttons are ghost, and the accent is not for buttons
 
 Every button is transparent with a 1px `--color-graphite-hairline` border and
@@ -223,9 +231,12 @@ The same rule governs role badges: a hairline border and ash gray text, never a
 colour per role. Roles are user-defined data in the API's seed, and a palette
 that has to grow when a role is added is not a palette.
 
-Enforced rather than written: the status tokens are restricted by lint rule to
-the inspector and response-rendering modules, so a status colour cannot reach a
-directory cell by hand.
+Enforced rather than written: the status tokens are restricted to
+`src/ui/StatusDot.tsx` and the inspector's response-rendering modules, so a
+status colour cannot reach a directory cell by hand. The primitive is on that
+list because the mapping has to live somewhere and one file is a narrower
+allowance than a whole feature folder; every other component is handed a
+`StatusDot`, never a colour.
 
 ## 11. Tokens have two tiers, and components may only touch the second
 
