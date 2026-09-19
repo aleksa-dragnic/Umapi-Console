@@ -1,3 +1,16 @@
 /* The token block lives in docs/tokens.css so the design system and its
-   documentation sit together. See docs/DESIGN-DECISIONS.md section 11. */
+   documentation sit together. See docs/DESIGN-DECISIONS.md section 11.
+   It stays first: it carries the Tailwind import. */
 @import '../../docs/tokens.css';
+
+/* Self-hosted through Fontsource rather than a foundry CDN: one less origin in
+   the critical path, no third-party request on first paint, and the fonts are
+   present offline in development.
+
+   Each package's entry point declares every subset with its own unicode-range,
+   so latin-ext is fetched exactly when a glyph needs it. That is what makes
+   names like Jovanovic and Petrovic render in one face instead of falling back
+   mid-word - see DESIGN-DECISIONS section 1. */
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/playfair-display';
+@import '@fontsource-variable/jetbrains-mono';
