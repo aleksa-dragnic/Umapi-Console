@@ -1,0 +1,196 @@
+/* umapi-console design tokens
+   Lands in the repository as docs/tokens.css and is imported by src/styles/theme.css.
+   Values only. The rules governing their use are in docs/DESIGN-DECISIONS.md.
+   The machine-readable permission sets (which token may carry text on which
+   surface) live in src/lib/design/tokens.ts and are asserted by
+   src/lib/design/contrast.test.ts. */
+
+@import "tailwindcss";
+
+@theme {
+  /* ---------------------------------------------------------------
+     Tier 1 — primitives. Named by what they are. Never used directly
+     in a component; components use the tier 2 names below.
+     --------------------------------------------------------------- */
+
+  --color-void: #000000;
+  --color-surface-lift: #0b0e14;
+
+  --color-white: #ffffff;
+  --color-bone-white: #f0f0f0;
+  --color-smoke-gray: #abafb4;
+  --color-ash-gray: #a1a4a5;
+  --color-iron: #6e727a;
+  --color-charcoal: #464a4d;
+  --color-graphite-hairline: #292d30;
+
+  --color-iris-violet: #9281f7;
+  --color-plum-violet: #9a54dc;
+  --color-signal-blue: #3b9eff;
+  --color-sky-blue: #70b8ff;
+  --color-pulse-green: #3ad389;
+  --color-amber: #ffca16;
+  --color-alarm-red: #ff9592;
+  --color-crimson: #ff6465;
+
+  /* ---------------------------------------------------------------
+     Tier 2 — semantics. Named by the job. This is what components use.
+     A component that needs a colour not named here needs a decision,
+     not a hex value.
+     --------------------------------------------------------------- */
+
+  /* Surfaces */
+  --color-canvas: var(--color-void);
+  --color-lift: var(--color-surface-lift);
+
+  /* Foreground */
+  --color-fg-primary: var(--color-bone-white);
+  --color-fg-emphasis: var(--color-white);
+  --color-fg-secondary: var(--color-smoke-gray);
+  --color-fg-muted: var(--color-ash-gray);
+  --color-fg-disabled: var(--color-iron);
+  --color-fg-identifier: var(--color-iris-violet);
+  --color-fg-danger: var(--color-alarm-red);
+
+  /* Borders. Elevation is a border; there are no shadow tokens. */
+  --color-border-default: var(--color-graphite-hairline);
+  --color-border-strong: var(--color-white);
+  --color-border-danger: var(--color-alarm-red);
+  --color-border-rule: var(--color-iron);
+
+  /* Navigation. The only place signal blue appears. */
+  --color-nav-selected: var(--color-signal-blue);
+
+  /* HTTP response class. Restricted by lint to the inspector and the
+     response-rendering modules. Entity status never uses these. */
+  --color-status-2xx: var(--color-pulse-green);
+  --color-status-3xx: var(--color-sky-blue);
+  --color-status-4xx: var(--color-amber);
+  --color-status-5xx: var(--color-crimson);
+  --color-status-pending: var(--color-ash-gray);
+
+  /* The single chromatic surface in the application: the app mark. */
+  --color-mark-from: var(--color-iris-violet);
+  --color-mark-to: var(--color-plum-violet);
+
+  /* ---------------------------------------------------------------
+     Type
+     --------------------------------------------------------------- */
+
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Editorial scale — sign-in, empty states, the 404. Nowhere else. */
+  --text-display-lg: 96px;
+  --text-display-lg--line-height: 1;
+  --text-display-lg--letter-spacing: -0.96px;
+  --text-display-md: 77px;
+  --text-display-md--line-height: 1;
+  --text-display-md--letter-spacing: -0.77px;
+  --text-display-sm: 56px;
+  --text-display-sm--line-height: 1;
+  --text-display-sm--letter-spacing: -0.56px;
+  --text-editorial-lg: 18px;
+  --text-editorial-lg--line-height: 1.6;
+  --text-editorial-md: 16px;
+  --text-editorial-md--line-height: 1.6;
+
+  /* Application scale — everything behind the login. */
+  --text-app-title: 24px;
+  --text-app-title--line-height: 1.2;
+  --text-app-subtitle: 20px;
+  --text-app-subtitle--line-height: 1.2;
+  --text-app-body: 14px;
+  --text-app-body--line-height: 1.45;
+  --text-app-meta: 12px;
+  --text-app-meta--line-height: 1.4;
+  --text-app-label: 12px;
+  --text-app-label--line-height: 1.4;
+  --text-app-label--letter-spacing: 0.025em;
+
+  /* ---------------------------------------------------------------
+     Spacing. Two scales, one set. Selection is per screen, not per
+     breakpoint — see DESIGN-DECISIONS section 4.
+     --------------------------------------------------------------- */
+
+  --spacing-app-1: 8px;
+  --spacing-app-2: 12px;
+  --spacing-app-3: 16px;
+  --spacing-app-4: 24px;
+  --spacing-app-5: 32px;
+
+  --spacing-editorial-1: 32px;
+  --spacing-editorial-2: 48px;
+  --spacing-editorial-3: 96px;
+
+  --container-editorial: 1200px;
+
+  /* ---------------------------------------------------------------
+     Geometry. Two radii, never mixed on one surface.
+     --------------------------------------------------------------- */
+
+  --radius-control: 6px;
+  --radius-card: 16px;
+  --radius-panel: 24px;
+  --radius-pill: 9999px;
+
+  --size-row: 40px;
+  --size-control: 36px;
+  --size-control-sm: 32px;
+  --size-shell-header: 56px;
+  --size-hairline: 1px;
+
+  /* ---------------------------------------------------------------
+     Motion. Removed entirely under prefers-reduced-motion, not
+     shortened.
+     --------------------------------------------------------------- */
+
+  --ease-standard: cubic-bezier(0, 0, 0.2, 1);
+  --duration-hover: 150ms;
+  --duration-enter: 240ms;
+}
+
+/* -----------------------------------------------------------------
+   Density selection. A screen declares which density it is and the
+   three values that generic components need resolve accordingly, so a
+   Card or a Table does not have to know which screen it is on.
+   Editorial is the exception and is declared explicitly; application
+   is the default.
+   ----------------------------------------------------------------- */
+
+@layer base {
+  :root,
+  [data-density="application"] {
+    --density-body: var(--text-app-body);
+    --density-gap: var(--spacing-app-3);
+    --density-pad: var(--spacing-app-3);
+  }
+
+  [data-density="editorial"] {
+    --density-body: var(--text-editorial-lg);
+    --density-gap: var(--spacing-editorial-2);
+    --density-pad: var(--spacing-editorial-1);
+  }
+
+  body {
+    background: var(--color-canvas);
+    color: var(--color-fg-primary);
+    font-family: var(--font-sans);
+    font-size: var(--density-body);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-border-strong);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+}
