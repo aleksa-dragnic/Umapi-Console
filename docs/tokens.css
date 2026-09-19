@@ -77,9 +77,11 @@
      Type
      --------------------------------------------------------------- */
 
-  --font-sans: "Inter", system-ui, sans-serif;
-  --font-display: "Playfair Display", Georgia, serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  /* Fontsource ships these as variable fonts, which declare their family with
+     a "Variable" suffix. The static name is kept behind it as a fallback. */
+  --font-sans: "Inter Variable", "Inter", system-ui, sans-serif;
+  --font-display: "Playfair Display Variable", "Playfair Display", Georgia, serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
 
   /* Editorial scale — sign-in, empty states, the 404. Nowhere else. */
   --text-display-lg: 96px;

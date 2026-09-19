@@ -57,6 +57,26 @@ export default tseslint.config(
     },
   },
   {
+    // ui/ knows tokens and nothing else. This is what makes the folder layout
+    // a feature-module architecture rather than folders with nice names.
+    // See BUILD-PLAN sections 4.2 and 10, and ADR 0003.
+    files: ['src/ui/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/features/*', '@/features/**', '**/features/*', '**/features/**'],
+              message:
+                'ui/ may not import from features/. Cross-feature needs go through app/ or lib/.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['eslint.config.js'],
     extends: [tseslint.configs.disableTypeChecked],
     languageOptions: {
