@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # setup-node runs before pnpm is installed, so its package-manager cache
+      # is disabled explicitly: it would detect pnpm-lock.yaml and shell out to
+      # a pnpm that does not exist yet.
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      # pnpm comes from npm, not corepack. The corepack bundled with Node 24
+      # does not resolve pnpm 12's bin layout, and the same choice is made on
+      # the development machine.
+      - name: Install pnpm
+        run: npm install --global pnpm@12.4.2
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test:run
+      - run: pnpm build
+
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - name: Install pnpm
+        run: npm install --global pnpm@12.4.2
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      # The Playwright web server builds the bundle and serves it over
+      # vite preview, so this step needs no separate build.
+      - run: pnpm test:e2e

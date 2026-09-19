@@ -13,6 +13,9 @@ export default defineConfig({
     },
   },
   test: {
+    // Vitest's default include also matches e2e/*.spec.ts, which are Playwright
+    // specs and cannot run under Vitest. Unit tests live in src and nowhere else.
+    include: ['src/**/*.test.{ts,tsx}'],
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/setupTests.ts'],

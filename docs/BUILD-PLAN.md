@@ -680,4 +680,12 @@ pull request that made the change.
 
 | Where | Plan | What shipped |
 |---|---|---|
-| | | |
+| §2 Runtime | Node 22 LTS | Node 24.19.0. Node 22 has left active LTS. PR 1. |
+| §2 Build | Vite 7, "required by React Router v8" | Vite 8.3.0. The claim is wrong in both halves: `react-router@8.4.0` declares a peer on `react >=19.2.7` only and does not constrain Vite. PR 1. |
+| §2 Language | TypeScript, latest | TypeScript 5.9.3. The registry's `latest` is 7.0.2, but `typescript-eslint` 8.70.0 declares a peer range of `<6.1.0`. PR 1. |
+| §2 Compiler | React Compiler through `babel-plugin-react-compiler` | `@vitejs/plugin-react` with `compiler: true`. Plugin v6 moved from Babel to an oxc transform; `oxc-transform-react` is pinned at 0.145.0, the only release inside the plugin's declared peer range. PR 1. |
+| §3.1 Toolchain | pnpm through `corepack enable` | pnpm installed globally with npm, on the development machine and on the runner. The corepack bundled with Node 24 does not resolve pnpm 12's bin layout. PR 1, PR 2. |
+| §10 Invariant | "No manual memoisation" as a lint rule | A grep in the verification block. The rule that would express it was not verified to exist at the pinned plugin version; ADR 0002 records that plainly. PR 1. |
+| §10 Invariant | `import/no-restricted-paths` | `no-restricted-imports` with path patterns, arriving in PR 3. No import-resolver plugin is installed, and adding one for this rule alone is equipment that outweighs the job. PR 1. |
+| §9 Testing | One test command | Two, because they are two runners: `pnpm test:run` over `src/**/*.test.{ts,tsx}` and `pnpm test:e2e` over `e2e/`. Vitest's default include would otherwise have collected the Playwright specs. PR 2. |
+| §7 PR 2 | "one smoke spec" | The spec runs against the production bundle over `vite preview` rather than the dev server, so CI exercises what is deployed. PR 2. |
