@@ -1,0 +1,3 @@
+/* The token block lives in docs/tokens.css so the design system and its
+   documentation sit together. See docs/DESIGN-DECISIONS.md section 11. */
+@import '../../docs/tokens.css';
