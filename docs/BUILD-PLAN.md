@@ -689,3 +689,15 @@ pull request that made the change.
 | §10 Invariant | `import/no-restricted-paths` | `no-restricted-imports` with path patterns, arriving in PR 3. No import-resolver plugin is installed, and adding one for this rule alone is equipment that outweighs the job. PR 1. |
 | §9 Testing | One test command | Two, because they are two runners: `pnpm test:run` over `src/**/*.test.{ts,tsx}` and `pnpm test:e2e` over `e2e/`. Vitest's default include would otherwise have collected the Playwright specs. PR 2. |
 | §7 PR 2 | "one smoke spec" | The spec runs against the production bundle over `vite preview` rather than the dev server, so CI exercises what is deployed. PR 2. |
+| DESIGN-DECISIONS §1 | Inter / Playfair Display / JetBrains Mono | The Fontsource variable packages declare `Inter Variable`, `Playfair Display Variable` and `JetBrains Mono Variable`. The stacks lead with those and keep the static names as fallbacks. As written the fonts would have loaded and nothing would have used them. PR 3. |
+| DESIGN-DECISIONS §1 | "The subset must include `latin-ext`" | Satisfied automatically: the variable packages ship no per-subset stylesheet, and the entry point declares every subset with its own `unicode-range`. Verified in the browser. PR 3. |
+| DESIGN-DECISIONS §3 | Twelve colours tabulated | `--color-sky-blue`, carried by `--color-status-3xx`, was never measured. It is 9.99:1 on the canvas and is now in the test. PR 3. |
+| DESIGN-DECISIONS §10 | Status tokens restricted to the inspector | The allowlist is `src/ui/StatusDot.tsx` plus the inspector. As written the rule forbade the status mapping to the one component whose job is to carry it. PR 3. |
+| DESIGN-DECISIONS §11 | `tokens.ts` holds the permission sets | It holds only token names. The test resolves each name against the stylesheet, so no colour value exists in two places. PR 3. |
+| §10 Invariant | Status-colour invariant enforced | The grep matched `--color-status-`, which components never contain. It matches the generated Tailwind classes as well. PR 3. |
+| §10 Invariant | Tier-1 tokens never referenced by components | The grep that asserts it did not exist until PR 3. |
+| README-FIRST §6 | ADR 0004 in PR 1 | Written in PR 3, which is where the decision is implemented and enforced. |
+| Protocol §4 | One apply script per PR | PR 2 took three, PR 3 took five, PR 4 took one. One squashed commit per PR either way. |
+| §2 Routing | React Router v8 arriving with authentication | Installed in PR 4. `/_design` is described as a route, and PR 7 then adds routes to a router that exists rather than introducing routing and authentication together. ADR 0005. PR 4. |
+| §4.2 Folder layout | `app/` holds the router, providers, error boundaries and the app shell | It also holds `app/design/`, the specimen page. It is not a feature and it does not ship, so `features/` would be the wrong home. PR 4. |
+| DESIGN-DECISIONS §11 | "A screen belongs to one density for its whole life" | `/_design` renders both densities on one page. It is the only exception, and it exists so the two can be compared at all. PR 4. |
