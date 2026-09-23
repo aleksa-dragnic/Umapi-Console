@@ -127,17 +127,17 @@ function Gallery({ density }: { density: 'application' | 'editorial' }) {
       </Specimens>
 
       <Specimens label="CodeWindow">
-        <CodeWindow title="GET /api/v1/users/7c41ab" className="w-96">
+        <CodeWindow title="GET /api/v1/users/7c41ab" className="w-full max-w-96">
           {RESPONSE_BODY}
         </CodeWindow>
-        <CodeWindow className="w-96">{REQUEST_HEAD}</CodeWindow>
-        <CodeWindow title="GET /api/v1/users" truncatedAtKb={64} className="w-96">
+        <CodeWindow className="w-full max-w-96">{REQUEST_HEAD}</CodeWindow>
+        <CodeWindow title="GET /api/v1/users" truncatedAtKb={64} className="w-full max-w-96">
           {RESPONSE_BODY}
         </CodeWindow>
       </Specimens>
 
       <Specimens label="Table">
-        <div className="w-full">
+        <div className="w-full overflow-x-auto">
           <Table caption="Users, with one sortable and one unsortable column">
             <TableHead>
               <TableRow>
@@ -185,7 +185,7 @@ function Gallery({ density }: { density: 'application' | 'editorial' }) {
             </TableBody>
           </Table>
         </div>
-        <div className="w-full">
+        <div className="w-full overflow-x-auto">
           <Table caption="Users, with an empty body">
             <TableHead>
               <TableRow>
@@ -250,7 +250,7 @@ function Gallery({ density }: { density: 'application' | 'editorial' }) {
 
 export default function Specimen() {
   return (
-    <main className="flex flex-col gap-app-5 p-app-5">
+    <main className="flex flex-col gap-app-5 p-app-3 sm:p-app-5">
       <header className="flex flex-col gap-app-1">
         <h1 className="text-app-title text-fg-emphasis">Design specimen</h1>
         <p className="font-mono text-app-meta text-fg-muted">
