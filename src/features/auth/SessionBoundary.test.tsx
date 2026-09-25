@@ -1,11 +1,12 @@
 import { StrictMode, useEffect } from 'react';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 
 import { RequireSession } from '@/features/auth/RequireSession';
 import { SessionBoundary } from '@/features/auth/SessionBoundary';
 import { SIGN_IN_PATH } from '@/features/auth/next';
-import { simulateColdStart } from '@/lib/testing/mock';
+import { api } from '@/lib/api/client';
+import { advanceClock, simulateColdStart } from '@/lib/testing/mock';
 import { server } from '@/lib/testing/server';
 import { call, signIn } from '@/lib/testing/support';
 import { COLD_START_COPY } from '@/ui/ColdStartNotice';
@@ -98,6 +99,24 @@ describe('boot (inventory section 3.1)', () => {
     expect(await screen.findByText(COLD_START_COPY, {}, { timeout: 4000 })).toBeInTheDocument();
     expect(
       await screen.findByRole('heading', { name: 'User detail' }, { timeout: 4000 }),
+    ).toBeInTheDocument();
+  });
+
+  it('sends a user whose session ends mid-use to sign-in, keeping the page as next (inventory section 2.4)', async () => {
+    await signIn();
+    renderAt('/users/7c41ab');
+    await screen.findByRole('heading', { name: 'User detail' });
+    await call('/api/v1/auth/logout', { method: 'POST' });
+    advanceClock(901_000);
+
+    await act(async () => {
+      await api.GET('/api/v1/roles');
+    });
+
+    expect(
+      await screen.findByText(
+        `sign-in at ${SIGN_IN_PATH}?next=${encodeURIComponent('/users/7c41ab')}`,
+      ),
     ).toBeInTheDocument();
   });
 

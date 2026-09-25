@@ -682,10 +682,10 @@ proven in M5, against the real API, not here.
 
 | What | Proven by |
 |---|---|
-| A reload of a deep route never flashes the sign-in screen | Playwright: authenticated, reload `/users/<id>`, assert the sign-in form never mounts |
-| Ten parallel 401s produce exactly one refresh | A test counting refresh calls while firing concurrent requests |
+| A reload of a deep route never flashes the sign-in screen | Playwright: authenticated, reload `/users/<id>`, assert the sign-in form never mounts. Until PR 13 the route is `/?view=reload` (`e2e/session.spec.ts`, section 14) |
+| Ten parallel 401s produce exactly one refresh | A test counting refresh calls while firing concurrent requests (`src/lib/api/refresh.test.ts`, ADR 0008) |
 | The access token is never written to storage | The lint rule, plus a test asserting that no storage entry contains the token after login. Not "storage is empty": the mock keeps its cookie jar in `localStorage` (section 14, PR 9) |
-| The refresh race renders both outcomes | Playwright against the mock, once per outcome: the 401 ends the session with the reuse wording and the access token is gone from memory at once; the 409 leaves the session running and says why |
+| The refresh race renders both outcomes | PR 11, with the session screen. Playwright against the mock, once per outcome: the 401 ends the session with the reuse wording and the access token is gone from memory at once; the 409 leaves the session running and says why |
 | A 429 on refresh keeps the session | Test: refresh answered 429 shows `rate-limited`, and the user is still signed in when it clears |
 | Expiry display ignores the client clock | A unit test with the clock skewed by ten minutes shows the same remaining time |
 | A gated action states its reason and never reaches the network | Test asserting the control is `aria-disabled` and no request was captured |
@@ -770,7 +770,7 @@ API repository — where a promised architecture test turned out not to exist.
 | Text colours meet WCAG AA on their surface | Unit test over every approved pair; `Charcoal` and `Iron` are excluded from the text set by construction |
 | `ui/` does not import from `features/` | ESLint `import/no-restricted-paths` |
 | No feature imports another feature | Same rule, boundary per feature |
-| The access token is never written to storage | Lint rule banning `localStorage` and `sessionStorage` outside an explicit allowlist |
+| The access token is never written to storage | Lint rule banning `localStorage` and `sessionStorage` outside tests and one mock file, `src/lib/testing/persistence.ts` (section 14, PR 10) |
 | The generated schema matches the deployed document | CI regenerates and diffs |
 | No manual memoisation if the compiler is on | Lint rule, decided in PR 1 |
 | Status colour is never applied to an entity status | Lint rule restricting the status tokens to the inspector and response modules |
@@ -919,3 +919,9 @@ pull request that made the change.
 | §10 Invariant | Storage ban and feature boundaries as lint rules | Both arrive with the first feature: `no-restricted-globals` and `no-restricted-properties` on `localStorage` and `sessionStorage` outside tests; `no-restricted-imports` per feature, for `lib/` and for `@/lib/testing` outside tests. ADR 0003 asked for a boundary entry per feature; `FEATURES` in `eslint.config.js` is that list. PR 9. |
 | §7 PR 9 | "Login route" | `/sign-in`, the inventory's name. The branch keeps `feat/login`. PR 9. |
 | §8 Gate 1 | `/_design` reviewed at 380px, the item left open at the end of M0 | Reviewed in PR 9. One defect: a `Card` let an email address escape its border, because an address has no break opportunity and a flex item does not shrink below its content. `Card` now sets `min-w-0` and `overflow-wrap: anywhere`, so no panel - the detail panels of PR 13 included - can be pushed open by an identifier. Layout is not observable in jsdom, so the fix has no unit test; it was verified in the browser at 380px. Gate 1 is closed. PR 9. |
+| §8 Gate 3 | The reload proven on `/users/<id>` | Proven on `/?view=reload`, the deepest route that exists: `/users/:id` arrives in PR 13, which moves the spec to it. The query shows the whole address survives the reload, not only the path. PR 10. |
+| §8 Gate 3, ADR 0012 | Both outcomes of the refresh race proven by Playwright from PR 10, which would expose the mock's scenario controls to a spec | Both move to PR 11, which builds the session screen that presents them. No spec in PR 10 needs a scenario control, so none is exposed yet. PR 10. |
+| §10 Invariant | Browser storage banned outside tests | One more exception: `src/lib/testing/persistence.ts` keeps the mock's refresh tokens in `sessionStorage` across a reload. In the browser the mock's database lived in the page while MSW's cookie jar survived in `localStorage`, so a reload in `pnpm dev` or the `e2e` build landed on sign-in: the mock behaved unlike the API. Mock code, in no production bundle; the access token is not in it. PR 10. |
+| §4.2, §4.3 | The refresh belongs to the auth feature | `src/lib/api/refresh.ts`: the client's middleware needs it, and `lib/` imports nothing above it (ADR 0003). The session provider hears every outcome through `onRefresh`. Client creation moved to `src/lib/api/create-client.ts`, so the application client and the auth client are built without an import cycle. ADR 0008. PR 10. |
+| Inventory §2.3, §2.4 | The session ends on `Auth.InvalidRefreshToken`, no `errorCode` or reuse; a refresh that fails is `session-ended` | Every 401 on refresh ends it, `Auth.AccountLocked` (row 51) included, with the generic wording. Any other answer - 429, 5xx, none - reaches the screen that made the request as its own answer, and the session stays. PR 10. |
+| §7 PR 10 | Logout | `Sign out` on the placeholder at `/` until the shell arrives in PR 16. Sign-in follows with no banner and no `next`. The session is forgotten whatever the API answers; a refused or unanswered logout leaves the cookie valid, so a reload would restore the session. Not surfaced in v1. PR 10. |

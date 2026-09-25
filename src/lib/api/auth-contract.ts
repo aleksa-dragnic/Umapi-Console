@@ -1,5 +1,5 @@
 import type { components } from '@/lib/api/schema';
-import { createApiClient } from '@/lib/api/client';
+import { createApiClient } from '@/lib/api/create-client';
 
 /**
  * The auth endpoints as the console calls them: build plan section 3.2, the
