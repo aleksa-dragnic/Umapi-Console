@@ -65,7 +65,7 @@ deliberately and the frontend respects it.
 | URL state | `useSearchParams` | No third library; see section 5.3 |
 | API types | `openapi-typescript` | **7.13.0**, generated from the deployed `/openapi/v1.json` — ADR 0006 |
 | API client | `openapi-fetch` | **0.17.0**. ~6 kB, typed, no generated classes |
-| Mocking | MSW | Handlers typed from the same generated types |
+| Mocking | MSW | **2.15.0**. Handlers typed from the same generated types; `src/lib/testing/` |
 | Fonts | Fontsource, `latin` + `latin-ext` | Self-hosted, no CDN |
 | Unit / component tests | Vitest + React Testing Library | Vitest **5.0.1**, RTL **16.3.3** |
 | End-to-end | Playwright | **1.63.0** |
@@ -663,6 +663,21 @@ interesting all assume a behaviour that has never been driven end to end.
 from here to M5 is written against this mock, so a wrong mock is a wrong
 application that passes all of its tests.
 
+**How PR 8 meets it.** The handlers live in `src/lib/testing/handlers/`, and
+each branch cites its row; a branch the instance was never measured doing says
+"not measured" instead, so the gaps are searchable. Vitest runs every test
+against the node server with unhandled requests failing the test
+(`src/setupTests.ts`); the dev server starts the browser worker before the first
+render unless `VITE_API_MODE=live`, and a production bundle contains neither.
+`src/lib/testing/auth.test.ts` asserts the cookie contract, including the two
+refresh outcomes selectable with `setRefreshRace`.
+
+MSW keeps the cookies a mocked response sets in its own jar. That jar honours
+`Path` and `Max-Age` but not `credentials`, and it is not reachable from a test.
+The mock therefore reads only the cookie's value, and `resetMock` clears it the
+way the contract does — through a logout. Whether a browser sends the cookie is
+proven in M5, against the real API, not here.
+
 ### Gate 3 — auth is correct, not merely working (end of M2)
 
 | What | Proven by |
@@ -891,4 +906,7 @@ pull request that made the change.
 | §6.2 | Search as a single match | Search compares one field at a time; a full name finds no one (observed row 56). Stated in the inventory; the term is sent as typed. PR 6. |
 | §4.4 | CI regenerates the types and fails on a difference | A separate `contract` job, not required: the document lives on a free instance, and a merge does not wait on its uptime. ADR 0006. PR 7. |
 | §8 Gate 0 | Probe 10a before PR 6 | Run as the first step of PR 7, because PR 7 could not be written without knowing the document was served. Rows 59-64. PR 7. |
+| §11 M1 | PR 8 mocks "the whole surface" | Everything the console calls, plus health. Not mocked: the HATEOAS media type, v2 and v3 (rows 31-33), `HEAD` and `OPTIONS` (row 63) - the console uses none of them. PR 8. |
+| §3.2 | The mock sets and reads the `umapi_rt` cookie like a browser | MSW's jar ignores `credentials`; the mock reads the value only, and whether a browser sends it is proven in M5. PR 8. |
+| §2 | MSW's postinstall | Not run: `allowBuilds: { msw: false }` in `pnpm-workspace.yaml`. The worker is committed as `public/mockServiceWorker.js` and regenerated with `pnpm mock:worker` after an MSW upgrade. It is copied into `dist/` and stays inert there: nothing in a production bundle registers it. PR 8. |
 | §6.1 | Two outcomes of the refresh race, equally likely | Three rounds out of three were the 409 live (observed row 11). The 401 stays designed and mocked. PR 6. |
