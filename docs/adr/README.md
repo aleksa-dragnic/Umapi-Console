@@ -10,3 +10,4 @@ One file per decision. Format and rules are the same as in
 | [0003](0003-feature-module-boundaries.md) | Feature-module boundaries enforced by lint rather than convention | Accepted | 1 |
 | [0004](0004-two-token-tiers.md) | Tokens have two tiers, and components may only reference the second | Accepted | 3 |
 | [0005](0005-declarative-router.md) | React Router in declarative mode, installed with the specimen route | Accepted | 4 |
+| [0006](0006-generated-api-types.md) | API types are generated from the deployed document, committed, and checked for drift outside the required checks | Accepted | 7 |

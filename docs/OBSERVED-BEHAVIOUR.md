@@ -12,7 +12,7 @@ A row describes the API **as deployed today**. Where the console's contract
 deliberately differs - the refresh token moving into a cookie in M5 - the row
 says so, and the mock implements the contract, not the row.
 
-Rows 43 onwards are different in kind: they were **read from the API's source**,
+Rows 43-55 are different in kind: they were **read from the API's source**,
 not measured. The source says what the code intends; only the deployed instance
 says what happens. A source-read row is enough to design against, and each one
 names the probe or the M5 step that confirms it live.
@@ -115,6 +115,22 @@ see the note at the top.
 | 54 | Logout today takes the refresh token in the body, and answers 204. | `AuthController.Logout` | M5 changes it to the cookie |
 | 55 | The update body is `{ email, firstName, lastName }`, all three required. | `UpdateUserRequest` | Row 57: the three-field body was accepted |
 
+## The OpenAPI document
+
+`/openapi/v1.json` as the deployed instance served it on 2026-09-25 - probe 10a,
+run as the first step of PR 7. `src/lib/api/schema.d.ts` is generated from it.
+Rows 60-63 are where the document and the instance part: the types follow the
+document, the mock and the error handling follow these rows.
+
+| # | Behaviour | Request | Response | Measured |
+|---|---|---|---|---|
+| 59 | The document is served in production | `GET` `/openapi/v1.json`, `/openapi/v2.json`, `/openapi`, `/swagger/v1/swagger.json`, `/scalar` | v1: 200, `application/json`, about 52 KB, OpenAPI **3.1.1**, 11 paths, 14 schemas. v2: 200. `/scalar`: 200, HTML. `/openapi` and `/swagger/...`: 404. `servers` is the instance's own origin and every path carries `/api/v1`, so a client's base URL is the origin alone. | 2026-09-25 |
+| 60 | What the document describes differently from the instance | Read `/openapi/v1.json` | `ProblemDetails` has only `type`, `title`, `status`, `detail`, `instance`: no `errorCode`, `traceId` or `errors`, which the application shape carries (row 34). The HATEOAS media type is documented with the plain body, not `{ value, links }` (row 33). `status` on users is an open `string`, not the four values (row 18). | 2026-09-25 |
+| 61 | Statuses the instance answers that the document does not list | Read `/openapi/v1.json` | 409 on refresh (row 11); 429 anywhere (row 28); 413 (row 29); 400 `User.Deactivated` on update, lock and role assignment, whose documented statuses stop at 404, 409 and 422 (row 49, read from the source). | 2026-09-25 |
+| 62 | Authorisation is not described | Read `/openapi/v1.json` | No `securitySchemes`, no `security` on any operation. Neither the bearer token nor the `permission` claim (row 4) appears; which permission an operation needs comes from row 48. | 2026-09-25 |
+| 63 | Operations and statuses the document lists that the console does not use | Read `/openapi/v1.json` | `HEAD` beside every `GET`, `OPTIONS /api/v1/users`, the root `GET /api` with links, `GET /api/v1/roles/{id}`. 406 on the user reads - the documented answer to an unsupported media type, not measured. | 2026-09-25 |
+| 64 | Query parameters are named in PascalCase | Read `/openapi/v1.json` | `PageNumber`, `PageSize`, `SearchTerm`, `Status`, `OrderBy`; the first two typed `integer \| string`. Rows 13-19 and 56 were measured with camelCase names and bound, so binding ignores case; the typed client sends the document's spelling, which has not itself been sent live. | 2026-09-25 |
+
 ## Not API behaviour, but measured and relevant
 
 | # | Observation | Consequence |
@@ -128,9 +144,9 @@ see the note at the top.
 | # | What | Probe | Blocks |
 |---|---|---|---|
 | - | Search and diacritics: `ovic` against `Petrović` | 5b again, after the M5 seed | Nothing; PR 12 is designed for no folding (row 43) |
-| - | The OpenAPI document against rows 43-55 | 10a, optional | Nothing; PR 7 reads the document regardless |
-| - | Rejection of an unsupported media type | 9, repeated | Nothing; the inspector renders whatever arrives |
+| - | Query parameters in the document's PascalCase, live (row 64) | Any probe session | Nothing; binding ignores case |
+| - | Rejection of an unsupported media type - documented as 406 (row 63) | 9, repeated | Nothing; the inspector renders whatever arrives |
 | - | `User.LastRoleCannotBeRemoved`, and locking oneself | **Not probed against production** - row 50: nothing would refuse locking the only administrator. Exercised against the local API in M5 step 3. | PR 13's lock and remove-role dialogs |
 
-Row 26 needs no probe any more: the source settles it (row 45). Probe 10a is
-optional for the same reason; PR 7 reads the OpenAPI document regardless.
+Row 26 needs no probe any more: the source settles it (row 45). Probe 10a ran
+as the first step of PR 7: rows 59-64.

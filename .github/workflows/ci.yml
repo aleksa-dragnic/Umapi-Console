@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Weekly, so a change to the deployed API is noticed even when nothing here
+  # changes. Only the contract job runs on the schedule.
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -15,6 +20,7 @@ permissions:
 jobs:
   build-and-test:
     name: build-and-test
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -41,6 +47,7 @@ jobs:
 
   e2e:
     name: e2e
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -61,3 +68,48 @@ jobs:
       # The Playwright web server builds the bundle and serves it over
       # vite preview, so this step needs no separate build.
       - run: pnpm test:e2e
+
+  # Regenerates src/lib/api/schema.d.ts from the deployed document and fails if
+  # it differs from what is committed. Deliberately not a required check: the
+  # document lives on a free instance that sleeps and can be down, and a merge
+  # must not wait on it. See docs/adr/0006-generated-api-types.md.
+  contract:
+    name: contract
+    runs-on: ubuntu-latest
+    env:
+      API_ORIGIN: https://usermanagementapi-j1if.onrender.com
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - name: Install pnpm
+        run: npm install --global pnpm@12.4.2
+
+      - run: pnpm install --frozen-lockfile
+
+      # An idle instance takes about half a minute to answer
+      # (docs/OBSERVED-BEHAVIOUR.md row 35). Twelve attempts, then give up and say so.
+      - name: Wake the API
+        run: |
+          for attempt in $(seq 1 12); do
+            if curl --fail --silent --show-error --max-time 30 "$API_ORIGIN/health/ready" > /dev/null; then
+              echo "API ready on attempt $attempt"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::The API did not become ready, so the contract was not checked."
+          exit 1
+
+      - run: pnpm api:generate
+
+      - name: Compare with the committed schema
+        run: |
+          if ! git diff --exit-code -- src/lib/api/schema.d.ts; then
+            echo "::error::The deployed API's document no longer matches src/lib/api/schema.d.ts. Run pnpm api:generate and review the diff."
+            exit 1
+          fi
