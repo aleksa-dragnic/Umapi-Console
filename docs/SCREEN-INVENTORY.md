@@ -177,7 +177,9 @@ Application density. The screen the project is judged on.
 **Toolbar states.** The search input is debounced at 300 ms; the debounce is
 visible as a pending dot in the footer rather than hidden. The term is sent as
 `searchTerm`, a case-insensitive substring match on email, first and last name
-that does **not** fold diacritics (observed row 43): `ovic` finds no Petrović.
+that does **not** fold diacritics (observed row 43): `ovic` does not match the
+name Petrović, though it finds him through an ASCII address such as
+`marko.petrovic@…`.
 It also compares one field at a time (row 56): `Petrović` finds Marko
 Petrović, `Marko Petrović` finds no one.
 The `empty-search` copy repeats the term exactly as sent, so the reason is
