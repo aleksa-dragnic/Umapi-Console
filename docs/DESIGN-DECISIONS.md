@@ -222,10 +222,13 @@ So entity status is rendered without colour:
 | Active | `Active`, bone white, 14px sans |
 | Pending | `Pending`, ash gray, 14px sans |
 | Locked | A padlock glyph plus `Locked`, ash gray |
+| Deactivated | A struck-circle glyph plus `Deactivated`, ash gray |
 
 The difference between Active and Pending is weight and value, not hue. Locked
-carries a glyph because it is the state with consequences and the one worth
-finding while scanning a column.
+and Deactivated carry glyphs because they are the states with consequences and
+the ones worth finding while scanning a column; the two glyphs differ so that
+the two are never confused in a column of forty rows. These four are exactly the
+values the API accepts.
 
 The same rule governs role badges: a hairline border and ash gray text, never a
 colour per role. Roles are user-defined data in the API's seed, and a palette
