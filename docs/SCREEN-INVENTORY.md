@@ -62,22 +62,25 @@ Not a visible state on most screens, and that is the requirement. A 401 on a
 background query triggers one refresh and the queued request replays; the user
 sees nothing but a slightly longer load.
 
-It becomes visible only when the refresh itself fails, which is `session-ended`
-— with one exception: a refresh answered **429** is `rate-limited`, not a lost
-session. Refresh shares the `auth` budget of ten requests a minute per IP with
-login and logout (observed row 52), and the session is still valid when the wait
-is over.
+It becomes visible only when the refresh itself is refused. A **401** is
+`session-ended`. Anything else reaches the screen that made the request as that
+request's own answer, and the session stays: a refresh answered **429** is
+`rate-limited`, not a lost session - refresh shares the `auth` budget of ten
+requests a minute per IP with login and logout (observed row 52), and the
+session is still valid when the wait is over - and a 5xx is `server-error`.
+Requests that fail together wait for one refresh and replay behind it (ADR 0008).
 
 ### 2.4 `session-ended`
 
 | | |
 |---|---|
-| Trigger | Refresh returns 401 with `errorCode` `Auth.InvalidRefreshToken` or with no `errorCode`, or `Auth.RefreshTokenReused` (observed rows 7, 8, 34) |
+| Trigger | Refresh returns 401: with `errorCode` `Auth.InvalidRefreshToken`, `Auth.AccountLocked` (the account was locked since sign-in, row 51) or none, or with `Auth.RefreshTokenReused` (observed rows 7, 8, 34) |
 | Renders | Everything is cleared from memory and the router navigates to `/sign-in`, with a banner on that screen: *Your session ended. Sign in again.* After reuse detection the wording is specific: *This session was ended because a refresh token was used twice. Every session of this account has been revoked.* |
 | The way out | Sign in |
 | Note | The intended destination is kept in the URL as `?next=` and honoured after sign-in. |
 | Note | The wording is chosen by `errorCode`, never by matching `detail` text. On `Auth.RefreshTokenReused` the session is cleared at once: access tokens stay valid until `exp` after revocation (observed row 9), so waiting for the next 401 would leave a revoked session working for up to fifteen minutes. |
 | Note | Revocation is account-wide. A second tab, or another visitor on the shared demo account, meets the generic wording at its next refresh: the API answers it with `Auth.InvalidRefreshToken` and does not say why. |
+| Note | Signing out is not this state. The API is told (observed row 54) and the session is forgotten whatever it answers; sign-in follows with no banner and no `next`. A refused or unanswered logout leaves the cookie valid, so a reload would restore the session; v1 does not surface that. The control sits on the placeholder at `/` until the shell arrives in PR 16. |
 
 ### 2.5 `forbidden` — 403
 

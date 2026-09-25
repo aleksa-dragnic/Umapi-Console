@@ -12,4 +12,5 @@ One file per decision. Format and rules are the same as in
 | [0005](0005-declarative-router.md) | React Router in declarative mode, installed with the specimen route | Accepted | 4 |
 | [0006](0006-generated-api-types.md) | API types are generated from the deployed document, committed, and checked for drift outside the required checks | Accepted | 7 |
 | [0007](0007-refresh-token-in-an-httponly-cookie.md) | The refresh token lives in an HttpOnly cookie, and the access token in memory only | Accepted | 9 |
+| [0008](0008-single-flight-refresh.md) | A 401 is met by one refresh in flight at a time, shared by every request that needs it | Accepted | 10 |
 | [0012](0012-e2e-runs-a-production-build-with-the-mock.md) | End-to-end tests run a production build that includes the mock, and CI proves the real production build does not | Accepted | 9 |
