@@ -188,7 +188,8 @@ feature is styled by the design rather than fitted into it.
 ## 8. Motion
 
 150ms ease-out on hover and focus transitions. Fade-and-slide on the sign-in
-screen only. Nothing animates in the directory or the inspector — a table that
+screen only: `--animate-enter` in `docs/tokens.css`, 240ms, used by that screen
+and nothing else. Nothing animates in the directory or the inspector — a table that
 moves while you read it is worse than a table that does not.
 
 All of it behind `prefers-reduced-motion: reduce`, which removes transitions

@@ -684,7 +684,7 @@ proven in M5, against the real API, not here.
 |---|---|
 | A reload of a deep route never flashes the sign-in screen | Playwright: authenticated, reload `/users/<id>`, assert the sign-in form never mounts |
 | Ten parallel 401s produce exactly one refresh | A test counting refresh calls while firing concurrent requests |
-| The access token is never written to storage | The lint rule, plus a test asserting storage is empty after login |
+| The access token is never written to storage | The lint rule, plus a test asserting that no storage entry contains the token after login. Not "storage is empty": the mock keeps its cookie jar in `localStorage` (section 14, PR 9) |
 | The refresh race renders both outcomes | Playwright against the mock, once per outcome: the 401 ends the session with the reuse wording and the access token is gone from memory at once; the 409 leaves the session running and says why |
 | A 429 on refresh keeps the session | Test: refresh answered 429 shows `rate-limited`, and the user is still signed in when it clears |
 | Expiry display ignores the client clock | A unit test with the clock skewed by ten minutes shows the same remaining time |
@@ -743,7 +743,7 @@ are coupled, so a skipped check is expensive.
 | Tokens and helpers | Unit | Vitest | Contrast ratios, claim decoding, `curl` formatting, pagination parsing, query-string round trips |
 | `ui/` primitives | Component | Vitest + RTL | Every state and variant, keyboard interaction, ARIA |
 | Features | Component | Vitest + RTL + MSW | Behaviour against mocked HTTP, including every error status |
-| Flows | End-to-end | Playwright + MSW | Login, refresh, search, mutate, conflict, inspect |
+| Flows | End-to-end | Playwright + MSW, against the `e2e` build (ADR 0012) | Login, refresh, search, mutate, conflict, inspect |
 | Live | End-to-end | Playwright against the deployed API | The demo account's read-only boundary, cold start — M5 only |
 | Accessibility | Automated | `axe-core` in Playwright | Every route, zero violations |
 
@@ -774,6 +774,7 @@ API repository — where a promised architecture test turned out not to exist.
 | The generated schema matches the deployed document | CI regenerates and diffs |
 | No manual memoisation if the compiler is on | Lint rule, decided in PR 1 |
 | Status colour is never applied to an entity status | Lint rule restricting the status tokens to the inspector and response modules |
+| The mock never reaches a production bundle | `no-restricted-imports` on `@/lib/testing` outside tests, and the `build-and-test` job searching `dist/assets` after the production build (ADR 0012) |
 
 ---
 
@@ -910,3 +911,11 @@ pull request that made the change.
 | §3.2 | The mock sets and reads the `umapi_rt` cookie like a browser | MSW's jar ignores `credentials`; the mock reads the value only, and whether a browser sends it is proven in M5. PR 8. |
 | §2 | MSW's postinstall | Not run: `allowBuilds: { msw: false }` in `pnpm-workspace.yaml`. The worker is committed as `public/mockServiceWorker.js` and regenerated with `pnpm mock:worker` after an MSW upgrade. It is copied into `dist/` and stays inert there: nothing in a production bundle registers it. PR 8. |
 | §6.1 | Two outcomes of the refresh race, equally likely | Three rounds out of three were the 409 live (observed row 11). The 401 stays designed and mocked. PR 6. |
+| §9 Testing, §14 PR 2 | Playwright drives the production bundle | It drives the `e2e` build: the production build plus the mock, started by the same build-time literal as on the dev server. From PR 9 every route asks the API for a session first, and a required check cannot depend on a sleeping free instance. The production build is searched for the mock and the specimen on every CI run instead of by the apply script. ADR 0012. PR 9. |
+| §8 Gate 3 | "A test asserting storage is empty after login" | MSW keeps the cookies of mocked responses in `localStorage` (`__msw-cookie-store__`), so storage is never empty under the mock. The test asserts that no storage entry contains the access token, which is the invariant itself. PR 9. |
+| §4.4 | Every call through the generated client | The three auth calls are typed from section 3.2 in `src/lib/api/auth-contract.ts`, with a second client configured like `api`. The generated schema still describes today's bodies (rows 1, 6); M5 regenerates it and deletes the file. ADR 0007. PR 9. |
+| Inventory §6 | `cold-start` in PR 16 | The notice and the rate-limit countdown are shared `ui/` components from PR 9, because `boot` and `sign-in` list both as states. "Shown once per session" stays with PR 16. PR 9. |
+| Inventory §3.1, §3.2 | Four boot states; no sign-in state for a locked account or an unanswered request | Boot adds `rate-limited` and `unavailable`, sign-in adds `account-locked` and `failed`, each with copy. The code has to do something in each case, and the inventory is where that is decided. PR 9. |
+| §10 Invariant | Storage ban and feature boundaries as lint rules | Both arrive with the first feature: `no-restricted-globals` and `no-restricted-properties` on `localStorage` and `sessionStorage` outside tests; `no-restricted-imports` per feature, for `lib/` and for `@/lib/testing` outside tests. ADR 0003 asked for a boundary entry per feature; `FEATURES` in `eslint.config.js` is that list. PR 9. |
+| §7 PR 9 | "Login route" | `/sign-in`, the inventory's name. The branch keeps `feat/login`. PR 9. |
+| §8 Gate 1 | `/_design` reviewed at 380px, the item left open at the end of M0 | Reviewed in PR 9. One defect: a `Card` let an email address escape its border, because an address has no break opportunity and a flex item does not shrink below its content. `Card` now sets `min-w-0` and `overflow-wrap: anywhere`, so no panel - the detail panels of PR 13 included - can be pushed open by an identifier. Layout is not observable in jsdom, so the fix has no unit test; it was verified in the browser at 380px. Gate 1 is closed. PR 9. |

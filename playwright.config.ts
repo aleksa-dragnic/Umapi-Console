@@ -1,7 +1,11 @@
 import { defineConfig } from '@playwright/test';
 
-// The specs run against the production bundle served by vite preview, not the
-// dev server: what CI checks should be what is deployed.
+// The specs run against a production-mode bundle served by vite preview, not
+// the dev server: minified, compiled and routed as it is deployed. It is built
+// in the `e2e` mode, which is the production build plus the mock, because
+// every route now asks the API for a session first and a required check must
+// not depend on a free instance being awake. The production build itself is
+// proven mock-free by CI. See docs/adr/0012-e2e-runs-a-production-build-with-the-mock.md.
 //
 // Two details that cost an evening and are therefore written down:
 //
@@ -19,6 +23,7 @@ import { defineConfig } from '@playwright/test';
 // explicit undefined on an optional property.
 
 const PORT = 5273;
+const OUT_DIR = 'dist-e2e';
 const baseURL = `http://127.0.0.1:${PORT}`;
 
 export default defineConfig({
@@ -32,7 +37,7 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: `pnpm build && pnpm exec vite preview --port ${PORT} --strictPort --host 127.0.0.1`,
+    command: `pnpm exec vite build --mode e2e --outDir ${OUT_DIR} && pnpm exec vite preview --outDir ${OUT_DIR} --port ${PORT} --strictPort --host 127.0.0.1`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

@@ -1,4 +1,5 @@
-import { API_BASE_URL, createApiClient } from '@/lib/api/client';
+import { setAccessToken } from '@/lib/api/access-token';
+import { API_BASE_URL, api, createApiClient } from '@/lib/api/client';
 
 const BASE = 'https://api.example.test';
 
@@ -53,5 +54,16 @@ describe('createApiClient', () => {
     const seen = captureRequests();
     await client.GET('/api/v1/roles');
     expect(seen).toHaveLength(1);
+  });
+
+  it('sends the access token held in memory, and none once it is cleared', async () => {
+    const seen = captureRequests();
+    setAccessToken('token-in-memory');
+    await api.GET('/api/v1/roles');
+    setAccessToken(null);
+    await api.GET('/api/v1/roles');
+
+    expect(seen[0]?.headers.get('Authorization')).toBe('Bearer token-in-memory');
+    expect(seen[1]?.headers.has('Authorization')).toBe(false);
   });
 });
