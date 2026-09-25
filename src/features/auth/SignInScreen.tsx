@@ -11,6 +11,7 @@ import { safeDestination } from '@/features/auth/next';
 import { useSession } from '@/features/auth/session';
 import { DEMO_ACCOUNT } from '@/lib/api/demo-account';
 import { fieldErrors, type Problem } from '@/lib/api/problem';
+import type { SessionEnd } from '@/lib/api/refresh';
 import { AppMark } from '@/ui/AppMark';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
@@ -32,6 +33,13 @@ type Field = (typeof FIELDS)[number];
 
 export const INVALID_CREDENTIALS_COPY = 'Email or password is incorrect.';
 export const ACCOUNT_LOCKED_COPY = 'This account is locked. An administrator can unlock it.';
+
+/** Inventory section 2.4: the banner, chosen by why the session ended. */
+export const SESSION_ENDED_COPY: Record<SessionEnd, string> = {
+  ended: 'Your session ended. Sign in again.',
+  reused:
+    'This session was ended because a refresh token was used twice. Every session of this account has been revoked.',
+};
 
 type Phase =
   | { kind: 'ready' }
@@ -81,6 +89,8 @@ export function SignInScreen() {
     return <Navigate to={safeDestination(params.get('next'))} replace />;
   }
 
+  const reason = state.status === 'anonymous' ? state.reason : undefined;
+  const ended = reason === 'signed-out' ? undefined : reason;
   const submitting = phase.kind === 'submitting';
   const problem = phase.kind === 'invalid-field' ? phase.problem : null;
   const errorFor = (field: Field): string | undefined => {
@@ -147,6 +157,15 @@ export function SignInScreen() {
             An admin console for UserManagementAPI that does not hide HTTP.
           </p>
         </div>
+
+        {ended === undefined ? null : (
+          <p
+            role="status"
+            className="rounded-card border border-border-default px-app-3 py-app-2 text-editorial-md text-fg-primary"
+          >
+            {SESSION_ENDED_COPY[ended]}
+          </p>
+        )}
 
         {message === null ? null : (
           <div

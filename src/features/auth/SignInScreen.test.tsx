@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 
@@ -7,15 +7,23 @@ import { SessionBoundary } from '@/features/auth/SessionBoundary';
 import {
   ACCOUNT_LOCKED_COPY,
   INVALID_CREDENTIALS_COPY,
+  SESSION_ENDED_COPY,
   SignInScreen,
 } from '@/features/auth/SignInScreen';
 import { SIGN_IN_PATH } from '@/features/auth/next';
 import { api } from '@/lib/api/client';
 import { DEMO_ACCOUNT } from '@/lib/api/demo-account';
+import { refreshAccessToken } from '@/lib/api/refresh';
 import { buildUsers } from '@/lib/testing/factories';
-import { MOCK_ACCOUNTS, SYNTHETIC_PASSWORD, simulateColdStart } from '@/lib/testing/mock';
+import {
+  MOCK_ACCOUNTS,
+  SYNTHETIC_PASSWORD,
+  advanceClock,
+  setRefreshRace,
+  simulateColdStart,
+} from '@/lib/testing/mock';
 import { server } from '@/lib/testing/server';
-import { call, json, signIn } from '@/lib/testing/support';
+import { call, json, refresh, signIn } from '@/lib/testing/support';
 import { COLD_START_COPY } from '@/ui/ColdStartNotice';
 import { rateLimitCopy } from '@/ui/RateLimitNotice';
 
@@ -50,6 +58,24 @@ async function submit(email: string, password: string) {
 afterEach(() => {
   server.events.removeAllListeners();
 });
+
+/** Signed in, at a protected page, with the session restored by the boot refresh. */
+async function renderInUse() {
+  await signIn();
+  render(
+    <MemoryRouter initialEntries={['/users/7c41ab']}>
+      <Routes>
+        <Route element={<SessionBoundary />}>
+          <Route path={SIGN_IN_PATH} element={<SignInScreen />} />
+          <Route element={<RequireSession />}>
+            <Route path="*" element={<Destination />} />
+          </Route>
+        </Route>
+      </Routes>
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: 'Arrived at /users/7c41ab' });
+}
 
 describe('sign-in (inventory section 3.2)', () => {
   it('prints the demo account below the form', async () => {
@@ -155,6 +181,34 @@ describe('sign-in (inventory section 3.2)', () => {
       'aria-disabled',
       'true',
     );
+  });
+
+  it('says the session ended when a refresh is refused mid-use (inventory section 2.4)', async () => {
+    await renderInUse();
+    // Signed out elsewhere, and the access token has since expired (rows 2, 8).
+    await call('/api/v1/auth/logout', { method: 'POST' });
+    advanceClock(901_000);
+
+    await act(async () => {
+      await api.GET('/api/v1/roles');
+    });
+
+    expect(await screen.findByRole('status')).toHaveTextContent(SESSION_ENDED_COPY.ended);
+    expect(screen.getByRole('form', { name: 'Sign in' })).toBeInTheDocument();
+  });
+
+  it('says why when the API reports a refresh token used twice (rows 8, 46)', async () => {
+    await renderInUse();
+    setRefreshRace('reuse');
+
+    // Another tab refreshes with the same cookie a moment before this one.
+    await act(async () => {
+      const elsewhere = refresh();
+      await refreshAccessToken();
+      await elsewhere;
+    });
+
+    expect(await screen.findByRole('status')).toHaveTextContent(SESSION_ENDED_COPY.reused);
   });
 
   it('keeps the access token in memory: the client sends it, and no storage holds it', async () => {

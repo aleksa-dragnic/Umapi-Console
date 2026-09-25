@@ -35,7 +35,8 @@ const noMock = {
 const restrict = (...patterns) => ['error', { patterns }];
 
 // The access token lives in memory only (ADR 0007). Nothing in src/ reaches
-// for browser storage; tests may read it to prove that.
+// for browser storage; tests may read it to prove that, and the mock may keep
+// its own refresh tokens in it (MOCK_PERSISTENCE below).
 const storageBan = {
   'no-restricted-globals': [
     'error',
@@ -68,6 +69,11 @@ const storageBan = {
 };
 
 const TESTS = ['src/**/*.test.ts', 'src/**/*.test.tsx', 'src/setupTests.ts'];
+
+// The one production-shaped file allowed to touch storage: the mock keeps its
+// refresh tokens across a reload there. It is mock code and never reaches a
+// production bundle (build plan Gate 2); the access token is not in it.
+const MOCK_PERSISTENCE = 'src/lib/testing/persistence.ts';
 
 export default tseslint.config(
   {
@@ -126,7 +132,7 @@ export default tseslint.config(
   },
   {
     files: ['src/**/*.{ts,tsx}'],
-    ignores: TESTS,
+    ignores: [...TESTS, MOCK_PERSISTENCE],
     rules: storageBan,
   },
   {

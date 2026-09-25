@@ -1,41 +1,14 @@
 import { authApi, type LoginRequest } from '@/lib/api/auth-contract';
-import { retryAfterSeconds, toProblem, type Problem } from '@/lib/api/problem';
+import type { Problem } from '@/lib/api/problem';
+import { settle, type AuthFailure, type AuthResult } from '@/lib/api/refresh';
 
 /**
- * The two auth calls PR 9 makes, reduced to what the screens decide on.
- *
- * - `token`: the API issued an access token.
- * - `refused`: it answered with a problem. `retryAfterSeconds` is read only
- *   for a 429, where it means something (observed rows 28 and 52).
- * - `unreachable`: no response at all - offline, DNS, or a CORS refusal, which
- *   a browser reports the same way.
+ * The auth calls the screens make, reduced to what they decide on. The refresh
+ * itself lives in `lib/api/refresh.ts`, because the client's middleware needs
+ * it too; its result type is re-exported here for the screens.
  */
-export type AuthResult =
-  | { kind: 'token'; accessToken: string }
-  | { kind: 'refused'; problem: Problem; retryAfterSeconds: number }
-  | { kind: 'unreachable' };
-
-export type AuthFailure = Exclude<AuthResult, { kind: 'token' }>;
-
-async function settle(
-  call: () => Promise<{ data?: { accessToken: string }; error?: unknown; response: Response }>,
-): Promise<AuthResult> {
-  let outcome: Awaited<ReturnType<typeof call>>;
-  try {
-    outcome = await call();
-  } catch {
-    return { kind: 'unreachable' };
-  }
-  const { data, error, response } = outcome;
-  if (response.ok && data !== undefined && typeof data.accessToken === 'string') {
-    return { kind: 'token', accessToken: data.accessToken };
-  }
-  return {
-    kind: 'refused',
-    problem: toProblem(response, error),
-    retryAfterSeconds: retryAfterSeconds(response),
-  };
-}
+export { requestRefresh } from '@/lib/api/refresh';
+export type { AuthFailure, AuthResult };
 
 /** `POST /auth/login`. On success the API also sets the refresh cookie. */
 export function requestSignIn(credentials: LoginRequest): Promise<AuthResult> {
@@ -43,11 +16,17 @@ export function requestSignIn(credentials: LoginRequest): Promise<AuthResult> {
 }
 
 /**
- * `POST /auth/refresh`, with the cookie as the only credential. Rotates the
- * cookie on success (observed row 6, section 3.2).
+ * `POST /auth/logout`, with the cookie as the credential: the API revokes the
+ * token it is given and clears the cookie (observed row 54, section 3.2). The
+ * answer changes nothing the console does - the session in memory is cleared
+ * either way - so it is not returned.
  */
-export function requestRefresh(): Promise<AuthResult> {
-  return settle(() => authApi.POST('/api/v1/auth/refresh'));
+export async function requestSignOut(): Promise<void> {
+  try {
+    await authApi.POST('/api/v1/auth/logout');
+  } catch {
+    // Unreachable. The session is cleared in memory regardless.
+  }
 }
 
 /**
