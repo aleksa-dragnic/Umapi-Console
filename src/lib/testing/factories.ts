@@ -1,3 +1,4 @@
+import { DEMO_ACCOUNT } from '@/lib/api/demo-account';
 import { pick, seededRandom, uuid } from '@/lib/testing/random';
 
 /**
@@ -72,9 +73,10 @@ function roleId(name: string): string {
 }
 
 /**
- * The accounts a test or a developer signs in with. The demo password is the one
- * the API's README publishes. The administrator password is the mock's own: the
- * deployed administrator's is never written down.
+ * The accounts a test or a developer signs in with. The demo account is the one
+ * the API publishes, and the sign-in screen prints it, so both read it from
+ * `DEMO_ACCOUNT`. The administrator password is the mock's own: the deployed
+ * administrator's is never written down.
  */
 export const MOCK_ACCOUNTS = {
   admin: {
@@ -84,8 +86,8 @@ export const MOCK_ACCOUNTS = {
   },
   demo: {
     id: '345d5955-fa12-48ae-b007-98dabc87f86e',
-    email: 'demo@umapi.local',
-    password: 'Demo-Passw0rd-2026!',
+    email: DEMO_ACCOUNT.email,
+    password: DEMO_ACCOUNT.password,
   },
 } as const;
 

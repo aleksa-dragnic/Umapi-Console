@@ -21,10 +21,13 @@ function render(): void {
   );
 }
 
-// import.meta.env.DEV is a literal the build replaces, so a production bundle
-// contains neither the mock nor MSW (build plan Gate 2).
+// The mock answers the dev server, and the `e2e` build Playwright runs against
+// (ADR 0012). Both conditions are literals the build replaces, so a production
+// build removes the branch and contains neither the mock nor MSW - build plan
+// Gate 2, asserted in CI by searching dist/.
 const startMock =
-  import.meta.env.DEV && import.meta.env.VITE_API_MODE !== 'live'
+  (import.meta.env.DEV || import.meta.env.MODE === 'e2e') &&
+  import.meta.env.VITE_API_MODE !== 'live'
     ? () => import('@/lib/testing/browser').then((mock) => mock.startMockWorker())
     : null;
 

@@ -18,6 +18,9 @@ describe('Specimen', () => {
       'CodeWindow',
       'Table',
       'Dialog',
+      'AppMark',
+      'ColdStartNotice',
+      'RateLimitNotice',
     ]) {
       expect(screen.getAllByRole('region', { name: primitive })).toHaveLength(2);
     }

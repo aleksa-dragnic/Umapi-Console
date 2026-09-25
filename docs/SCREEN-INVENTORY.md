@@ -140,9 +140,16 @@ flash of the sign-in form for a user who is signed in.
 | `checking-slow` | Still checking after 1200 ms | Adds `cold-start` copy | Resolves |
 | `authenticated` | Refresh returned an access token | Router proceeds to the requested route | — |
 | `anonymous` | Refresh returned 401 | Router navigates to `/sign-in?next=<path>` | Sign in |
+| `rate-limited` | Refresh returned 429 | The mark, and §2.7's countdown beneath it. Not `anonymous`: the refresh shares the sign-in budget (observed row 52), and the cookie is still valid when the wait is over | The refresh is sent again at zero |
+| `unavailable` | No response, or any other status | *The console could not check your session.* and, in mono beneath it, the status and `title` (*The API answered 503 Service Unavailable.*) or *The console cannot reach the API.*; a **Retry** control | Retry, which sends the refresh again |
 
 The requirement is that an authenticated user reloading `/users/7c41ab` never
 sees the sign-in screen.
+
+The boot refresh is sent once per page load. Development renders effects
+twice, and two refreshes with one cookie are the race of observed rows 11 and
+46, so the second run is refused by the session provider rather than left to
+timing.
 
 ### 3.2 `sign-in`
 
@@ -152,8 +159,10 @@ Editorial density. The only screen in the application that uses display type.
 |---|---|---|---|
 | `ready` | — | Email, password, submit. Demo credentials printed below the form in mono. | Submit |
 | `submitting` | Submit | Button shows a pending state, fields are `readonly` not disabled, so focus is not lost | Response |
-| `invalid-field` | 422 | Field-level messages taken from the problem details `errors` object, rendered under the field they name — matched case-insensitively, because the API's keys are PascalCase (observed row 19) — in alarm red mono 12px. Focus moves to the first invalid field. | Correct and resubmit |
+| `invalid-field` | 422 | Field-level messages taken from the problem details `errors` object, rendered under the field they name — matched case-insensitively, because the API's keys are PascalCase (observed row 19) — in alarm red mono 12px. Focus moves to the first invalid field. A message for a key the form has no field for is shown above the form instead of being dropped. The form sets `noValidate`: the API's 422 is the validation. | Correct and resubmit |
 | `invalid-credentials` | 401 | One message above the form: *Email or password is incorrect.* Never *"user not found"* — that is an account enumeration oracle. The API already answers an unknown email and a wrong password identically (observed row 5); the console adds no distinction. | Retry |
+| `account-locked` | 401 with `errorCode` `Auth.AccountLocked` | One message above the form: *This account is locked. An administrator can unlock it.* Chosen by `errorCode`, never by `detail`. The console repeats what the API chose to say; whether the API checks the lock before or after the password - which decides whether this is an enumeration oracle - is not measured, and is on the API's own list. The mock checks the password first (row 51, wording not measured). | Contact an administrator |
+| `failed` | No response, or any status without a row above | One message above the form: the status and `title` (*The API answered 503 Service Unavailable.*), or *The console cannot reach the API.*; a `traceId`, when the body has one, beneath it in mono. §2.8's pointer to the inspector joins it in PR 15 | Resubmit |
 | `rate-limited` | 429 | §2.7 | Wait |
 | `session-ended` | Arrived from §2.4 | The banner, above the form | Sign in |
 | `cold-start` | §2.1 | Beneath the submit button | Resolves |
@@ -381,14 +390,14 @@ selection, which are per-session and would make every link carry debug state.
 |---|---|
 | All primitives, all states | 3, 4 |
 | Measured behaviour written into this document | 6 |
-| `boot`, `sign-in` | 9 |
+| `boot`, `sign-in`, and `cold-start` and `rate-limited` as the shared notices both screens render | 9 |
 | `session-ended`, `refreshing` | 10 |
 | `gated`, `session` | 11 |
 | `users` and all its states | 12 |
 | `users/:id`, `assign-role`, `lock-user` | 13 |
 | `not-modified`, `conflict` | 14 |
 | `inspector` | 15 |
-| `404`, `error-boundary`, `cold-start`, `offline`, narrow viewport | 16 |
+| `404`, `error-boundary`, `cold-start` shown once per session, `offline`, narrow viewport | 16 |
 
 A pull request is not done until every state this document lists for its screens
 either exists or is deferred by name in the PR's Notes.

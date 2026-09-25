@@ -45,6 +45,18 @@ jobs:
       - run: pnpm test:run
       - run: pnpm build
 
+      # The production bundle carries neither the mock nor the specimen route
+      # (build plan Gate 2, ADR 0005). The e2e job builds a second bundle that
+      # does carry the mock (ADR 0012), so this is asserted on every run rather
+      # than by hand: each string below exists only in code that must be gone.
+      - name: Production bundle carries no mock and no specimen
+        run: |
+          if grep -rlF -e '[MSW]' -e 'Design specimen' -e 'mock-admin-password' dist/assets; then
+            echo "::error::The production bundle contains the mock or the specimen route."
+            exit 1
+          fi
+          echo "dist/assets is free of the mock and the specimen route."
+
   e2e:
     name: e2e
     if: github.event_name != 'schedule'

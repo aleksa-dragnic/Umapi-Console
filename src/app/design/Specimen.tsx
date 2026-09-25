@@ -1,11 +1,14 @@
 import { useState, type ReactNode } from 'react';
 
+import { AppMark } from '@/ui/AppMark';
 import { Badge } from '@/ui/Badge';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { CodeWindow } from '@/ui/CodeWindow';
+import { ColdStartNotice } from '@/ui/ColdStartNotice';
 import { Dialog } from '@/ui/Dialog';
 import { Input } from '@/ui/Input';
+import { RateLimitNotice } from '@/ui/RateLimitNotice';
 import { StatusDot } from '@/ui/StatusDot';
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from '@/ui/Table';
 import type { SortDirection } from '@/ui/Table';
@@ -61,6 +64,8 @@ function LockGlyph() {
 function Gallery({ density }: { density: 'application' | 'editorial' }) {
   const [emailSort, setEmailSort] = useState<SortDirection>('ascending');
   const [dialog, setDialog] = useState<'none' | 'plain' | 'destructive'>('none');
+  // Restarts the countdown when it reaches zero, so the state stays reviewable.
+  const [countdown, setCountdown] = useState(0);
 
   return (
     <div
@@ -215,6 +220,33 @@ function Gallery({ density }: { density: 'application' | 'editorial' }) {
           }}
         >
           Open destructive dialog
+        </Button>
+      </Specimens>
+
+      <Specimens label="AppMark">
+        <AppMark />
+        <AppMark size="lg" />
+      </Specimens>
+
+      <Specimens label="ColdStartNotice">
+        <div className="max-w-md">
+          <ColdStartNotice pending afterMs={0} />
+        </div>
+      </Specimens>
+
+      <Specimens label="RateLimitNotice">
+        <RateLimitNotice
+          key={`notice-${countdown}`}
+          seconds={42}
+          onElapsed={() => {
+            setCountdown(countdown + 1);
+          }}
+        />
+        <Button
+          type="submit"
+          disabledReason={<RateLimitNotice key={`reason-${countdown}`} seconds={42} />}
+        >
+          Sign in
         </Button>
       </Specimens>
 
