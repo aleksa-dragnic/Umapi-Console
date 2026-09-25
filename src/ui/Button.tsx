@@ -17,8 +17,12 @@ export interface ButtonProps
   /** React 19 passes ref as an ordinary prop. Dialog uses it to place focus. */
   ref?: Ref<HTMLButtonElement> | undefined;
   variant?: ButtonVariant | undefined;
-  /** Why this action is unavailable. Present means disabled, with the reason shown. */
-  disabledReason?: string | undefined;
+  /**
+   * Why this action is unavailable. Present means disabled, with the reason
+   * shown. Usually a sentence; a live notice such as a rate-limit countdown
+   * when the reason changes while it is shown.
+   */
+  disabledReason?: ReactNode | undefined;
   /** A request is in flight. The control is busy and refuses a second activation. */
   pending?: boolean | undefined;
   children: ReactNode;
