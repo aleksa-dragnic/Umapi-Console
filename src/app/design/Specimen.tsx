@@ -7,8 +7,11 @@ import { Card } from '@/ui/Card';
 import { CodeWindow } from '@/ui/CodeWindow';
 import { ColdStartNotice } from '@/ui/ColdStartNotice';
 import { Dialog } from '@/ui/Dialog';
+import { EntityStatus } from '@/ui/EntityStatus';
 import { Input } from '@/ui/Input';
 import { RateLimitNotice } from '@/ui/RateLimitNotice';
+import { Select } from '@/ui/Select';
+import { SkeletonRow } from '@/ui/SkeletonRow';
 import { StatusDot } from '@/ui/StatusDot';
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from '@/ui/Table';
 import type { SortDirection } from '@/ui/Table';
@@ -42,22 +45,6 @@ function Specimens({ label, children }: { label: string; children: ReactNode }) 
       <p className="font-mono text-app-label uppercase text-fg-muted">{label}</p>
       <div className="flex flex-wrap items-start gap-[var(--density-gap)]">{children}</div>
     </section>
-  );
-}
-
-function LockGlyph() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 12 12"
-      className="size-3"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1"
-    >
-      <rect x="2.5" y="5.5" width="7" height="5" rx="1" />
-      <path d="M4.5 5.5V4a1.5 1.5 0 0 1 3 0v1.5" />
-    </svg>
   );
 }
 
@@ -166,14 +153,18 @@ function Gallery({ density }: { density: 'application' | 'editorial' }) {
                   marko.jovanovic@example.com
                 </TableCell>
                 <TableCell className="font-mono text-fg-secondary">2026-02-11</TableCell>
-                <TableCell>Active</TableCell>
+                <TableCell>
+                  <EntityStatus status="Active" />
+                </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="font-mono text-fg-identifier">
                   ana.petrovic@example.com
                 </TableCell>
                 <TableCell className="font-mono text-fg-secondary">2026-03-04</TableCell>
-                <TableCell className="text-fg-muted">Pending</TableCell>
+                <TableCell>
+                  <EntityStatus status="Pending" />
+                </TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="font-mono text-fg-identifier">
@@ -181,12 +172,10 @@ function Gallery({ density }: { density: 'application' | 'editorial' }) {
                 </TableCell>
                 <TableCell className="font-mono text-fg-secondary">2026-03-19</TableCell>
                 <TableCell>
-                  <span className="inline-flex items-center gap-app-1 text-fg-muted">
-                    <LockGlyph />
-                    Locked
-                  </span>
+                  <EntityStatus status="Locked" />
                 </TableCell>
               </TableRow>
+              <SkeletonRow columns={3} />
             </TableBody>
           </Table>
         </div>
@@ -221,6 +210,53 @@ function Gallery({ density }: { density: 'application' | 'editorial' }) {
         >
           Open destructive dialog
         </Button>
+      </Specimens>
+
+      <Specimens label="Select">
+        <div className="w-48">
+          <Select
+            label="Status"
+            options={[
+              { value: '', label: 'All statuses' },
+              { value: 'Locked', label: 'Locked' },
+            ]}
+          />
+        </div>
+        <div className="w-48">
+          <Select
+            label="Status"
+            defaultValue="Locked"
+            options={[
+              { value: '', label: 'All statuses' },
+              { value: 'Locked', label: 'Locked' },
+            ]}
+          />
+        </div>
+      </Specimens>
+
+      <Specimens label="EntityStatus">
+        <EntityStatus status="Active" />
+        <EntityStatus status="Pending" />
+        <EntityStatus status="Locked" />
+        <EntityStatus status="Deactivated" />
+      </Specimens>
+
+      <Specimens label="SkeletonRow">
+        <div className="w-full overflow-x-auto">
+          <Table caption="Users, loading">
+            <TableHead>
+              <TableRow>
+                <TableHeaderCell>Email</TableHeaderCell>
+                <TableHeaderCell>First name</TableHeaderCell>
+                <TableHeaderCell>Status</TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              <SkeletonRow columns={3} />
+              <SkeletonRow columns={3} />
+            </TableBody>
+          </Table>
+        </div>
       </Specimens>
 
       <Specimens label="AppMark">

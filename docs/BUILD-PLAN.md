@@ -61,7 +61,7 @@ deliberately and the frontend respects it.
 | Build | Vite | **8.3.0** — section 14 |
 | Routing | React Router v8, **declarative mode** | **8.4.0**, installed in PR 4, ADR 0005 |
 | Styling | Tailwind CSS v4, `@theme` | **4.3.3**. Token block comes from `docs/tokens.css` |
-| Server state | TanStack Query | Pinned by the pull request that installs it, read from the registry then |
+| Server state | TanStack Query | **5.103.2**, installed in PR 12, ADR 0010. 5.104.0 was a day old and needed a release-age exclusion — section 14 |
 | URL state | `useSearchParams` | No third library; see section 5.3 |
 | API types | `openapi-typescript` | **7.13.0**, generated from the deployed `/openapi/v1.json` — ADR 0006 |
 | API client | `openapi-fetch` | **0.17.0**. ~6 kB, typed, no generated classes |
@@ -930,3 +930,12 @@ pull request that made the change.
 | §8 Gate 3 | A gated action proven on a real action | No screen carries a mutation before PR 13, and the demonstration is deliberately not gated (decision 5). Proven on the lock action, the one PR 13 renders, through the same `useCan`; PR 13 asserts the same on the screen. PR 11. |
 | §6.1, decision 13 | Both responses of the race in the inspector | Listed on the session screen, one line each, until the inspector arrives in PR 15. `revoked` shows neither, because the session ends at once and sign-in follows. PR 11. |
 | §8 Gate 3, ADR 0012 | The mock's scenario controls exposed to a spec in the `e2e` build | `startMockWorker` places them on `window.__umapiMock` when `main.tsx` passes the `e2e` literal; the dev server does not. The CI search of the production `dist/assets` includes the name. The scenario resets on reload, so a spec sets it after the page has loaded. PR 11. |
+| §2 | TanStack Query at the version current on the day | 5.104.0 was published the same day. `pnpm add` of a version younger than pnpm's release-age policy installs it and writes an exclusion into `pnpm-workspace.yaml` without asking. 5.103.2, five days old, needs none. PR 12. |
+| §4.2, ADR 0010 | Query client wiring unspecified | `src/app/query-client.tsx`: `retry: false`, `refetchOnWindowFocus: false`, and the cache dropped whenever the access token is cleared, so a second account on the same tab never sees the first one's data. PR 12. |
+| §7 PR 12 | The directory on existing primitives | Three more in `ui/`, each on `/_design`: `Select` for the status filter, `EntityStatus` for DESIGN-DECISIONS section 10, `SkeletonRow` for `loading-first`. PR 12. |
+| Inventory §3.3 | Sortable by the whole whitelist of row 47 | By `email`, `firstName`, `lastName` and `status`, one column each. The list response carries no `createdAt`, so no column could show that order. PR 12. |
+| Inventory §3.3 | No state for a 429 on the read | `rate-limited`: the status and title in place of the table, Retry held by the shared countdown until `Retry-After` has passed. Reads are a hundred a minute per user (row 52), within reach of fast typing. PR 12. |
+| Inventory §3.3, §4 | Row states and keyboard traversal with the directory | Rows have hover only. Focus, selection, arrow keys and activation arrive with the detail route in PR 13, because a row that cannot be activated has nothing to focus for. PR 12. |
+| Inventory §2.8 | *Open the inspector to see the full response.* in the error state | Left out until the inspector exists in PR 15. PR 12. |
+| §6 Test conventions | No per-test handlers | The directory's 5xx and unanswered request are one-off `server.use(..., { once: true })` handlers in its test, because the mock has no measured 5xx on the endpoint and inventing one in the mock would be a branch with nothing to cite. PR 12. |
+| §7 PR 12 | The directory reached from the shell | A *Users* link on the placeholder at `/`, beside *Session*, until the shell arrives in PR 16. Whether `/` becomes a landing page or a redirect to `/users` stays open decision 1. PR 12. |

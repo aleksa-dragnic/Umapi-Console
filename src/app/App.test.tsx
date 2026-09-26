@@ -20,6 +20,20 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Umapi Console' })).toBeInTheDocument();
   });
 
+  it('links to the directory until the shell arrives', async () => {
+    await signIn();
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Routes>
+          <Route element={<SessionBoundary />}>
+            <Route path="/" element={<App />} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByRole('link', { name: 'Users' })).toHaveAttribute('href', '/users');
+  });
+
   it('links to the session screen until the shell arrives', async () => {
     await signIn();
     render(

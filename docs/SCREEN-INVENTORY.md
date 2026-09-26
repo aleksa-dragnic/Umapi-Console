@@ -185,7 +185,8 @@ Application density. The screen the project is judged on.
 | `empty-search` | 0 results with a search term | *No users match "ovic".* Below it, a ghost **Clear search** control. Footer still shows `200 · 0 results`. | Clear, or edit the term |
 | `empty-filter` | 0 results with a status filter and no term | *No users with status Locked.* With a **Clear filter** control. | Clear |
 | `empty-page` | A page number beyond the last page, usually from an old link | *Page 9 is past the end. There are 7 pages.* With a control to go to page 1. | Go to page 1 |
-| `error` | §2.8 | The table area replaced by the status, the title, and **Retry** | Retry |
+| `error` | §2.8 | The table area replaced by the status, the title, and **Retry**. A request with no answer at all reads *No response from the API.* | Retry |
+| `rate-limited` | 429 on the read (row 52) | As `error`, with **Retry** held by the shared countdown until `Retry-After` has passed | Retry, once the wait is over |
 | `offline` | §2.2 | Bar at the top, rows stay visible and readable | Reconnect |
 
 **Toolbar states.** The search input is debounced at 300 ms; the debounce is
@@ -206,8 +207,19 @@ ascending. The status filter offers the four values the API accepts
 (row 18). Page size defaults to 10 and the API clamps it at 50 (rows 14, 15); the
 footer reports what `X-Pagination` says, not what was asked for.
 
+**Columns and footer.** Four columns, each sortable: *Email*, *First name*,
+*Last name*, *Status* - row 47's whitelist less `createdAt`, which the list
+response does not carry. With no sort chosen, *Email* is marked ascending,
+because that is the order the API applies. The footer reads *200 · 130 results*
+(*1 result* for one) and *Page 2 of 13*; **Previous** and **Next** are present
+only where there is a page to go to, and neither is shown past the last page,
+where `empty-page` offers page 1 instead. With no term, no filter and no rows
+the table reads *No users.* The line *Open the inspector to see the full
+response.* of section 2.8 joins `error` with the inspector in PR 15.
+
 **Row states.** Default, hover (surface lift), focused (visible ring, reached by
-keyboard), and selected. Entity status — Active, Pending, Locked,
+keyboard), and selected. Focused and selected, like activation and arrow-key
+traversal, arrive with the detail route in PR 13. Entity status — Active, Pending, Locked,
 Deactivated — renders as neutral text, with a glyph for Locked and another for
 Deactivated. See the design decisions, section 10.
 
