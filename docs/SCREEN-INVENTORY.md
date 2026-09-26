@@ -103,6 +103,8 @@ The *expected* form of this — the demo account meeting a write action — is
 | The way out | Sign in as an account that holds the permission |
 | Note | Disabled, never hidden. A hidden control teaches a reviewer nothing; a disabled one with a reason demonstrates the whole permission model in a glance. |
 | Note | Never derived from HATEOAS links: the API sends write links to the demo account and both `lock` and `unlock` to an active user (observed row 33). |
+| Note | The permissions held are listed in row 48's order - `users.read`, `users.write`, `users.lock`, `roles.read`, `roles.manage` - not the token's: the order of the claim's array is not part of the contract. An account holding none reads *This account holds no permissions.* |
+| Note | A route gated the same way renders in place, without a redirect: the heading *Not available to this account*, and the reason beneath it. The address stays what the user asked for. The demo account and the administrator both hold every read permission (row 4), so no route in v1 is gated for either. |
 
 ### 2.7 `rate-limited` — 429
 
@@ -310,6 +312,28 @@ warns about it.
 | `raced` | One 200 and one 409 `Concurrency.Conflict` | Both responses in the inspector and one line: *The API refused the second request because the first had just rotated the token. Nothing was revoked; your session continues.* | Race again |
 | `revoked` | One 200 and one 401 `Auth.RefreshTokenReused` | Both responses in the inspector, then §2.4 with the reuse wording | Sign in |
 | `unexpected` | Any other pair — two 200s would be an API defect | Both responses, and the pair stated as it arrived | — |
+
+The copy that surrounds the table. Beside the action: *Sends two refresh
+requests at the same moment with the same cookie - the mistake single-flight
+exists to prevent. The API lets one through and refuses the other, in one of two
+ways. A 409 means the second request collided with the write of the first:
+nothing is revoked, and your session continues. A 401 means it read the token
+after the first had rotated it, which looks exactly like a stolen token: every
+session of this account is revoked.* Under the countdown, *Expires in 14:59.*:
+*Counted from the moment it arrived: exp - iat is 900 s. The client clock is not
+consulted.* When it reaches zero: *Expired. The next request will refresh it.*
+
+Until the inspector arrives in PR 15, each answer of the pair is listed on the
+screen, one line each, in the order the requests were sent: *Request 1: 200,
+with a new access token*, *Request 2: 409 Concurrency.Conflict* - the status and
+the `errorCode`, or the `title` when there is none. `unexpected` states the pair
+in one sentence: *The API answered 429 Too Many Requests and 429 Too Many
+Requests.* `revoked` lists neither, because the session ends at once.
+
+The confirmation is drawn in place, not as a dialog, with **Cancel** and
+**Confirm**. It opens on **Cancel**, as a destructive dialog does (section 4),
+and closing it returns focus to the action. Until the shell arrives in PR 16 the
+screen is reached from the placeholder at `/`.
 
 ### 3.10 `404`
 

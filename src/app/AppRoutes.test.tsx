@@ -27,6 +27,17 @@ describe('AppRoutes', () => {
     expect(screen.queryByRole('heading', { name: 'Sign in' })).not.toBeInTheDocument();
   });
 
+  it('renders the session screen for a signed-in user', async () => {
+    await signIn();
+    render(
+      <MemoryRouter initialEntries={['/session']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Session' })).toBeInTheDocument();
+  });
+
   it('serves the specimen route in development', async () => {
     render(
       <MemoryRouter initialEntries={['/_design']}>

@@ -51,7 +51,7 @@ jobs:
       # than by hand: each string below exists only in code that must be gone.
       - name: Production bundle carries no mock and no specimen
         run: |
-          if grep -rlF -e '[MSW]' -e 'Design specimen' -e 'mock-admin-password' dist/assets; then
+          if grep -rlF -e '[MSW]' -e 'Design specimen' -e 'mock-admin-password' -e '__umapiMock' dist/assets; then
             echo "::error::The production bundle contains the mock or the specimen route."
             exit 1
           fi

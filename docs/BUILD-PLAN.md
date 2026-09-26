@@ -538,7 +538,7 @@ on 13 September 2026.
 
 **Exit:** Gate 2.
 
-### M2 — Authentication (3 PRs)
+### M2 — Authentication (3 PRs) — complete
 
 | PR | Branch | Contents |
 |---|---|---|
@@ -546,7 +546,7 @@ on 13 September 2026.
 | 10 | `feat/silent-refresh` | Refresh on 401 with single-flight queueing, reload rehydration without a login flash, logout. |
 | 11 | `feat/permission-gates` | Claim decoding (`string` or array), route guards, action gating with a stated reason, the session screen with its skew-proof expiry countdown, and the reuse-detection demonstration. |
 
-**Exit:** Gate 3.
+**Exit:** Gate 3. Closed 2026-09-26 with PR 11.
 
 ### M3 — The directory (3 PRs)
 
@@ -685,10 +685,10 @@ proven in M5, against the real API, not here.
 | A reload of a deep route never flashes the sign-in screen | Playwright: authenticated, reload `/users/<id>`, assert the sign-in form never mounts. Until PR 13 the route is `/?view=reload` (`e2e/session.spec.ts`, section 14) |
 | Ten parallel 401s produce exactly one refresh | A test counting refresh calls while firing concurrent requests (`src/lib/api/refresh.test.ts`, ADR 0008) |
 | The access token is never written to storage | The lint rule, plus a test asserting that no storage entry contains the token after login. Not "storage is empty": the mock keeps its cookie jar in `localStorage` (section 14, PR 9) |
-| The refresh race renders both outcomes | PR 11, with the session screen. Playwright against the mock, once per outcome: the 401 ends the session with the reuse wording and the access token is gone from memory at once; the 409 leaves the session running and says why |
+| The refresh race renders both outcomes | Playwright against the mock, once per outcome (`e2e/race.spec.ts`): the 401 ends the session with the reuse wording, the 409 leaves the session running and says why. That the access token is gone from memory at once, and that the winner's 200 cannot bring it back, is a unit test (`src/features/auth/race.test.ts`): memory is not visible to a browser test (section 14) |
 | A 429 on refresh keeps the session | Test: refresh answered 429 shows `rate-limited`, and the user is still signed in when it clears |
-| Expiry display ignores the client clock | A unit test with the clock skewed by ten minutes shows the same remaining time |
-| A gated action states its reason and never reaches the network | Test asserting the control is `aria-disabled` and no request was captured |
+| Expiry display ignores the client clock | A unit test with the clock skewed by ten minutes shows the same remaining time (`src/features/auth/SessionScreen.test.tsx`: the server's clock ten minutes behind when the token is issued, the client's jumping ten minutes forward after it arrives) |
+| A gated action states its reason and never reaches the network | Test asserting the control is `aria-disabled` and no request was captured (`src/features/auth/gated-action.test.tsx`, on the lock action through `useCan`; the screens that carry real actions arrive in PR 13, section 14) |
 
 **Unblocks:** M3.
 
@@ -925,3 +925,8 @@ pull request that made the change.
 | §4.2, §4.3 | The refresh belongs to the auth feature | `src/lib/api/refresh.ts`: the client's middleware needs it, and `lib/` imports nothing above it (ADR 0003). The session provider hears every outcome through `onRefresh`. Client creation moved to `src/lib/api/create-client.ts`, so the application client and the auth client are built without an import cycle. ADR 0008. PR 10. |
 | Inventory §2.3, §2.4 | The session ends on `Auth.InvalidRefreshToken`, no `errorCode` or reuse; a refresh that fails is `session-ended` | Every 401 on refresh ends it, `Auth.AccountLocked` (row 51) included, with the generic wording. Any other answer - 429, 5xx, none - reaches the screen that made the request as its own answer, and the session stays. PR 10. |
 | §7 PR 10 | Logout | `Sign out` on the placeholder at `/` until the shell arrives in PR 16. Sign-in follows with no banner and no `next`. The session is forgotten whatever the API answers; a refused or unanswered logout leaves the cookie valid, so a reload would restore the session. Not surfaced in v1. PR 10. |
+| §4.2 Folder layout | Permission gates in `features/auth/` | Claim decoding, `useCan` and the gate's reason in `src/lib/api/` (`claims.ts`, `permissions.ts`), because every feature asks and a feature may not import another (ADR 0003). The access token store became observable for it. The route guard, `RequirePermission`, stays in the auth feature. ADR 0009. PR 11. |
+| §8 Gate 3 | Playwright proves the access token is gone from memory at once after reuse | A browser test cannot see memory. Playwright proves both screens; the token cleared at once, and the winner's 200 unable to restore it whichever answer arrives first, are unit tests on the demonstration's adoption step. PR 11. |
+| §8 Gate 3 | A gated action proven on a real action | No screen carries a mutation before PR 13, and the demonstration is deliberately not gated (decision 5). Proven on the lock action, the one PR 13 renders, through the same `useCan`; PR 13 asserts the same on the screen. PR 11. |
+| §6.1, decision 13 | Both responses of the race in the inspector | Listed on the session screen, one line each, until the inspector arrives in PR 15. `revoked` shows neither, because the session ends at once and sign-in follows. PR 11. |
+| §8 Gate 3, ADR 0012 | The mock's scenario controls exposed to a spec in the `e2e` build | `startMockWorker` places them on `window.__umapiMock` when `main.tsx` passes the `e2e` literal; the dev server does not. The CI search of the production `dist/assets` includes the name. The scenario resets on reload, so a spec sets it after the page has loaded. PR 11. |
