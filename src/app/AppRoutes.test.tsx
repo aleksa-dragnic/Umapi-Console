@@ -38,6 +38,18 @@ describe('AppRoutes', () => {
     expect(await screen.findByRole('heading', { name: 'Session' })).toBeInTheDocument();
   });
 
+  it('renders the directory for an account that holds users.read', async () => {
+    await signIn();
+    render(
+      <MemoryRouter initialEntries={['/users']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Users' })).toBeInTheDocument();
+    expect(await screen.findByText('200 · 130 results')).toBeInTheDocument();
+  });
+
   it('serves the specimen route in development', async () => {
     render(
       <MemoryRouter initialEntries={['/_design']}>

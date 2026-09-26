@@ -21,6 +21,9 @@ describe('Specimen', () => {
       'AppMark',
       'ColdStartNotice',
       'RateLimitNotice',
+      'Select',
+      'EntityStatus',
+      'SkeletonRow',
     ]) {
       expect(screen.getAllByRole('region', { name: primitive })).toHaveLength(2);
     }
