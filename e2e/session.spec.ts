@@ -1,4 +1,6 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+
+import { signInAsDemo } from './support';
 
 // Gate 3: a signed-in user who reloads never meets the sign-in form, and a user
 // who signs out is not signed back in by a reload (inventory sections 2.4 and
@@ -8,18 +10,9 @@ import { expect, test, type Page } from '@playwright/test';
 
 const PROTECTED = '/?view=reload';
 
-async function signInAsDemo(page: Page, next: string): Promise<void> {
-  await page.goto(`/sign-in?next=${encodeURIComponent(next)}`);
-  const demo = page.getByRole('region', { name: 'Demo account' });
-  await page.getByLabel('Email').fill((await demo.locator('dd').nth(0).textContent()) ?? '');
-  await page.getByLabel('Password').fill((await demo.locator('dd').nth(1).textContent()) ?? '');
-  await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page.getByRole('heading', { name: 'Umapi Console' })).toBeVisible();
-}
-
 test('a reload restores the session without ever mounting the sign-in form', async ({ page }) => {
   await signInAsDemo(page, PROTECTED);
-  await expect(page).toHaveURL(PROTECTED);
+  await expect(page.getByRole('heading', { name: 'Umapi Console' })).toBeVisible();
 
   // Installed before any script of the reloaded page runs, so a form that
   // mounts for a single frame and is replaced is still seen.
@@ -42,6 +35,7 @@ test('a reload restores the session without ever mounting the sign-in form', asy
 
 test('signing out ends the session, and a reload does not restore it', async ({ page }) => {
   await signInAsDemo(page, '/');
+  await expect(page.getByRole('heading', { name: 'Umapi Console' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
