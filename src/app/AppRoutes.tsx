@@ -2,7 +2,9 @@ import { Suspense, lazy } from 'react';
 import { Route, Routes } from 'react-router';
 
 import App from '@/app/App';
+import { QueryProvider } from '@/app/query-client';
 import {
+  RequirePermission,
   RequireSession,
   SESSION_PATH,
   SIGN_IN_PATH,
@@ -10,6 +12,7 @@ import {
   SessionScreen,
   SignInScreen,
 } from '@/features/auth';
+import { DirectoryScreen, USERS_PATH } from '@/features/users';
 
 /**
  * The route table.
@@ -33,24 +36,29 @@ const Specimen = import.meta.env.DEV ? lazy(() => import('@/app/design/Specimen'
 
 export function AppRoutes() {
   return (
-    <Routes>
-      {Specimen === null ? null : (
-        <Route
-          path="/_design"
-          element={
-            <Suspense fallback={null}>
-              <Specimen />
-            </Suspense>
-          }
-        />
-      )}
-      <Route element={<SessionBoundary />}>
-        <Route path={SIGN_IN_PATH} element={<SignInScreen />} />
-        <Route element={<RequireSession />}>
-          <Route path="/" element={<App />} />
-          <Route path={SESSION_PATH} element={<SessionScreen />} />
+    <QueryProvider>
+      <Routes>
+        {Specimen === null ? null : (
+          <Route
+            path="/_design"
+            element={
+              <Suspense fallback={null}>
+                <Specimen />
+              </Suspense>
+            }
+          />
+        )}
+        <Route element={<SessionBoundary />}>
+          <Route path={SIGN_IN_PATH} element={<SignInScreen />} />
+          <Route element={<RequireSession />}>
+            <Route path="/" element={<App />} />
+            <Route path={SESSION_PATH} element={<SessionScreen />} />
+            <Route element={<RequirePermission permission="users.read" />}>
+              <Route path={USERS_PATH} element={<DirectoryScreen />} />
+            </Route>
+          </Route>
         </Route>
-      </Route>
-    </Routes>
+      </Routes>
+    </QueryProvider>
   );
 }
