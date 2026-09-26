@@ -24,11 +24,15 @@ function render(): void {
 // The mock answers the dev server, and the `e2e` build Playwright runs against
 // (ADR 0012). Both conditions are literals the build replaces, so a production
 // build removes the branch and contains neither the mock nor MSW - build plan
-// Gate 2, asserted in CI by searching dist/.
+// Gate 2, asserted in CI by searching dist/. Only the `e2e` build exposes the
+// mock's controls to a spec; the dev server does not.
+const E2E = import.meta.env.MODE === 'e2e';
 const startMock =
-  (import.meta.env.DEV || import.meta.env.MODE === 'e2e') &&
-  import.meta.env.VITE_API_MODE !== 'live'
-    ? () => import('@/lib/testing/browser').then((mock) => mock.startMockWorker())
+  (import.meta.env.DEV || E2E) && import.meta.env.VITE_API_MODE !== 'live'
+    ? () =>
+        import('@/lib/testing/browser').then((mock) =>
+          mock.startMockWorker({ exposeControls: E2E }),
+        )
     : null;
 
 if (startMock) {

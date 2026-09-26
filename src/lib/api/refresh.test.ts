@@ -4,6 +4,7 @@ import { api } from '@/lib/api/client';
 import { DEMO_ACCOUNT } from '@/lib/api/demo-account';
 import type { Problem } from '@/lib/api/problem';
 import {
+  adoptRefresh,
   onRefresh,
   refreshAccessToken,
   sessionEndOf,
@@ -203,5 +204,35 @@ describe('which refresh answers end the session (inventory section 2.4)', () => 
     ['429', refused(429, 'Too Many Requests'), null],
   ] as const)('%s', (_, result, end) => {
     expect(sessionEndOf(result)).toBe(end);
+  });
+});
+
+describe('adopting a refresh answer', () => {
+  it('clears the token at once and tells every listener, once, on a 401 that ends the session', () => {
+    const ends = sessionEnds();
+    setAccessToken('held');
+
+    adoptRefresh({
+      kind: 'refused',
+      problem: { status: 401, title: 'Unauthorized', errorCode: 'Auth.RefreshTokenReused' },
+      retryAfterSeconds: 60,
+    });
+
+    expect(currentAccessToken()).toBeNull();
+    expect(ends).toEqual(['reused']);
+  });
+
+  it('leaves the token in place on an answer that says nothing about the session', () => {
+    const ends = sessionEnds();
+    setAccessToken('held');
+
+    adoptRefresh({
+      kind: 'refused',
+      problem: { status: 429, title: 'Too Many Requests' },
+      retryAfterSeconds: 60,
+    });
+
+    expect(currentAccessToken()).toBe('held');
+    expect(ends).toEqual([null]);
   });
 });

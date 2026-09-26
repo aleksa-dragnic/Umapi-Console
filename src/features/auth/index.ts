@@ -2,8 +2,10 @@
  * The auth feature's public surface. `app/` composes these; nothing outside
  * this folder imports its other files (ADR 0003).
  */
+export { RequirePermission } from '@/features/auth/RequirePermission';
 export { RequireSession } from '@/features/auth/RequireSession';
 export { SessionBoundary } from '@/features/auth/SessionBoundary';
+export { SESSION_PATH, SessionScreen } from '@/features/auth/SessionScreen';
 export { SignInScreen } from '@/features/auth/SignInScreen';
 export { SignOutButton } from '@/features/auth/SignOutButton';
 export { useSession } from '@/features/auth/session';

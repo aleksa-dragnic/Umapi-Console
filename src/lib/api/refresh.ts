@@ -57,8 +57,8 @@ export async function settle(
  * `POST /auth/refresh`, sent exactly once, with the cookie as the only
  * credential. Rotates the cookie on success (observed row 6, section 3.2).
  * Nothing in the console calls this directly except the reuse demonstration,
- * whose point is to bypass single-flight; everything else uses
- * `refreshAccessToken`.
+ * whose point is to bypass single-flight, and which adopts its answer with
+ * `adoptRefresh`; everything else uses `refreshAccessToken`.
  */
 export function requestRefresh(): Promise<AuthResult> {
   return settle(() => authApi.POST('/api/v1/auth/refresh'));
@@ -92,24 +92,35 @@ export function onRefresh(listener: RefreshListener): () => void {
   };
 }
 
+/**
+ * What a refresh answer does to the session in memory: a new token replaces the
+ * old one, and a 401 clears it at once - access tokens survive revocation until
+ * `exp` (observed row 9), so a session the API has ended must not keep working
+ * from memory until the next 401. Anything else leaves it. Every listener then
+ * hears the answer.
+ *
+ * `refreshAccessToken` adopts each answer it gets. The reuse demonstration,
+ * which bypasses it, adopts the one answer of its pair that decides the session.
+ */
+export function adoptRefresh(result: AuthResult): void {
+  if (result.kind === 'token') {
+    setAccessToken(result.accessToken);
+  } else if (sessionEndOf(result) !== null) {
+    setAccessToken(null);
+  }
+  listeners.forEach((listener) => listener(result));
+}
+
 let inFlight: Promise<AuthResult> | null = null;
 
 /**
  * The refresh, single-flight: a call while one is in flight gets that one's
- * answer instead of sending a second. The token in memory is replaced on a new
- * token and cleared at once on a 401 - access tokens survive revocation until
- * `exp` (observed row 9), so a session the API has ended must not keep working
- * from memory until the next 401.
+ * answer instead of sending a second, and the answer is adopted once.
  */
 export function refreshAccessToken(): Promise<AuthResult> {
   inFlight ??= requestRefresh()
     .then((result) => {
-      if (result.kind === 'token') {
-        setAccessToken(result.accessToken);
-      } else if (sessionEndOf(result) !== null) {
-        setAccessToken(null);
-      }
-      listeners.forEach((listener) => listener(result));
+      adoptRefresh(result);
       return result;
     })
     .finally(() => {
