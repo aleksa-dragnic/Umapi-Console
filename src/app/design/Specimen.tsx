@@ -288,29 +288,44 @@ function Gallery({ density }: { density: 'application' | 'editorial' }) {
 
       <Dialog
         open={dialog === 'plain'}
-        title="Assign a role"
+        title="Assign a role to Marko Jovanovic"
         onClose={() => {
           setDialog('none');
         }}
+        action={{
+          label: 'Assign',
+          onConfirm: () => {
+            setDialog('none');
+          },
+        }}
       >
-        <p className="text-fg-secondary">
-          Marko Jovanovic holds Reader. Assigning a second role adds its permissions.
-        </p>
-        <Button>Assign</Button>
+        <Select
+          label="Role"
+          options={[
+            { value: 'administrator', label: 'Administrator' },
+            { value: 'support', label: 'Support' },
+          ]}
+        />
       </Dialog>
 
       <Dialog
         open={dialog === 'destructive'}
         destructive
-        title="Lock this user"
+        title="Lock Ana Petrovic"
         onClose={() => {
           setDialog('none');
         }}
+        action={{
+          label: 'Lock',
+          onConfirm: () => {
+            setDialog('none');
+          },
+        }}
       >
         <p className="text-fg-secondary">
-          Locking Ana Petrovic signs out their sessions and refuses new sign-ins until unlocked.
+          Locking Ana Petrovic refuses their next sign-in and ends the session they have within
+          fifteen minutes. Unlocking reverses it.
         </p>
-        <Button variant="destructive">Lock user</Button>
       </Dialog>
     </div>
   );

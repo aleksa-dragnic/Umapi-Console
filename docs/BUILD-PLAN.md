@@ -435,8 +435,8 @@ Petrović, `Marko Petrović` finds no one. The console sends the term as typed,
 and the `empty-search` state repeats it, so the reason is visible.
 
 ### 6.3 User detail and mutations
-Role assignment, lock and unlock, profile update. Optimistic updates with
-rollback.
+Role assignment and removal, lock and unlock, profile update. Optimistic updates
+with rollback.
 
 An update answers **204 with no body** (observed row 57): the response carries
 neither the saved record nor its new `ETag`. A successful save therefore reads
@@ -455,6 +455,8 @@ user in one tab, then lock it again in the other — and they are surfaced as a
 real conflict with a "reload" affordance, not as a generic error toast. The
 related refusals `User.NotLocked`, `User.LastRoleCannotBeRemoved` and
 `User.RoleNotAssigned` are 400, and are rendered the same way.
+`User.EmailNotUnique` is the exception: a 409, but the record did not change and
+a reload would not help, so its `detail` lands on the email field like a 422.
 
 Locking does not end the locked user's sessions at once: their refresh is
 refused, so the session lapses within fifteen minutes (row 51). And nothing
@@ -553,8 +555,8 @@ on 13 September 2026.
 | PR | Branch | Contents |
 |---|---|---|
 | 12 | `feat/user-list` | Table, pagination from `X-Pagination`, debounced search, sorting, status filter — **all of it in the query string** — plus the empty, loading and error states from the inventory. |
-| 13 | `feat/user-detail` | Detail route, profile update, role assignment dialog, lock/unlock, optimistic updates with rollback. |
-| 14 | `feat/conditional-get` | `ETag` retention, `If-None-Match`, 304 handling, and the 409 conflict path made explicit. |
+| 13 | `feat/user-detail` | Detail route, row activation and keyboard traversal in the directory, profile update, role assignment and removal dialogs, lock/unlock, optimistic updates with rollback, and the domain conflicts (409) and refusals (400) they meet. |
+| 14 | `feat/conditional-get` | `ETag` retention, `If-None-Match`, 304 handling. |
 
 **Exit:** Gate 4.
 
@@ -700,7 +702,7 @@ proven in M5, against the real API, not here.
 | Changing a filter resets `page` to 1 | Unit test over the query-string helper |
 | An invalid parameter falls back rather than erroring | `?page=-3&sort=nonsense` renders page 1, default sort |
 | A refetch does not collapse the table | Test asserting rows stay mounted while a refetch is in flight |
-| 304 and 409 are visible, not swallowed | Tests for both paths, plus the footer and the conflict panel |
+| 304 and 409 are visible, not swallowed | Tests for both paths, plus the footer and the conflict panel: the 409 in PR 13, the 304 in PR 14 |
 | 422 field errors land on their field whatever the key casing | Test with the API's PascalCase `errors` keys |
 | Every state the inventory lists for `users` and `users/:id` exists | Walked against the inventory, state by state |
 
@@ -939,3 +941,13 @@ pull request that made the change.
 | Inventory §2.8 | *Open the inspector to see the full response.* in the error state | Left out until the inspector exists in PR 15. PR 12. |
 | §6 Test conventions | No per-test handlers | The directory's 5xx and unanswered request are one-off `server.use(..., { once: true })` handlers in its test, because the mock has no measured 5xx on the endpoint and inventing one in the mock would be a branch with nothing to cite. PR 12. |
 | §7 PR 12 | The directory reached from the shell | A *Users* link on the placeholder at `/`, beside *Session*, until the shell arrives in PR 16. Whether `/` becomes a landing page or a redirect to `/users` stays open decision 1. PR 12. |
+| §7 PR 13, inventory §6 | The 409 conflict path in PR 14 | In PR 13. An optimistic update without its rollback and the panel that explains it is half a mutation, and section 6.3 and inventory §3.4 already described them together. PR 14 is caching alone. PR 13. |
+| §6.3, inventory §6 | Role assignment only | Removal as well: row 48 names it, the API and the mock have it, and inventory §3.6 and the unmeasured `User.LastRoleCannotBeRemoved` already assumed its dialog. A destructive confirmation like the lock's. PR 13. |
+| Inventory §3.4 | `User.EmailNotUnique` as a `conflict` with Reload | On the email field, like a 422: the record did not change, and "reload" would have been untrue. PR 13. |
+| Inventory §3.4 | No state for a refused edit's fields | `editing` and `invalid`: the edit is inline in the identity panel, the API's 422 lands on its field. `forbidden`, `rate-limited` and the write's `error` gained their copy. PR 13. |
+| Inventory §3.3 | "Selected" named but not defined | The row whose detail was just open, kept in the directory's own history entry: Back and *Back to users* return to it, lifted and focused. A changed filter forgets it. No storage. PR 13. |
+| Inventory §3.5, §3.6 | Dialogs without an action row; lock copy "signs out their sessions" on `/_design` | `Dialog` takes the action it confirms beside Cancel and holds while it is in flight; `/_design` carries the copy of row 51. Unlock and remove-role gained their own copy. PR 13. |
+| §8 Gate 3 | The reload proven on `/users/<id>` | Done: the spec opens the demo user's row from the directory and reloads the detail. PR 13. |
+| §8 Gate 3 | A gated action on the real screen | Done: the demo account meets Edit, Lock, Assign role and Remove disabled with their reasons, and no write is sent. PR 13. |
+| §4.2 | Error types unspecified | `RequestError`, shared by the users feature's reads and writes (it was `DirectoryError` in PR 12), and the read's `Failure` state shared by the directory and the detail. PR 13. |
+| README-FIRST §6 | ADR 0010 "collection state in the URL", 0011 "no state-management library" | ADR 0011 carries both, written in PR 13; 0010 stays the server-state decision of PR 12. |

@@ -15,4 +15,5 @@ One file per decision. Format and rules are the same as in
 | [0008](0008-single-flight-refresh.md) | A 401 is met by one refresh in flight at a time, shared by every request that needs it | Accepted | 10 |
 | [0009](0009-permissions-from-claims.md) | What the interface offers is read from the access token's claims, in `lib/` | Accepted | 11 |
 | [0010](0010-server-state-through-tanstack-query.md) | Server state goes through TanStack Query, keyed by the URL, and belongs to one session | Accepted | 12 |
+| [0011](0011-no-state-library-and-collection-state-in-the-url.md) | No state-management library, and collection state lives in the URL | Accepted | 13 |
 | [0012](0012-e2e-runs-a-production-build-with-the-mock.md) | End-to-end tests run a production build that includes the mock, and CI proves the real production build does not | Accepted | 9 |

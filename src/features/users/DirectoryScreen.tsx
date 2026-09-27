@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
-import { DirectoryError, useDirectory, type DirectoryPage } from '@/features/users/api';
+import { useDirectory, type DirectoryPage } from '@/features/users/api';
+import { DirectoryRows } from '@/features/users/DirectoryRows';
+import { Failure } from '@/features/users/Failure';
 import { Footer } from '@/features/users/Footer';
 import { Toolbar } from '@/features/users/Toolbar';
 import {
@@ -14,10 +16,8 @@ import {
   type UserStatus,
 } from '@/features/users/url-state';
 import { Button } from '@/ui/Button';
-import { EntityStatus } from '@/ui/EntityStatus';
-import { RateLimitNotice } from '@/ui/RateLimitNotice';
 import { SkeletonRow } from '@/ui/SkeletonRow';
-import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from '@/ui/Table';
+import { Table, TableBody, TableHead, TableHeaderCell, TableRow } from '@/ui/Table';
 
 /**
  * The `users` screen, the directory (inventory section 3.3). Application
@@ -26,12 +26,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } fro
  * and a reload keeps it. Every state below is a row of that table, and the copy
  * is the inventory's.
  *
- * Rows are not yet interactive: activating one opens the user's detail, and the
- * detail route, keyboard traversal and the focused and selected row states
- * arrive together in PR 13.
+ * A row opens the user's detail; the rows, their keyboard traversal and their
+ * focused and selected states are `DirectoryRows`.
  */
 
-export const USERS_PATH = '/users';
+export { USERS_PATH } from '@/features/users/paths';
+export { UNREACHABLE_COPY } from '@/features/users/Failure';
+
 const SEARCH_DEBOUNCE_MS = 300;
 const COLUMNS: ReadonlyArray<{ field: SortField; label: string }> = [
   { field: 'email', label: 'Email' },
@@ -47,7 +48,6 @@ export function emptyPageCopy(page: number, totalPages: number): string {
   return `Page ${page} is past the end. ${there}`;
 }
 export const NO_USERS_COPY = 'No users.';
-export const UNREACHABLE_COPY = 'No response from the API.';
 
 export interface EmptyState {
   message: string;
@@ -93,47 +93,6 @@ function Empty({
       {action === null ? null : (
         <Button onClick={() => onChange(action.next)}>{action.label}</Button>
       )}
-    </div>
-  );
-}
-
-function Failure({ error, onRetry }: { error: unknown; onRetry: () => void }) {
-  const [elapsedFor, setElapsedFor] = useState<unknown>(null);
-  const failure =
-    error instanceof DirectoryError ? error.failure : { kind: 'unreachable' as const };
-
-  if (failure.kind === 'unreachable') {
-    return (
-      <div role="alert" className="flex flex-col items-start gap-app-2 p-app-3">
-        <p className="text-fg-primary">{UNREACHABLE_COPY}</p>
-        <Button onClick={onRetry}>Retry</Button>
-      </div>
-    );
-  }
-
-  const { problem } = failure;
-  const limited = problem.status === 429 && elapsedFor !== error;
-  return (
-    <div role="alert" className="flex flex-col items-start gap-app-2 p-app-3">
-      <p className="text-fg-primary">
-        <span className="font-mono">{problem.status}</span> {problem.title}
-      </p>
-      {problem.traceId === undefined ? null : (
-        <p className="font-mono text-app-meta text-fg-secondary">{problem.traceId}</p>
-      )}
-      <Button
-        onClick={onRetry}
-        disabledReason={
-          limited ? (
-            <RateLimitNotice
-              seconds={failure.retryAfterSeconds}
-              onElapsed={() => setElapsedFor(error)}
-            />
-          ) : undefined
-        }
-      >
-        Retry
-      </Button>
     </div>
   );
 }
@@ -205,20 +164,13 @@ export function DirectoryScreen() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data === undefined
-                ? Array.from({ length: 10 }, (_, index) => (
-                    <SkeletonRow key={index} columns={COLUMNS.length} />
-                  ))
-                : data.users.map((user) => (
-                    <TableRow key={user.id} className="hover:bg-lift">
-                      <TableCell className="font-mono text-fg-identifier">{user.email}</TableCell>
-                      <TableCell>{user.firstName}</TableCell>
-                      <TableCell>{user.lastName}</TableCell>
-                      <TableCell>
-                        <EntityStatus status={user.status} />
-                      </TableCell>
-                    </TableRow>
-                  ))}
+              {data === undefined ? (
+                Array.from({ length: 10 }, (_, index) => (
+                  <SkeletonRow key={index} columns={COLUMNS.length} />
+                ))
+              ) : (
+                <DirectoryRows users={data.users} />
+              )}
             </TableBody>
           </Table>
         </div>
