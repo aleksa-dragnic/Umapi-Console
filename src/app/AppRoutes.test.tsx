@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 
 import { AppRoutes } from '@/app/AppRoutes';
+import { MOCK_ACCOUNTS } from '@/lib/testing/mock';
 import { signIn } from '@/lib/testing/support';
 
 describe('AppRoutes', () => {
@@ -48,6 +49,20 @@ describe('AppRoutes', () => {
 
     expect(await screen.findByRole('heading', { name: 'Users' })).toBeInTheDocument();
     expect(await screen.findByText('200 · 130 results')).toBeInTheDocument();
+  });
+
+  it("renders a user's detail at its own address", async () => {
+    await signIn();
+    render(
+      <MemoryRouter initialEntries={[`/users/${MOCK_ACCOUNTS.demo.id}`]}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: MOCK_ACCOUNTS.demo.email }),
+    ).toBeInTheDocument();
+    expect(await screen.findByRole('region', { name: 'Concurrency' })).toHaveTextContent('W/');
   });
 
   it('serves the specimen route in development', async () => {

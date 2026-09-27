@@ -1,18 +1,20 @@
 import { expect, test } from '@playwright/test';
 
+import { DEMO_ACCOUNT } from '../src/lib/api/demo-account';
 import { signInAsDemo } from './support';
 
 // Gate 3: a signed-in user who reloads never meets the sign-in form, and a user
 // who signs out is not signed back in by a reload (inventory sections 2.4 and
-// 3.1). The protected route here is `/` with a query string, the deepest route
-// that exists before the user detail arrives; the query proves the whole
-// address survives the reload, not only the path.
-
-const PROTECTED = '/?view=reload';
+// 3.1). The protected route is a user's detail, the deepest route the console
+// has, reached the way a user reaches it: by opening a row of the directory.
 
 test('a reload restores the session without ever mounting the sign-in form', async ({ page }) => {
-  await signInAsDemo(page, PROTECTED);
-  await expect(page.getByRole('heading', { name: 'Umapi Console' })).toBeVisible();
+  await signInAsDemo(page, '/users?q=reader');
+  await page.getByRole('link', { name: DEMO_ACCOUNT.email }).click();
+  const heading = page.getByRole('heading', { level: 1, name: DEMO_ACCOUNT.email });
+  await expect(heading).toBeFocused();
+  await expect(page).toHaveURL(/\/users\/[0-9a-f-]{36}$/);
+  const detail = page.url();
 
   // Installed before any script of the reloaded page runs, so a form that
   // mounts for a single frame and is replaced is still seen.
@@ -25,8 +27,9 @@ test('a reload restores the session without ever mounting the sign-in form', asy
   });
   await page.reload();
 
-  await expect(page.getByRole('heading', { name: 'Umapi Console' })).toBeVisible();
-  await expect(page).toHaveURL(PROTECTED);
+  await expect(heading).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Concurrency' })).toContainText('W/');
+  await expect(page).toHaveURL(detail);
   const seen = await page.evaluate(
     () => (window as unknown as { __umapiSignInSeen: { signIn: boolean } }).__umapiSignInSeen,
   );

@@ -12,7 +12,7 @@ import {
   SessionScreen,
   SignInScreen,
 } from '@/features/auth';
-import { DirectoryScreen, USERS_PATH } from '@/features/users';
+import { DetailScreen, DirectoryScreen, USER_PATH, USERS_PATH } from '@/features/users';
 
 /**
  * The route table.
@@ -55,6 +55,7 @@ export function AppRoutes() {
             <Route path={SESSION_PATH} element={<SessionScreen />} />
             <Route element={<RequirePermission permission="users.read" />}>
               <Route path={USERS_PATH} element={<DirectoryScreen />} />
+              <Route path={USER_PATH} element={<DetailScreen />} />
             </Route>
           </Route>
         </Route>
