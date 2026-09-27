@@ -1,4 +1,6 @@
 import createClient from 'openapi-fetch';
+
+import { captureExchange } from '@/lib/api/capture';
 import type { components, paths } from '@/lib/api/schema';
 
 /**
@@ -27,10 +29,12 @@ export type Schema<K extends keyof components['schemas']> = components['schemas'
  * sends `If-None-Match` itself, so what it shows is what crossed the network.
  * See docs/adr/0013-the-console-keeps-its-own-validators.md.
  *
- * `fetch` is looked up on every request instead of being captured when the
- * client is created. openapi-fetch would otherwise keep the `fetch` that
- * existed at import time, and a request interceptor installed later - the
- * mock layer in tests - would never see the call.
+ * Every request goes out through `transport`, which records it for the
+ * inspector (ADR 0014) and looks `fetch` up on every request instead of
+ * keeping the one that existed when the client was created. openapi-fetch
+ * would otherwise hold on to the `fetch` of import time, and a request
+ * interceptor installed later - the mock layer in tests - would never see the
+ * call.
  *
  * This file imports nothing from `lib/api` that makes a request, so the auth
  * contract's client and the application's client can both be built from it
@@ -41,6 +45,15 @@ export function createApiClient<Paths extends object = paths>(baseUrl: string = 
     baseUrl,
     credentials: 'include',
     cache: 'no-store',
-    fetch: (request: Request) => globalThis.fetch(request),
+    fetch: transport,
   });
+}
+
+/**
+ * The one way a request reaches the network: recorded for the inspector, then
+ * sent with the `fetch` of the moment. The silent refresh sends its replay
+ * through here too, so the replay is recorded like any other request.
+ */
+export function transport(request: Request): Promise<Response> {
+  return captureExchange(request, (outgoing) => globalThis.fetch(outgoing));
 }

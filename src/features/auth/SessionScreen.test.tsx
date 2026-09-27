@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 
@@ -15,8 +15,18 @@ import {
 import { SESSION_ENDED_COPY, SignInScreen } from '@/features/auth/SignInScreen';
 import { SIGN_IN_PATH } from '@/features/auth/next';
 import { currentAccessToken } from '@/lib/api/access-token';
+import { currentCaptures } from '@/lib/api/capture';
 import { advanceClock, setRefreshRace } from '@/lib/testing/mock';
 import { call, json, signIn } from '@/lib/testing/support';
+
+/** The statuses of the race's two refreshes, as the transport recorded them, lowest first. */
+function raceStatuses(): number[] {
+  return currentCaptures()
+    .filter(({ request }) => request.url.endsWith('/api/v1/auth/refresh'))
+    .slice(-2)
+    .flatMap(({ outcome }) => (outcome.kind === 'response' ? [outcome.response.status] : []))
+    .sort((a, b) => a - b);
+}
 
 function Where() {
   const location = useLocation();
@@ -103,15 +113,15 @@ describe('the session screen (inventory section 3.9)', () => {
     expect(screen.getByRole('button', { name: 'Race two refreshes' })).toHaveFocus();
   });
 
-  it('raced: lists both answers, says nothing was revoked, and the session continues', async () => {
+  it('raced: both answers are in the inspector, nothing was revoked, and the session continues', async () => {
     await renderSession();
     const before = currentAccessToken();
 
     await race();
 
     expect(await screen.findByRole('status')).toHaveTextContent(RACED_COPY);
-    expect(screen.getByText(/^Request [12]: 409 Concurrency\.Conflict$/)).toBeInTheDocument();
-    expect(screen.getByText(/^Request [12]: 200, with a new access token$/)).toBeInTheDocument();
+    await waitFor(() => expect(raceStatuses()).toEqual([200, 409]));
+    expect(screen.queryByText(/^Request [12]:/)).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Session' })).toBeInTheDocument();
     expect(currentAccessToken()).not.toBe(before);
     expect(screen.getByRole('button', { name: 'Race again' })).toBeInTheDocument();

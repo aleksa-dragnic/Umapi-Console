@@ -39,16 +39,24 @@ const DOT: Record<ResponseClass, string> = {
 export interface StatusDotProps {
   /** Absent means the request is still in flight. */
   status?: number | undefined;
+  /**
+   * Nothing answered the request: offline, DNS, or a CORS refusal. There is no
+   * code to show and no class to colour, so the dot stays neutral and the words
+   * say what happened.
+   */
+  unanswered?: boolean | undefined;
   className?: string | undefined;
 }
 
-export function StatusDot({ status, className }: StatusDotProps) {
-  const responseClass = responseClassOf(status);
+export function StatusDot({ status, unanswered = false, className }: StatusDotProps) {
+  const responseClass = unanswered ? 'pending' : responseClassOf(status);
 
   return (
     <span className={['inline-flex items-center gap-app-1', className].filter(Boolean).join(' ')}>
       <span aria-hidden="true" className={`size-2 rounded-pill ${DOT[responseClass]}`} />
-      {status === undefined ? (
+      {unanswered ? (
+        <span className="font-mono text-app-meta text-fg-muted">no response</span>
+      ) : status === undefined ? (
         <span className="font-mono text-app-meta text-fg-muted">pending</span>
       ) : (
         <>

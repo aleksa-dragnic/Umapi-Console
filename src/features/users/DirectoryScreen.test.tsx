@@ -7,6 +7,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import type { DirectoryPage } from '@/features/users/api';
 import {
   DirectoryScreen,
+  INSPECTOR_POINTER_COPY,
   NO_USERS_COPY,
   UNREACHABLE_COPY,
   USERS_PATH,
@@ -179,7 +180,7 @@ describe('the directory (inventory section 3.3)', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
-  it('error: the status, the title and the traceId in place of the table, and Retry (section 2.8)', async () => {
+  it('error: the status, the title, the traceId and the way to the inspector in place of the table, and Retry (section 2.8)', async () => {
     // The mock has no 5xx on this endpoint; the transport shape of section 2.8, once.
     server.use(
       http.get(
@@ -197,6 +198,7 @@ describe('the directory (inventory section 3.3)', () => {
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('503 Service Unavailable');
     expect(alert).toHaveTextContent('00-4bf92f3577b34da6-01');
+    expect(alert).toHaveTextContent(INSPECTOR_POINTER_COPY);
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'Retry' }));
@@ -204,11 +206,13 @@ describe('the directory (inventory section 3.3)', () => {
     expect(await footerLine()).toHaveTextContent('200 · 130 results');
   });
 
-  it('error: a request with no answer at all says so, and Retry', async () => {
+  it('error: a request with no answer at all says so, has no response to point to, and Retry', async () => {
     server.use(http.get(url('/api/v1/users'), () => HttpResponse.error(), { once: true }));
     await renderDirectory();
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(UNREACHABLE_COPY);
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(UNREACHABLE_COPY);
+    expect(alert).not.toHaveTextContent(INSPECTOR_POINTER_COPY);
 
     await userEvent.click(screen.getByRole('button', { name: 'Retry' }));
 

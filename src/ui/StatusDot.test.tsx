@@ -26,4 +26,12 @@ describe('StatusDot', () => {
 
     expect(screen.getByText('pending')).toBeInTheDocument();
   });
+
+  test('a request nothing answered has no code and says so, whatever status is passed', () => {
+    render(<StatusDot unanswered status={200} />);
+
+    expect(screen.getByText('no response')).toBeInTheDocument();
+    expect(screen.queryByText('200')).not.toBeInTheDocument();
+    expect(screen.queryByText('pending')).not.toBeInTheDocument();
+  });
 });

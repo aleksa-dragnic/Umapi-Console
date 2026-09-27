@@ -25,7 +25,11 @@ test('a 409 leaves the session running and says why', async ({ page }) => {
   await expect(page.getByRole('status')).toHaveText(
     'The API refused the second request because the first had just rotated the token. Nothing was revoked; your session continues.',
   );
-  await expect(page.getByText(/^Request [12]: 409 Concurrency\.Conflict$/)).toBeVisible();
+  // Both answers are in the inspector: the winner's 200 and the loser's 409.
+  await page.getByRole('button', { name: 'Inspector' }).click();
+  const requests = page.getByRole('list', { name: 'Requests' }).getByRole('button');
+  await expect(requests.filter({ hasText: /^200.*POST\/api\/v1\/auth\/refresh/ })).toHaveCount(1);
+  await expect(requests.filter({ hasText: /^409.*POST\/api\/v1\/auth\/refresh/ })).toHaveCount(1);
   await expect(page).toHaveURL(SESSION);
   await expect(page.getByText(/^Expires in/)).toBeVisible();
 

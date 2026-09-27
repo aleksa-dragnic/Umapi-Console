@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 
 import { AppRoutes } from '@/app/AppRoutes';
@@ -63,6 +63,26 @@ describe('AppRoutes', () => {
       await screen.findByRole('heading', { level: 1, name: MOCK_ACCOUNTS.demo.email }),
     ).toBeInTheDocument();
     expect(await screen.findByRole('region', { name: 'Concurrency' })).toHaveTextContent('W/');
+  });
+
+  it('docks the inspector beneath every screen behind the login, and not beneath sign-in', async () => {
+    render(
+      <MemoryRouter initialEntries={['/session']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Inspector' })).not.toBeInTheDocument();
+    cleanup();
+
+    await signIn();
+    render(
+      <MemoryRouter initialEntries={['/session']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+    expect(await screen.findByRole('heading', { name: 'Session' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Inspector' })).toBeInTheDocument();
   });
 
   it('serves the specimen route in development', async () => {
