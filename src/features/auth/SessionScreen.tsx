@@ -18,7 +18,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } fro
  * account, and the confirmation says what it may do to everyone else on it.
  * `revoked` is never drawn here - the session ends, and `RequireSession` takes
  * the user to sign-in, where the reuse wording is shown (section 2.4). Both
- * responses are listed on this screen until the inspector arrives in PR 15.
+ * responses of the race are in the inspector, recorded at the transport; the
+ * screen says what they came to.
  */
 
 export const SESSION_PATH = '/session';
@@ -34,7 +35,7 @@ export const CONFIRM_COPY =
 export const RACED_COPY =
   'The API refused the second request because the first had just rotated the token. Nothing was revoked; your session continues.';
 
-/** One answer of the pair, as the screen lists it. */
+/** One answer of the pair, as `unexpected` states it. */
 export function describeAnswer(result: AuthResult): string {
   if (result.kind === 'token') return '200, with a new access token';
   if (result.kind === 'unreachable') return 'no answer';
@@ -78,18 +79,6 @@ function Countdown({
       </span>
       .
     </p>
-  );
-}
-
-function Pair({ pair }: { pair: RacePair }) {
-  return (
-    <ol className="flex flex-col gap-app-1 font-mono text-app-meta text-fg-secondary">
-      {pair.map((result, index) => (
-        <li key={index}>
-          Request {index + 1}: {describeAnswer(result)}
-        </li>
-      ))}
-    </ol>
   );
 }
 
@@ -149,21 +138,15 @@ function RaceCard() {
         ) : null}
 
         {phase.kind === 'raced' ? (
-          <div className="flex flex-col gap-app-2">
-            <Pair pair={phase.pair} />
-            <p role="status" className="text-fg-primary">
-              {RACED_COPY}
-            </p>
-          </div>
+          <p role="status" className="text-fg-primary">
+            {RACED_COPY}
+          </p>
         ) : null}
 
         {phase.kind === 'unexpected' ? (
-          <div className="flex flex-col gap-app-2">
-            <Pair pair={phase.pair} />
-            <p role="status" className="text-fg-primary">
-              {unexpectedCopy(phase.pair)}
-            </p>
-          </div>
+          <p role="status" className="text-fg-primary">
+            {unexpectedCopy(phase.pair)}
+          </p>
         ) : null}
 
         {phase.kind === 'ready' ? (

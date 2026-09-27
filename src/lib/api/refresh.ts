@@ -2,6 +2,7 @@ import type { Middleware } from 'openapi-fetch';
 
 import { currentAccessToken, setAccessToken } from '@/lib/api/access-token';
 import { authApi } from '@/lib/api/auth-contract';
+import { transport } from '@/lib/api/create-client';
 import { retryAfterSeconds, toProblem, type Problem } from '@/lib/api/problem';
 
 /**
@@ -169,8 +170,9 @@ const replays = new WeakMap<Request, Request>();
  * - the token is still the one sent: refresh, joining any refresh in flight;
  * - no token is held any more: the session has ended; the 401 stands.
  *
- * The replay goes straight to fetch, not back through this middleware, so a
- * second 401 is returned as it is rather than refreshed again.
+ * The replay goes straight to the transport, not back through this
+ * middleware, so a second 401 is returned as it is rather than refreshed again;
+ * the transport records it for the inspector like any other request.
  */
 export const silentRefresh: Middleware = {
   onRequest({ request }) {
@@ -198,6 +200,6 @@ export const silentRefresh: Middleware = {
       token = result.accessToken;
     }
     replay.headers.set('Authorization', `Bearer ${token}`);
-    return globalThis.fetch(replay);
+    return transport(replay);
   },
 };
