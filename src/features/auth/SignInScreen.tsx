@@ -32,6 +32,11 @@ const FIELDS = ['email', 'password'] as const;
 type Field = (typeof FIELDS)[number];
 
 export const INVALID_CREDENTIALS_COPY = 'Email or password is incorrect.';
+export const CONSOLE_REPOSITORY = 'https://github.com/aleksa-dragnic/Umapi-Console';
+export const API_REPOSITORY = 'https://github.com/aleksa-dragnic/UserManagementAPI';
+
+const SOURCE_LINK =
+  'text-fg-secondary underline underline-offset-4 transition-colors duration-[var(--duration-hover)] ease-standard hover:text-fg-primary';
 export const ACCOUNT_LOCKED_COPY = 'This account is locked. An administrator can unlock it.';
 
 /** Inventory section 2.4: the banner, chosen by why the session ended. */
@@ -154,7 +159,8 @@ export function SignInScreen() {
             Sign in
           </h1>
           <p className="text-editorial-md text-fg-secondary">
-            An admin console for UserManagementAPI that does not hide HTTP.
+            An admin console for UserManagementAPI that does not hide HTTP. Every request it sends
+            is in the inspector, with its status, headers and body, and a copy for curl.
           </p>
         </div>
 
@@ -241,6 +247,15 @@ export function SignInScreen() {
           </dl>
           <p className="text-fg-secondary">Read-only: it holds users.read and roles.read.</p>
         </section>
+
+        <nav aria-label="Source" className="flex flex-wrap gap-app-3 font-mono text-app-meta">
+          <a href={CONSOLE_REPOSITORY} className={SOURCE_LINK}>
+            Console source
+          </a>
+          <a href={API_REPOSITORY} className={SOURCE_LINK}>
+            API source
+          </a>
+        </nav>
       </div>
     </main>
   );

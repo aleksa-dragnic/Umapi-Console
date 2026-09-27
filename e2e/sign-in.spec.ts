@@ -15,8 +15,9 @@ test('the printed demo account signs in and returns to the requested page', asyn
   await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: 'Sign in' }).click();
 
-  await expect(page.getByRole('heading', { name: 'Umapi Console' })).toBeVisible();
-  await expect(page).toHaveURL(/\/$/);
+  // The root is the directory (build plan decision 1).
+  await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible();
+  await expect(page).toHaveURL(/\/users$/);
 });
 
 test('a wrong password is refused with the one message the inventory allows', async ({ page }) => {

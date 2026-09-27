@@ -10,8 +10,7 @@ import { Button } from '@/ui/Button';
  * `next` and the sign-in screen shows no banner - the user chose to leave, so
  * nothing ended and there is nowhere to return to.
  *
- * The shell does not exist until PR 16; until then the control sits on the
- * placeholder at `/`.
+ * It sits in the shell's header, beside the account it signs out.
  */
 export function SignOutButton() {
   const { signOut } = useSession();

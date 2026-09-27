@@ -97,6 +97,18 @@ describe('the directory (inventory section 3.3)', () => {
     expect(screen.queryByText('Search pending')).not.toBeInTheDocument();
   });
 
+  it('Escape clears the search field and the search (inventory section 4)', async () => {
+    await renderDirectory('/users?q=ovic');
+    expect(await screen.findByText('200 · 30 results')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByLabelText('Search'));
+    await userEvent.keyboard('{Escape}');
+
+    expect(screen.getByLabelText('Search')).toHaveValue('');
+    expect(await screen.findByText('200 · 130 results')).toBeInTheDocument();
+    expect(where()).toBe('/users');
+  });
+
   it('empty-search: repeats the term as sent, and Clear search brings the rows back', async () => {
     await renderDirectory('/users?q=zzz');
 

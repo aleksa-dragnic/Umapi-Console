@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 
@@ -7,6 +7,8 @@ import { SessionBoundary } from '@/features/auth/SessionBoundary';
 import {
   ACCOUNT_LOCKED_COPY,
   INVALID_CREDENTIALS_COPY,
+  API_REPOSITORY,
+  CONSOLE_REPOSITORY,
   SESSION_ENDED_COPY,
   SignInScreen,
 } from '@/features/auth/SignInScreen';
@@ -84,6 +86,21 @@ describe('sign-in (inventory section 3.2)', () => {
     expect(screen.getByRole('form', { name: 'Sign in' })).toBeInTheDocument();
     expect(screen.getByText(DEMO_ACCOUNT.email)).toBeInTheDocument();
     expect(screen.getByText(DEMO_ACCOUNT.password)).toBeInTheDocument();
+  });
+
+  it('says what the project is, and links to the source of both repositories (build plan decision 1)', async () => {
+    await renderSignIn();
+
+    expect(screen.getByText(/Every request it sends is in the inspector/)).toBeInTheDocument();
+    const source = screen.getByRole('navigation', { name: 'Source' });
+    expect(within(source).getByRole('link', { name: 'Console source' })).toHaveAttribute(
+      'href',
+      CONSOLE_REPOSITORY,
+    );
+    expect(within(source).getByRole('link', { name: 'API source' })).toHaveAttribute(
+      'href',
+      API_REPOSITORY,
+    );
   });
 
   it('signs in and continues to the page that was asked for', async () => {
