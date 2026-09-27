@@ -63,10 +63,11 @@ Every button is transparent with a 1px `--color-graphite-hairline` border and
 white text, 6px radius. Hover raises the border toward white. There is no
 filled primary button anywhere.
 
-- **Destructive** actions — locking a user — are ghost with an
+- **Destructive** actions — locking a user, removing a role — are ghost with an
   `--color-alarm-red` border and text. Never filled red.
 - **`--color-signal-blue`** appears only as the selected state in navigation.
-  It is not a button colour.
+  It is not a button colour, and not a selected table row: the directory's
+  selected row is the surface lift, because a row is content, not navigation.
 - **`--color-iris-violet`** belongs to code strings, email addresses and
   identifiers. It behaves like syntax highlighting, never like decoration, and
   never on a control.

@@ -10,6 +10,12 @@ import { Button } from '@/ui/Button';
  * A destructive dialog starts on Cancel rather than on the destructive
  * control, so a reflexive Enter does not lock a user out of their account.
  *
+ * The action row holds Cancel and, when the dialog has one, the action it
+ * confirms: a ghost control, with the alarm border in a destructive dialog
+ * (DESIGN-DECISIONS section 2). While the action is in flight the dialog
+ * stays open and neither Cancel nor Escape closes it - the answer belongs to
+ * the dialog that asked (inventory section 3.5, `submitting`).
+ *
  * No library. The trap is a keydown handler over the panel's focusable
  * elements, which is the whole of what a library would do here.
  */
@@ -28,6 +34,15 @@ function focusableIn(root: HTMLElement | null): HTMLElement[] {
   return [...root.querySelectorAll<HTMLElement>(FOCUSABLE)];
 }
 
+export interface DialogAction {
+  label: string;
+  onConfirm: () => void;
+  /** A request is in flight: the dialog holds, and the control is busy. */
+  pending?: boolean | undefined;
+  /** Why the action cannot be taken; present means disabled, with the reason shown. */
+  disabledReason?: ReactNode | undefined;
+}
+
 export interface DialogProps {
   open: boolean;
   title: string;
@@ -36,6 +51,8 @@ export interface DialogProps {
   /** Focus starts on Cancel instead of on the first control. */
   destructive?: boolean | undefined;
   cancelLabel?: string | undefined;
+  /** The action the dialog confirms, beside Cancel. Absent leaves Cancel alone. */
+  action?: DialogAction | undefined;
   children: ReactNode;
 }
 
@@ -45,10 +62,13 @@ export function Dialog({
   onClose,
   destructive = false,
   cancelLabel = 'Cancel',
+  action,
   children,
 }: DialogProps) {
   const panel = useRef<HTMLDivElement>(null);
+  const body = useRef<HTMLDivElement>(null);
   const cancel = useRef<HTMLButtonElement>(null);
+  const confirm = useRef<HTMLButtonElement>(null);
   const returnTo = useRef<Element | null>(null);
   const titleId = useId();
 
@@ -56,7 +76,9 @@ export function Dialog({
     if (!open) return;
 
     returnTo.current = document.activeElement;
-    const entry = destructive ? cancel.current : (focusableIn(panel.current)[0] ?? cancel.current);
+    const entry = destructive
+      ? cancel.current
+      : (focusableIn(body.current)[0] ?? confirm.current ?? cancel.current);
     entry?.focus();
 
     return () => {
@@ -69,10 +91,12 @@ export function Dialog({
 
   if (!open) return null;
 
+  const holding = action?.pending === true;
+
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     if (event.key === 'Escape') {
       event.stopPropagation();
-      onClose();
+      if (!holding) onClose();
       return;
     }
     if (event.key !== 'Tab') return;
@@ -105,11 +129,24 @@ export function Dialog({
         <h2 id={titleId} className="text-app-subtitle text-fg-emphasis">
           {title}
         </h2>
-        {children}
-        <div className="flex justify-end gap-app-2">
-          <Button ref={cancel} onClick={onClose}>
+        <div ref={body} className="flex flex-col gap-[var(--density-gap)]">
+          {children}
+        </div>
+        <div className="flex flex-wrap items-start justify-end gap-app-2">
+          <Button ref={cancel} pending={holding} onClick={onClose}>
             {cancelLabel}
           </Button>
+          {action === undefined ? null : (
+            <Button
+              ref={confirm}
+              variant={destructive ? 'destructive' : 'ghost'}
+              pending={holding}
+              disabledReason={action.disabledReason}
+              onClick={action.onConfirm}
+            >
+              {action.label}
+            </Button>
+          )}
         </div>
       </div>
     </div>

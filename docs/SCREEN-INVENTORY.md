@@ -218,8 +218,14 @@ the table reads *No users.* The line *Open the inspector to see the full
 response.* of section 2.8 joins `error` with the inspector in PR 15.
 
 **Row states.** Default, hover (surface lift), focused (visible ring, reached by
-keyboard), and selected. Focused and selected, like activation and arrow-key
-traversal, arrive with the detail route in PR 13. Entity status — Active, Pending, Locked,
+keyboard), and selected. A row opens the user's detail: the email is a link to
+`/users/:id`, so a row opens in a new tab or its address is copied like any
+link, and a click anywhere else on the row follows it. The table is one tab
+stop; once a row has focus, the arrow keys, Home and End move between rows.
+**Selected** is the row whose detail was just open: returning by Back, or by
+*Back to users* on the detail, lands on the same view with that row lifted and
+focused. It lives in the browser's history entry, nothing else, and a changed
+filter forgets it. Entity status — Active, Pending, Locked,
 Deactivated — renders as neutral text, with a glyph for Locked and another for
 Deactivated. See the design decisions, section 10.
 
@@ -227,34 +233,42 @@ Deactivated. See the design decisions, section 10.
 
 | State | Trigger | Renders | The way out |
 |---|---|---|---|
-| `loading` | Route entry | Skeleton in the three panels, header shows the email from the list if it was navigated from there | Data |
-| `ready` | Data | Identity, roles and concurrency panels, from the v1 detail fields: name, email, status, created and updated times; each role with its assignment time (observed row 21). The concurrency panel shows the `ETag` exactly as received, `W/` prefix included (row 22), and says plainly what it is and is not: *This tag lets the console ask whether the record changed. It does not protect an edit: the API does not check versions, so the last save wins.* (rows 26, 45) | Actions |
+| `loading` | Route entry | Skeleton in the three panels, header shows the email from the list if it was navigated from there. *Back to users* above it returns to the directory view the user came from. | Data |
+| `ready` | Data | Identity, roles and concurrency panels, from the v1 detail fields: name, email, status, created and updated times, in UTC to the minute; each role with its assignment time (observed row 21). The concurrency panel shows the `ETag` exactly as received, `W/` prefix included (row 22), and says plainly what it is and is not: *This tag lets the console ask whether the record changed. It does not protect an edit: the API does not check versions, so the last save wins.* (rows 26, 45) A response without the header reads *The response carried no ETag.* Actions: **Edit** and **Lock** (**Unlock** for a Locked user) in the identity panel; **Remove** on each role and **Assign role** in the roles panel. Every action is offered whatever the user's status: the API's answer is the rule, not the console's guess. | Actions |
 | `not-found` | 404 | *No user with that id.* With a link back to the directory. Distinct from the application's own 404 route. | Back |
-| `saving` | A mutation in flight | The changed field updates optimistically; the panel carries a pending dot. An update answers 204 with no body (observed row 57), so success reads the detail again, and the concurrency panel shows the new `ETag` only when that read returns. | Response |
-| `conflict` | 409 with a domain `errorCode` — `User.AlreadyLocked`, `User.RoleAlreadyAssigned`, `User.EmailNotUnique`, `User.AlreadyDeactivated` (observed row 49) | The optimistic update rolls back, and a panel appears with the API's `detail` first, then: *This record changed since it was read. Reload to see the current version, then apply the change again.* With **Reload**. Never a toast — a toast is dismissed before it is read. A stale second tab is the usual way here. | Reload |
-| `refused` | 400 with a domain `errorCode` — `User.NotLocked`, `User.RoleNotAssigned`, `User.LastRoleCannotBeRemoved`, `User.Deactivated` (row 49) | The rollback, and the API's `detail` in place of the action, not paraphrased | Dismiss, or Reload |
+| `saving` | A mutation in flight | The changed field updates optimistically; the panel that changed and the concurrency panel carry a pending dot with *Saving*, and every write control is busy. A role just assigned reads *pending* where its time goes: the client's clock is not the server's. An update answers 204 with no body (observed row 57), so success reads the detail again, and the concurrency panel shows the new `ETag` only when that read returns. The directory's pages are marked stale in the same step (row 25). | Response |
+| `editing` | **Edit** | The identity panel's fields become the three inputs, all required by the API (row 55), focus on *Email*; **Save** and **Cancel**. No browser validation: the API's 422 is the validation. A save that changes nothing sends nothing. Closing the form, saved or cancelled, returns focus to **Edit**. | Save or cancel |
+| `invalid` | 422, or 409 `User.EmailNotUnique` on a save | The rollback, then the form again with what was typed, each message on its field whatever the casing of its key (row 19), focus on the first. An email another user holds is not a conflict - the record did not change and a reload would not help - so the API's `detail` goes on *Email*. | Correct |
+| `conflict` | 409 with a domain `errorCode` — `User.AlreadyLocked`, `User.RoleAlreadyAssigned`, `User.AlreadyDeactivated` (observed rows 49, 58) | The optimistic update rolls back, any dialog closes, and a panel titled *Conflict* appears with the API's `detail` first, then: *This record changed since it was read. Reload to see the current version, then apply the change again.* With **Reload**, which reads the detail again. Never a toast — a toast is dismissed before it is read. A stale second tab is the usual way here. | Reload |
+| `refused` | 400 with a domain `errorCode` — `User.NotLocked`, `User.RoleNotAssigned`, `User.LastRoleCannotBeRemoved`, `User.Deactivated` (row 49) | The rollback, and the API's `detail` in place of the action, not paraphrased: inside the dialog for an action that has one (sections 3.5, 3.6), above **Save** for an edit | Cancel, or correct |
 | `gated` | §2.6 | Write controls disabled with their reason | Sign in as administrator |
-| `forbidden` | §2.5 | In-place error, the control disables | — |
-| `error` | §2.8 | Panel-level error with **Retry** | Retry |
+| `forbidden` | §2.5 | Any dialog closes; in the panel that owns the action: *Locking or unlocking was refused: 403 Forbidden.* (*Saving the profile*, *Assigning a role*, *Removing a role* for the others) with **Dismiss**. The control stays disabled for the rest of the visit, its reason *The API refused this action for this account.* | Dismiss |
+| `rate-limited` | 429 on a write (row 52: thirty a minute per user) | The rollback; the action's confirm control, or **Save**, is held by the shared countdown of §2.7 | Wait |
+| `error` | §2.8 | Panel-level error with **Retry**. A write with no answer, or a 5xx, rolls back and says so where the action is: *No response from the API.*, or the status and title. | Retry |
 
 ### 3.5 `assign-role` — dialog
 
 | State | Trigger | Renders | The way out |
 |---|---|---|---|
-| `open` | The action | Focus trapped, focus on the first control, `Escape` closes, the trigger regains focus on close | Assign or cancel |
-| `loading-roles` | Open | The list area shows a skeleton; the dialog does not resize when it fills | Data |
-| `no-roles-available` | Every role already assigned | *This user already holds every role.* The assign control is disabled. | Cancel |
-| `submitting` | Assign | Control pending, dialog stays open | Response |
+| `open` | The action | Titled *Assign a role to Marko Petrović*. A **Role** choice among the roles the user does not hold, read from `GET /api/v1/roles`. Focus trapped, focus on the first control, `Escape` closes, the trigger regains focus on close | Assign or cancel |
+| `loading-roles` | Open | The list area shows a skeleton at the field's height; the dialog does not resize when it fills. **Assign** appears with the list. | Data |
+| `no-roles-available` | Every role already assigned | *This user already holds every role.* as the reason the assign control is disabled | Cancel |
+| `submitting` | Assign | Control pending, dialog stays open: neither **Cancel** nor `Escape` closes it until the answer arrives | Response |
 | `invalid` | 422 | Message inside the dialog, focus to the offending control | Correct |
 | `conflict` | 409 `User.RoleAlreadyAssigned` | The dialog closes and the detail screen enters `conflict` — the conflict belongs to the record, not to the dialog | Reload |
+| `refused` | 400 - `User.Deactivated` (row 49) | The API's `detail` inside the dialog; **Assign** leaves, **Cancel** stays | Cancel |
+| `forbidden` | 403 | The dialog closes and the detail screen enters `forbidden` | Dismiss |
+| `error` | 5xx, 429, or no answer | Inside the dialog: the status and title, or *No response from the API.*; a 429 holds **Assign** by the countdown of §2.7. A roles list that cannot be read shows §2.8 with **Retry** in the list area. | Assign again, or cancel |
 
-### 3.6 `lock-user` / `unlock-user` — confirmation dialog
+### 3.6 `lock-user` / `unlock-user` / `remove-role` — confirmation dialog
 
 | State | Trigger | Renders | The way out |
 |---|---|---|---|
-| `open` | The destructive action | The consequence in plain words: *Locking Marko Petrović refuses their next sign-in and ends the session they have within fifteen minutes. Unlocking reverses it.* (Locking does not revoke sessions at once; observed row 51.) Confirm is a ghost control with an alarm-red border. Focus starts on **Cancel**, not on the destructive control. | Confirm or cancel |
-| `refused` | The API refuses: locking yourself, once decision 14 adds that rule in M5 (today nothing refuses it, row 50); or, in the remove-role dialog, removing a user's last role — `User.LastRoleCannotBeRemoved`, 400 | The domain rule stated as the API returned it, not paraphrased | Cancel |
-| `submitting` / `error` | As above | | |
+| `open` | **Lock** | Titled *Lock Marko Petrović*. The consequence in plain words: *Locking Marko Petrović refuses their next sign-in and ends the session they have within fifteen minutes. Unlocking reverses it.* (Locking does not revoke sessions at once; observed row 51.) Confirm is a ghost control with an alarm-red border. Focus starts on **Cancel**, not on the destructive control. | Confirm or cancel |
+| `open` | **Unlock** | Titled *Unlock Marko Petrović*: *Unlocking Marko Petrović lets them sign in again.* Not destructive: the confirm control is a plain ghost, and focus starts on it. | Confirm or cancel |
+| `open` | **Remove** on a role | Titled *Remove Support from Marko Petrović*: *Marko Petrović will no longer hold Support. A user keeps at least one role: the API refuses to remove the last.* Destructive, like the lock: alarm-red border, focus on **Cancel**. | Confirm or cancel |
+| `refused` | The API refuses: locking yourself, once decision 14 adds that rule in M5 (today nothing refuses it, row 50); unlocking a user who is not locked, `User.NotLocked`; any of them on a deactivated user, `User.Deactivated`; or, in the remove-role dialog, removing a user's last role — `User.LastRoleCannotBeRemoved`, 400 | The domain rule stated as the API returned it, not paraphrased. The confirm control leaves; **Cancel** stays. | Cancel |
+| `submitting` / `conflict` / `forbidden` / `error` | As in section 3.5: `User.AlreadyLocked` is the conflict here | | |
 
 ### 3.7 `roles` — read-only list
 
@@ -387,6 +401,9 @@ Asserted in component tests, not left to review.
 | Dialog close | The control that opened it |
 | Validation failure | The first invalid field |
 | Row activation | The detail screen's `h1` |
+| Return to the directory, by Back or by *Back to users* | The row that was opened, if it is on the page |
+| **Edit** | The *Email* field |
+| The edit form closes, saved or cancelled | **Edit** |
 | `Escape` | Closes the topmost dialog, then the inspector, then clears the search field |
 
 Additional rules: every interactive element has a visible focus ring that is not
@@ -433,8 +450,8 @@ selection, which are per-session and would make every link carry debug state.
 | `session-ended`, `refreshing` | 10 |
 | `gated`, `session` | 11 |
 | `users` and all its states | 12 |
-| `users/:id`, `assign-role`, `lock-user` | 13 |
-| `not-modified`, `conflict` | 14 |
+| `users/:id` and all its states, `conflict` included; `assign-role`, `lock-user`, `unlock-user`, `remove-role` | 13 |
+| `not-modified` | 14 |
 | `inspector` | 15 |
 | `404`, `error-boundary`, `cold-start` shown once per session, `offline`, narrow viewport | 16 |
 

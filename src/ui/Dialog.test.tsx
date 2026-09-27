@@ -81,4 +81,79 @@ describe('Dialog', () => {
 
     expect(trigger).toHaveFocus();
   });
+
+  test('the action beside Cancel confirms', async () => {
+    const confirmed = vi.fn();
+    render(
+      <Dialog
+        open
+        title="Unlock Marko Petrovic"
+        onClose={() => undefined}
+        action={{ label: 'Unlock', onConfirm: confirmed }}
+      >
+        <p>Unlocking Marko Petrovic lets them sign in again.</p>
+      </Dialog>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Unlock' }));
+
+    expect(confirmed).toHaveBeenCalledOnce();
+  });
+
+  test('with no control of its own, a plain dialog starts on its action', () => {
+    render(
+      <Dialog
+        open
+        title="Unlock Marko Petrovic"
+        onClose={() => undefined}
+        action={{ label: 'Unlock', onConfirm: () => undefined }}
+      >
+        <p>Unlocking Marko Petrovic lets them sign in again.</p>
+      </Dialog>,
+    );
+
+    expect(screen.getByRole('button', { name: 'Unlock' })).toHaveFocus();
+  });
+
+  test('while its action is in flight, neither Cancel nor Escape closes it', async () => {
+    const closed = vi.fn();
+    render(
+      <Dialog
+        open
+        destructive
+        title="Lock Marko Petrovic"
+        onClose={closed}
+        action={{ label: 'Lock', onConfirm: () => undefined, pending: true }}
+      >
+        <p>Locking Marko Petrovic refuses their next sign-in.</p>
+      </Dialog>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await userEvent.keyboard('{Escape}');
+
+    expect(closed).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Lock' })).toHaveAttribute('aria-busy', 'true');
+  });
+
+  test('an action that cannot be taken states why', () => {
+    render(
+      <Dialog
+        open
+        title="Assign a role"
+        onClose={() => undefined}
+        action={{
+          label: 'Assign',
+          onConfirm: () => undefined,
+          disabledReason: 'This user already holds every role.',
+        }}
+      >
+        <p>Marko Petrovic</p>
+      </Dialog>,
+    );
+
+    const assign = screen.getByRole('button', { name: 'Assign' });
+    expect(assign).toHaveAttribute('aria-disabled', 'true');
+    expect(assign).toHaveAccessibleDescription('This user already holds every role.');
+  });
 });

@@ -1,4 +1,4 @@
-import type { AriaAttributes, ReactNode } from 'react';
+import type { AriaAttributes, HTMLAttributes, ReactNode } from 'react';
 
 /**
  * The table shell. It knows rows, cells and the sorting contract, and nothing
@@ -44,12 +44,16 @@ export function TableBody({ children }: { children?: ReactNode | undefined }) {
 export function TableRow({
   children,
   className,
+  ...rest
 }: {
   children: ReactNode;
   className?: string | undefined;
-}) {
+} & Omit<HTMLAttributes<HTMLTableRowElement>, 'children' | 'className'>) {
+  // The rest is for a row that does something - the directory's rows open a
+  // user's detail - and for the state it is in (`aria-current`).
   return (
     <tr
+      {...rest}
       className={[
         'h-[var(--size-row)] border-b border-border-default',
         'transition-colors duration-[var(--duration-hover)] ease-standard',
