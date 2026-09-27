@@ -50,6 +50,8 @@ export const CONFLICT_COPY =
 export const CONCURRENCY_COPY =
   'This tag lets the console ask whether the record changed. It does not protect an edit: the API does not check versions, so the last save wins.';
 export const NO_ETAG_COPY = 'The response carried no ETag.';
+export const NOT_MODIFIED_COPY =
+  'The last read answered 304 Not Modified: the record has not changed since this tag.';
 export const FORBIDDEN_REASON = 'The API refused this action for this account.';
 export const forbiddenCopy = (action: string, problem: Problem) =>
   `${action} was refused: ${problem.status} ${problem.title}.`;
@@ -344,6 +346,10 @@ export function DetailScreen() {
                 )}
               </Field>
             </dl>
+            {data.status === 304 ? (
+              // Section 2.9: a 304 is shown, not hidden. It is what the tag is for.
+              <p className="text-fg-primary">{NOT_MODIFIED_COPY}</p>
+            ) : null}
             <p className="text-fg-secondary">{CONCURRENCY_COPY}</p>
           </div>
         </Card>

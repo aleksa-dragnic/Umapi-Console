@@ -126,9 +126,15 @@ The *expected* form of this — the demo account meeting a write action — is
 ### 2.9 `not-modified` — 304
 
 Not an error and not hidden. The data on screen is unchanged; the inspector
-records a 304 with its duration, and the directory footer shows the status of
-the request that produced the current view. This is the only place in a normal
-application where a 304 is visible to the user, and showing it is the point.
+records a 304 with its duration, the directory footer shows the status of the
+request that produced the current view, and the detail's concurrency panel says
+its last read was confirmed. This is the only place in a normal application
+where a 304 is visible to the user, and showing it is the point.
+
+A read is conditional whenever the console already holds that view: the
+`ETag` kept with it goes back as `If-None-Match`. The first read of a view is
+never conditional. The browser's own cache is kept out of it (ADR 0013), so
+the status on screen is the one that crossed the network.
 
 ---
 
@@ -181,7 +187,7 @@ Application density. The screen the project is judged on.
 | `loading-first` | First load of the route | Skeleton rows at the real row height, header and toolbar already live | Data |
 | `loading-refetch` | Query change, page change | Existing rows stay, dimmed to 60%, toolbar stays interactive. **The table does not collapse to a spinner.** | Data |
 | `ready` | Data | Rows, pagination from `X-Pagination`, status line in the footer | Interaction |
-| `not-modified` | §2.9 | Unchanged rows, footer shows `304` | — |
+| `not-modified` | §2.9: a page read again - Back, Previous, a return from a detail | Unchanged rows, footer shows `304 · 130 results` | — |
 | `empty-search` | 0 results with a search term | *No users match "ovic".* Below it, a ghost **Clear search** control. Footer still shows `200 · 0 results`. | Clear, or edit the term |
 | `empty-filter` | 0 results with a status filter and no term | *No users with status Locked.* With a **Clear filter** control. | Clear |
 | `empty-page` | A page number beyond the last page, usually from an old link | *Page 9 is past the end. There are 7 pages.* With a control to go to page 1. | Go to page 1 |
@@ -236,6 +242,7 @@ Deactivated. See the design decisions, section 10.
 | `loading` | Route entry | Skeleton in the three panels, header shows the email from the list if it was navigated from there. *Back to users* above it returns to the directory view the user came from. | Data |
 | `ready` | Data | Identity, roles and concurrency panels, from the v1 detail fields: name, email, status, created and updated times, in UTC to the minute; each role with its assignment time (observed row 21). The concurrency panel shows the `ETag` exactly as received, `W/` prefix included (row 22), and says plainly what it is and is not: *This tag lets the console ask whether the record changed. It does not protect an edit: the API does not check versions, so the last save wins.* (rows 26, 45) A response without the header reads *The response carried no ETag.* Actions: **Edit** and **Lock** (**Unlock** for a Locked user) in the identity panel; **Remove** on each role and **Assign role** in the roles panel. Every action is offered whatever the user's status: the API's answer is the rule, not the console's guess. | Actions |
 | `not-found` | 404 | *No user with that id.* With a link back to the directory. Distinct from the application's own 404 route. | Back |
+| `not-modified` | §2.9: the detail read again - opened again, or read after Reload with nothing changed | Unchanged panels; the concurrency panel adds *The last read answered 304 Not Modified: the record has not changed since this tag.* A write moves the tag (row 25), so the read after it is a 200 again and the line goes. | — |
 | `saving` | A mutation in flight | The changed field updates optimistically; the panel that changed and the concurrency panel carry a pending dot with *Saving*, and every write control is busy. A role just assigned reads *pending* where its time goes: the client's clock is not the server's. An update answers 204 with no body (observed row 57), so success reads the detail again, and the concurrency panel shows the new `ETag` only when that read returns. The directory's pages are marked stale in the same step (row 25). | Response |
 | `editing` | **Edit** | The identity panel's fields become the three inputs, all required by the API (row 55), focus on *Email*; **Save** and **Cancel**. No browser validation: the API's 422 is the validation. A save that changes nothing sends nothing. Closing the form, saved or cancelled, returns focus to **Edit**. | Save or cancel |
 | `invalid` | 422, or 409 `User.EmailNotUnique` on a save | The rollback, then the form again with what was typed, each message on its field whatever the casing of its key (row 19), focus on the first. An email another user holds is not a conflict - the record did not change and a reload would not help - so the API's `detail` goes on *Email*. | Correct |
