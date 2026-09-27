@@ -17,3 +17,4 @@ One file per decision. Format and rules are the same as in
 | [0010](0010-server-state-through-tanstack-query.md) | Server state goes through TanStack Query, keyed by the URL, and belongs to one session | Accepted | 12 |
 | [0011](0011-no-state-library-and-collection-state-in-the-url.md) | No state-management library, and collection state lives in the URL | Accepted | 13 |
 | [0012](0012-e2e-runs-a-production-build-with-the-mock.md) | End-to-end tests run a production build that includes the mock, and CI proves the real production build does not | Accepted | 9 |
+| [0013](0013-the-console-keeps-its-own-validators.md) | The console keeps its own validators and bypasses the browser's HTTP cache | Accepted | 14 |

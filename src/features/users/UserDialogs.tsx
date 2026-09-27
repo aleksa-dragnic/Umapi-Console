@@ -128,7 +128,7 @@ export function AssignRoleDialog({
   const field = useRef<HTMLDivElement>(null);
 
   const held = new Set(user.roles.map((role) => role.roleId));
-  const available = (roles.data ?? []).filter((role) => !held.has(role.id));
+  const available = (roles.data?.roles ?? []).filter((role) => !held.has(role.id));
   const chosen = available.find((role) => role.id === choice) ?? available[0];
 
   useEffect(() => {

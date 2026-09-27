@@ -32,6 +32,8 @@ test('a lock is confirmed, and Back returns to the row, selected and showing it'
   const row = page.getByRole('row').filter({ has: link });
   await expect(row).toHaveAttribute('aria-current', 'true');
   await expect(row).toContainText('Locked');
+  // The lock moved the page's tag (row 25): the read after it is a 200, not a 304.
+  await expect(page.getByText('200 · 1 result')).toBeVisible();
 });
 
 test('the demo account meets every write disabled, with the permission it needs', async ({
@@ -55,4 +57,8 @@ test('the demo account meets every write disabled, with the permission it needs'
   for (const name of ['Edit', 'Lock', 'Assign role', 'Remove Member']) {
     await expect(page.getByRole('button', { name })).toHaveAttribute('aria-disabled', 'true');
   }
+
+  // Nothing was written, so the directory read again is confirmed unchanged.
+  await page.goBack();
+  await expect(page.getByText('304 · 1 result')).toBeVisible();
 });

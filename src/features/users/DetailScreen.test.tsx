@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
@@ -10,6 +10,7 @@ import {
   DetailScreen,
   FORBIDDEN_REASON,
   NOT_FOUND_COPY,
+  NOT_MODIFIED_COPY,
   formatUtc,
 } from '@/features/users/DetailScreen';
 import { UNREACHABLE_COPY } from '@/features/users/Failure';
@@ -114,6 +115,28 @@ describe('the user detail (inventory section 3.4)', () => {
     expect(member).toHaveTextContent(formatUtc(user.roles[0]?.assignedAtUtc ?? ''));
     expect(etagShown()).toBe(wire.headers.get('ETag'));
     expect(within(concurrency()).getByText(CONCURRENCY_COPY)).toBeInTheDocument();
+  });
+
+  it('not-modified: a detail read again answers 304, and the concurrency panel says so (section 2.9)', async () => {
+    const client = await renderDetail(MOCK_ACCOUNTS.demo.id);
+    await ready();
+    const tag = etagShown();
+    expect(within(concurrency()).queryByText(NOT_MODIFIED_COPY)).not.toBeInTheDocument();
+
+    // A read the test starts itself, so React hears its result inside act.
+    await act(() =>
+      client.invalidateQueries({ queryKey: ['users', 'detail', MOCK_ACCOUNTS.demo.id] }),
+    );
+
+    expect(await within(concurrency()).findByText(NOT_MODIFIED_COPY)).toBeInTheDocument();
+    expect(etagShown()).toBe(tag);
+
+    // A write moves the tag (row 25), so the read after it is a 200 again.
+    await userEvent.click(screen.getByRole('button', { name: 'Lock' }));
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Lock' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(within(concurrency()).queryByText(NOT_MODIFIED_COPY)).not.toBeInTheDocument();
+    expect(etagShown()).not.toBe(tag);
   });
 
   it('not-found: a 404 says so, with the way back to the directory', async () => {

@@ -423,7 +423,10 @@ is ignored silently (observed row 17), so the whitelist comes from its contract.
 Filtering by the four statuses the API accepts: Pending, Active, Locked,
 Deactivated (observed row 18). All of it in the URL. Conditional GET:
 the `ETag` is kept and sent back as `If-None-Match`, and a 304 is shown as a 304
-rather than hidden.
+rather than hidden. The validator is kept in the cache entry beside the data it
+validates, and the browser's own HTTP cache is bypassed, because the API's
+`private, no-cache` would let the browser revalidate on its own and hand the
+console a 200 for a 304 (ADR 0013).
 
 Production holds two users (observed row 20). The directory is the screen the
 project is judged on, and two rows demonstrate neither pagination nor search.
@@ -550,7 +553,7 @@ on 13 September 2026.
 
 **Exit:** Gate 3. Closed 2026-09-26 with PR 11.
 
-### M3 — The directory (3 PRs)
+### M3 — The directory (3 PRs) — complete
 
 | PR | Branch | Contents |
 |---|---|---|
@@ -558,7 +561,7 @@ on 13 September 2026.
 | 13 | `feat/user-detail` | Detail route, row activation and keyboard traversal in the directory, profile update, role assignment and removal dialogs, lock/unlock, optimistic updates with rollback, and the domain conflicts (409) and refusals (400) they meet. |
 | 14 | `feat/conditional-get` | `ETag` retention, `If-None-Match`, 304 handling. |
 
-**Exit:** Gate 4.
+**Exit:** Gate 4. Closed 2026-09-27 with PR 14.
 
 ### M4 — The inspector and the shell (2 PRs)
 
@@ -684,13 +687,13 @@ proven in M5, against the real API, not here.
 
 | What | Proven by |
 |---|---|
-| A reload of a deep route never flashes the sign-in screen | Playwright: authenticated, reload `/users/<id>`, assert the sign-in form never mounts. Until PR 13 the route is `/?view=reload` (`e2e/session.spec.ts`, section 14) |
+| A reload of a deep route never flashes the sign-in screen | Playwright: authenticated, reload `/users/<id>`, reached by opening the row, assert the sign-in form never mounts (`e2e/session.spec.ts`; on `/?view=reload` until PR 13, section 14) |
 | Ten parallel 401s produce exactly one refresh | A test counting refresh calls while firing concurrent requests (`src/lib/api/refresh.test.ts`, ADR 0008) |
 | The access token is never written to storage | The lint rule, plus a test asserting that no storage entry contains the token after login. Not "storage is empty": the mock keeps its cookie jar in `localStorage` (section 14, PR 9) |
 | The refresh race renders both outcomes | Playwright against the mock, once per outcome (`e2e/race.spec.ts`): the 401 ends the session with the reuse wording, the 409 leaves the session running and says why. That the access token is gone from memory at once, and that the winner's 200 cannot bring it back, is a unit test (`src/features/auth/race.test.ts`): memory is not visible to a browser test (section 14) |
 | A 429 on refresh keeps the session | Test: refresh answered 429 shows `rate-limited`, and the user is still signed in when it clears |
 | Expiry display ignores the client clock | A unit test with the clock skewed by ten minutes shows the same remaining time (`src/features/auth/SessionScreen.test.tsx`: the server's clock ten minutes behind when the token is issued, the client's jumping ten minutes forward after it arrives) |
-| A gated action states its reason and never reaches the network | Test asserting the control is `aria-disabled` and no request was captured (`src/features/auth/gated-action.test.tsx`, on the lock action through `useCan`; the screens that carry real actions arrive in PR 13, section 14) |
+| A gated action states its reason and never reaches the network | Test asserting the control is `aria-disabled` and no request was captured (`src/features/auth/gated-action.test.tsx` on the lock action through `useCan`, and on every write of the real screen in `src/features/users/DetailScreen.test.tsx` and `e2e/detail.spec.ts`, section 14) |
 
 **Unblocks:** M3.
 
@@ -698,13 +701,15 @@ proven in M5, against the real API, not here.
 
 | What | Proven by |
 |---|---|
-| Every collection parameter survives a reload and a Back press | Playwright: filter, sort, page, reload, assert the view; then Back through the history |
-| Changing a filter resets `page` to 1 | Unit test over the query-string helper |
-| An invalid parameter falls back rather than erroring | `?page=-3&sort=nonsense` renders page 1, default sort |
-| A refetch does not collapse the table | Test asserting rows stay mounted while a refetch is in flight |
-| 304 and 409 are visible, not swallowed | Tests for both paths, plus the footer and the conflict panel: the 409 in PR 13, the 304 in PR 14 |
-| 422 field errors land on their field whatever the key casing | Test with the API's PascalCase `errors` keys |
-| Every state the inventory lists for `users` and `users/:id` exists | Walked against the inventory, state by state |
+| Every collection parameter survives a reload and a Back press | Playwright: filter, sort, page, reload, assert the view; then Back through the history (`e2e/directory.spec.ts`) |
+| Changing a filter resets `page` to 1 | Unit test over the query-string helper (`src/features/users/url-state.test.ts`) |
+| An invalid parameter falls back rather than erroring | `?page=-3&sort=nonsense` renders page 1, default sort (`src/features/users/DirectoryScreen.test.tsx`) |
+| A refetch does not collapse the table | Test asserting rows stay mounted while a refetch is in flight (`loading-refetch` in the same file) |
+| 304 and 409 are visible, not swallowed | Tests for both paths, plus the footer and the conflict panel: the 409 in PR 13 (`DetailScreen.test.tsx`), the 304 in PR 14 (the directory's footer and the detail's concurrency panel, unit and Playwright) |
+| 422 field errors land on their field whatever the key casing | Test with the API's PascalCase `errors` keys (`DetailScreen.test.tsx`, `invalid`) |
+| Every state the inventory lists for `users` and `users/:id` exists | Walked against the inventory, state by state, in the browser review of PR 13 and PR 14 |
+
+Closed 2026-09-27 with PR 14.
 
 **Unblocks:** M4.
 
@@ -951,3 +956,8 @@ pull request that made the change.
 | §8 Gate 3 | A gated action on the real screen | Done: the demo account meets Edit, Lock, Assign role and Remove disabled with their reasons, and no write is sent. PR 13. |
 | §4.2 | Error types unspecified | `RequestError`, shared by the users feature's reads and writes (it was `DirectoryError` in PR 12), and the read's `Failure` state shared by the directory and the detail. PR 13. |
 | README-FIRST §6 | ADR 0010 "collection state in the URL", 0011 "no state-management library" | ADR 0011 carries both, written in PR 13; 0010 stays the server-state decision of PR 12. |
+| §6.2, §2 | The browser's HTTP cache left to its defaults | Bypassed with `cache: 'no-store'` on every request of the API client. The API's `private, no-cache` lets the browser revalidate a first read on its own, and `fetch` then reports a 200 from the browser's cache for what was a 304 on the wire - the one status inventory §2.9 says to show. ADR 0013. PR 14. |
+| §6.2 | "The `ETag` is kept", where unstated | In the TanStack Query cache entry, beside the data it validates: a re-read of a key sends that entry's tag, and a 304 returns the same data with status 304, so nothing re-renders and no separate map of tags can disagree with the bodies. The directory, the detail and the roles alike. ADR 0013. PR 14. |
+| Inventory §3.4 | A 304 visible in the directory's footer only | Also in the detail's concurrency panel: *The last read answered 304 Not Modified: the record has not changed since this tag.* It is what the tag is for. PR 14. |
+| §8 Gate 3 | Two rows still saying the reload spec and the real actions "arrive in PR 13" | Corrected after the fact; PR 13 moved the spec and added the actions but not these two rows. PR 14. |
+| Observed, still to measure | 304 measured without an `Origin` | Rows 23 and 24 were measured from PowerShell. Whether a 304 to a browser origin carries the CORS headers is unmeasured, and proven in M5 by the live specs. PR 14. |

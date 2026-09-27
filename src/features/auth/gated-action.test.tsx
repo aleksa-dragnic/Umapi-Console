@@ -11,8 +11,8 @@ import { Button } from '@/ui/Button';
 
 // Gate 3: a gated action states its reason and never reaches the network
 // (inventory section 2.6). The action is the lock of section 3.6, which needs
-// `users.lock` (row 48); the screen that carries it arrives in PR 13 and uses
-// the same `useCan`.
+// `users.lock` (row 48), through the same `useCan` the user detail uses; the
+// detail's own test proves the same on every write of the real screen.
 
 function LockAction() {
   const permit = useCan('users.lock');
