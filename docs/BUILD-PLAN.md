@@ -565,7 +565,7 @@ on 13 September 2026.
 
 **Exit:** Gate 4. Closed 2026-09-27 with PR 14.
 
-### M4 — The inspector and the shell (2 PRs)
+### M4 — The inspector and the shell (2 PRs) — complete
 
 | PR | Branch | Contents |
 |---|---|---|
@@ -728,11 +728,16 @@ Closed 2026-09-27 with PR 14.
 | The keyboard contract in section 4 of the inventory holds | Component tests, one per row of that table |
 | The whole inventory is implemented or deferred by name | Inventory walked end to end; gaps listed in the PR Notes |
 
-**Status, 2026-09-27:** the first two rows proven in PR 15 -
+**Status, 2026-09-27: closed.** The first two rows were proven in PR 15:
 `src/lib/api/capture.test.ts` counts what crossed the network against the
 record, the silent refresh's replay included, and shows a request pending
 before it settles; `src/features/inspector/curl.test.ts` and
-`e2e/inspector.spec.ts` find `$TOKEN` and no token. The other three are PR 16.
+`e2e/inspector.spec.ts` find `$TOKEN` and no token. The other three in PR 16:
+`e2e/a11y.spec.ts` runs `@axe-core/playwright` 4.13.0 against WCAG 2.1 A and AA
+on sign-in, `404`, the directory, a detail, roles, session, the inspector open
+and a dialog open, and finds nothing - it does find an image without `alt` when
+one is planted; inventory section 4 names the test for each of its rows; and the
+inventory walk is in PR 16's Notes.
 
 **Unblocks:** M5. Nothing touches the API repository before this gate closes.
 
@@ -988,3 +993,9 @@ pull request that made the change.
 | Inventory §2.8, §3.2 | The pointer to the inspector joins sign-in's `failed` in PR 15 | Not on sign-in or boot: the inspector is behind the login. It is in `Failure`, shared by every read, and only when the API answered. PR 15. |
 | Inventory §3.9 | The pair listed on the session screen until PR 15 | Removed from the screen; `raced` and `unexpected` keep their sentences, and the pair is in the inspector. `e2e/race.spec.ts` finds it there. PR 15. |
 | §8 Gate 5 | Captures equal requests; `$TOKEN` in curl | Both proven in PR 15, each test failing when its rule is removed: the replay sent past the transport, the redaction switched off. The session's clearing and the body redaction likewise. PR 15. |
+| Inventory §3.10, §3.11, §5 | `/` a landing page or a redirect; `roles` assigned to no PR | `/` redirects to `/users` inside `RequireSession`, so an anonymous visitor at `/` still reaches sign-in with no `next`. `roles` is `/roles` behind `roles.read`, in `features/users` beside the query it shares with the assign-role dialog. The placeholder `App.tsx` is gone. Decisions 1 and 17. PR 16. |
+| Inventory §2.6, §3 shell | A gated destination unstated for navigation | Every navigation entry is always shown; a route the token does not permit states its reason in place (`RequirePermission`). The demo account and the administrator hold every read. PR 16. |
+| Inventory §2.1, §2.2 | Cold-start per screen; offline from `navigator.onLine` or a request with no response | Both read the transport's record (ADR 0014). Cold-start is the shell's, once per session, beneath the header; boot and sign-in keep their own. Offline also ends with the next answered request, not only the `online` event, or one CORS failure would leave the bar up for the visit. `src/lib/api/connection.ts`. PR 16. |
+| Inventory §4 | Route change moves focus to the `h1` | The shell does it, unless the screen has placed focus inside its `main` - the directory's opened row, the detail's heading - because a parent's effect runs after its children's and would otherwise take it back. `Escape` clears the search by a handler, since not every browser does it for a search field. PR 16. |
+| Inventory §3.10 | `404` inside the product | Outside the shell, in editorial density, with a session or without. PR 16. |
+| §2 Testing | `axe-core` in Playwright | `@axe-core/playwright` 4.13.0, pinned exactly, its first release older than the workspace's minimum release age; `pnpm-workspace.yaml` unchanged. PR 16. |

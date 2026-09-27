@@ -22,6 +22,7 @@ import {
   removeRoleCopy,
   unlockCopy,
 } from '@/features/users/UserDialogs';
+import { useOffline } from '@/lib/api/connection';
 import { useCan } from '@/lib/api/permissions';
 import type { Problem } from '@/lib/api/problem';
 import { Button } from '@/ui/Button';
@@ -53,6 +54,8 @@ export const NO_ETAG_COPY = 'The response carried no ETag.';
 export const NOT_MODIFIED_COPY =
   'The last read answered 304 Not Modified: the record has not changed since this tag.';
 export const FORBIDDEN_REASON = 'The API refused this action for this account.';
+/** Inventory section 2.2: no write is offered while the API cannot be reached. */
+export const OFFLINE_REASON = 'No connection to the API.';
 export const forbiddenCopy = (action: string, problem: Problem) =>
   `${action} was refused: ${problem.status} ${problem.title}.`;
 
@@ -143,6 +146,7 @@ export function DetailScreen() {
   const canEdit = useCan(PERMISSION_FOR.edit);
   const canLock = useCan(PERMISSION_FOR.lock);
   const canManageRoles = useCan(PERMISSION_FOR['assign-role']);
+  const offline = useOffline();
 
   const [editing, setEditing] = useState<{ values: ProfileValues; outcome: Outcome | null } | null>(
     null,
@@ -178,7 +182,8 @@ export function DetailScreen() {
   function reasonFor(action: Action): string | undefined {
     const permit = action === 'edit' ? canEdit : action === 'lock' ? canLock : canManageRoles;
     if (!permit.allowed) return permit.reason;
-    return forbidden.includes(action) ? FORBIDDEN_REASON : undefined;
+    if (forbidden.includes(action)) return FORBIDDEN_REASON;
+    return offline ? OFFLINE_REASON : undefined;
   }
 
   function forbid(action: Action, problem: Problem) {
