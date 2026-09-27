@@ -47,14 +47,15 @@ not thirty seconds.
 | Renders | The screen's own loading state, plus a line beneath it: *Waking the API. The demo runs on a free instance that sleeps when idle — this can take up to a minute.* Ash gray, mono, 12px. A pending status dot, never a spinner that implies imminence. |
 | The way out | Resolves into the screen's ready or error state |
 | Note | The message appears once per session. A second slow request does not repeat it. |
+| Where | Behind the login, the shell carries it beneath its header, watching every request the transport records (ADR 0014). Boot and sign-in, which have no shell, carry their own beneath their controls. |
 
 ### 2.2 `offline`
 
 | | |
 |---|---|
 | Trigger | `navigator.onLine` is false, or a request fails with no response at all |
-| Renders | A persistent bar under the app shell header: *No connection. The console cannot reach the API.* Mutations are disabled while it shows. |
-| The way out | The `online` event; the bar disappears and the active query refetches |
+| Renders | A persistent bar under the app shell header: *No connection. The console cannot reach the API.* Mutations are disabled while it shows: every write in the detail, with the reason *No connection to the API.* |
+| The way out | The `online` event, after which the active query refetches; or the next request the API answers, so that one unanswered request on a working network does not mark the console offline for the rest of the visit |
 
 ### 2.3 `refreshing` — a 401 met by a silent refresh
 
@@ -169,7 +170,7 @@ Editorial density. The only screen in the application that uses display type.
 
 | State | Trigger | Renders | The way out |
 |---|---|---|---|
-| `ready` | — | Email, password, submit. Demo credentials printed below the form in mono. | Submit |
+| `ready` | — | Under the heading: *An admin console for UserManagementAPI that does not hide HTTP. Every request it sends is in the inspector, with its status, headers and body, and a copy for curl.* Email, password, submit. Demo credentials printed below the form in mono, and links to both repositories: *Console source*, *API source* (build plan decision 1). | Submit |
 | `submitting` | Submit | Button shows a pending state, fields are `readonly` not disabled, so focus is not lost | Response |
 | `invalid-field` | 422 | Field-level messages taken from the problem details `errors` object, rendered under the field they name — matched case-insensitively, because the API's keys are PascalCase (observed row 19) — in alarm red mono 12px. Focus moves to the first invalid field. A message for a key the form has no field for is shown above the form instead of being dropped. The form sets `noValidate`: the API's 422 is the validation. | Correct and resubmit |
 | `invalid-credentials` | 401 | One message above the form: *Email or password is incorrect.* Never *"user not found"* — that is an account enumeration oracle. The API already answers an unknown email and a wrong password identically (observed row 5); the console adds no distinction. | Retry |
@@ -391,7 +392,7 @@ Editorial density.
 
 | State | Renders | The way out |
 |---|---|---|
-| `ready` | The path that was not found, in mono, and links to the directory and to sign-in depending on session state | Navigate |
+| `ready` | *Nothing here*, in display type, and *No screen lives at* the path, in mono. *Go to the directory* for a signed-in user, *Sign in* for anyone else. No shell and no inspector, with a session or without | Navigate |
 
 ### 3.11 `error-boundary`
 
@@ -399,10 +400,11 @@ The screen for a rendering failure, not an HTTP failure.
 
 | State | Renders | The way out |
 |---|---|---|
-| `crashed` | *Something in the console failed to render.* The component stack in a code window in development, the error id only in production. **Reload** and a link to the repository's issues. | Reload |
+| `crashed` | *Something in the console failed to render.* The component stack in a code window in development, *Error id* and eight hex characters in production. **Reload** and *Report it on GitHub*, to the repository's issues. | Reload |
 
 The boundary sits below the app shell, so navigation survives a crash in a
-feature.
+feature, and it is keyed by the path, so moving to another screen leaves the
+crash behind.
 
 ### 3.12 `/_design` — the specimen route
 
@@ -418,17 +420,17 @@ project, and where a new state is drawn before it is wired to anything.
 
 Asserted in component tests, not left to review.
 
-| Event | Where focus goes |
-|---|---|
-| Route change | The `h1` of the new screen, which is `tabindex="-1"` |
-| Dialog open | The first interactive control, or **Cancel** for a destructive dialog |
-| Dialog close | The control that opened it |
-| Validation failure | The first invalid field |
-| Row activation | The detail screen's `h1` |
-| Return to the directory, by Back or by *Back to users* | The row that was opened, if it is on the page |
-| **Edit** | The *Email* field |
-| The edit form closes, saved or cancelled | **Edit** |
-| `Escape` | Closes the topmost dialog, then the inspector, then clears the search field |
+| Event | Where focus goes | Proven by (Gate 5) |
+|---|---|---|
+| Route change | The `h1` of the new screen, which is `tabindex="-1"` - unless the screen has already placed focus inside its `main`, as the next two rows do | `src/app/Shell.test.tsx` |
+| Dialog open | The first interactive control, or **Cancel** for a destructive dialog | `src/ui/Dialog.test.tsx`, `DetailScreen.test.tsx` |
+| Dialog close | The control that opened it | `src/ui/Dialog.test.tsx`, `DetailScreen.test.tsx` |
+| Validation failure | The first invalid field | `SignInScreen.test.tsx`, `DetailScreen.test.tsx` |
+| Row activation | The detail screen's `h1` | `DirectoryRows.test.tsx` |
+| Return to the directory, by Back or by *Back to users* | The row that was opened, if it is on the page | `DirectoryRows.test.tsx` |
+| **Edit** | The *Email* field | `DetailScreen.test.tsx` |
+| The edit form closes, saved or cancelled | **Edit** | `DetailScreen.test.tsx` |
+| `Escape` | Closes the topmost dialog, then the inspector, then clears the search field | `Dialog.test.tsx`, `Inspector.test.tsx`, `DirectoryScreen.test.tsx` |
 
 Additional rules: every interactive element has a visible focus ring that is not
 the browser default sitting invisibly on a black canvas; the table is traversable

@@ -37,8 +37,8 @@ test('a reload restores the session without ever mounting the sign-in form', asy
 });
 
 test('signing out ends the session, and a reload does not restore it', async ({ page }) => {
-  await signInAsDemo(page, '/');
-  await expect(page.getByRole('heading', { name: 'Umapi Console' })).toBeVisible();
+  await signInAsDemo(page, '/users');
+  await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();

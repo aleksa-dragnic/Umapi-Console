@@ -10,6 +10,7 @@ import {
   DetailScreen,
   FORBIDDEN_REASON,
   NOT_FOUND_COPY,
+  OFFLINE_REASON,
   NOT_MODIFIED_COPY,
   formatUtc,
 } from '@/features/users/DetailScreen';
@@ -239,6 +240,28 @@ describe('the user detail (inventory section 3.4)', () => {
     expect(field).toHaveAccessibleDescription('The email is already in use.');
     expect(field).toHaveValue(MOCK_ACCOUNTS.admin.email);
     expect(screen.queryByText(CONFLICT_COPY)).not.toBeInTheDocument();
+  });
+
+  it('offline: every write is disabled with the reason while the API cannot be reached (section 2.2)', async () => {
+    await renderDetail(MOCK_ACCOUNTS.demo.id);
+    const edit = await ready();
+    expect(edit).toBeEnabled();
+
+    act(() => {
+      window.dispatchEvent(new Event('offline'));
+    });
+
+    for (const name of ['Edit', 'Lock', 'Assign role']) {
+      const control = screen.getByRole('button', { name });
+      expect(control).toHaveAttribute('aria-disabled', 'true');
+      expect(control).toHaveAccessibleDescription(OFFLINE_REASON);
+    }
+
+    act(() => {
+      window.dispatchEvent(new Event('online'));
+    });
+
+    expect(screen.getByRole('button', { name: 'Edit' })).not.toHaveAttribute('aria-disabled');
   });
 
   it('a save with no answer keeps what was typed and says nothing answered', async () => {

@@ -33,6 +33,14 @@ export function Toolbar({
           placeholder="Email, first name or last name"
           value={term}
           onChange={(event) => onTermChange(event.target.value)}
+          onKeyDown={(event) => {
+            // Inventory section 4: Escape clears the search. Stated rather than
+            // left to the browser, because not every browser clears a search
+            // field on Escape, and the inspector takes the key first when open.
+            if (event.key !== 'Escape' || term === '') return;
+            event.preventDefault();
+            onTermChange('');
+          }}
         />
       </div>
       <div className="w-48">

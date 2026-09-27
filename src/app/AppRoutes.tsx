@@ -1,8 +1,9 @@
 import { Suspense, lazy } from 'react';
-import { Outlet, Route, Routes } from 'react-router';
+import { Navigate, Route, Routes } from 'react-router';
 
-import App from '@/app/App';
+import { NotFound } from '@/app/NotFound';
 import { QueryProvider } from '@/app/query-client';
+import { Shell } from '@/app/Shell';
 import {
   RequirePermission,
   RequireSession,
@@ -12,8 +13,14 @@ import {
   SessionScreen,
   SignInScreen,
 } from '@/features/auth';
-import { Inspector } from '@/features/inspector';
-import { DetailScreen, DirectoryScreen, USER_PATH, USERS_PATH } from '@/features/users';
+import {
+  DetailScreen,
+  DirectoryScreen,
+  ROLES_PATH,
+  RolesScreen,
+  USER_PATH,
+  USERS_PATH,
+} from '@/features/users';
 
 /**
  * The route table.
@@ -24,8 +31,10 @@ import { DetailScreen, DirectoryScreen, USER_PATH, USERS_PATH } from '@/features
  * it is sent on rather than shown the form; everything else is also inside
  * `RequireSession`. The session screen needs no permission beyond a session
  * (decision 5); a route that does wraps itself in `RequirePermission`. Every
- * screen behind the login has the inspector docked beneath it (inventory
- * section 3.8); sign-in and boot do not.
+ * screen behind the login sits in the shell, with the inspector docked beneath
+ * it (inventory section 3.8); sign-in, boot and `404` do not. `/` is the
+ * directory (build plan decision 1), and an address nothing matches is the
+ * `404` screen, for a visitor with a session or without.
  *
  * /_design is the specimen route and exists in development only. It sits
  * outside the boundary: reviewing the primitives needs no session and makes no
@@ -36,18 +45,6 @@ import { DetailScreen, DirectoryScreen, USER_PATH, USERS_PATH } from '@/features
  * would leave the module in the bundle and the claim would be false.
  */
 const Specimen = import.meta.env.DEV ? lazy(() => import('@/app/design/Specimen')) : null;
-
-/** A screen behind the login, with the inspector docked beneath it. */
-function Inspected() {
-  return (
-    <div className="flex min-h-screen flex-col">
-      <div className="flex flex-1 flex-col">
-        <Outlet />
-      </div>
-      <Inspector />
-    </div>
-  );
-}
 
 export function AppRoutes() {
   return (
@@ -66,15 +63,19 @@ export function AppRoutes() {
         <Route element={<SessionBoundary />}>
           <Route path={SIGN_IN_PATH} element={<SignInScreen />} />
           <Route element={<RequireSession />}>
-            <Route element={<Inspected />}>
-              <Route path="/" element={<App />} />
+            <Route path="/" element={<Navigate to={USERS_PATH} replace />} />
+            <Route element={<Shell />}>
               <Route path={SESSION_PATH} element={<SessionScreen />} />
               <Route element={<RequirePermission permission="users.read" />}>
                 <Route path={USERS_PATH} element={<DirectoryScreen />} />
                 <Route path={USER_PATH} element={<DetailScreen />} />
               </Route>
+              <Route element={<RequirePermission permission="roles.read" />}>
+                <Route path={ROLES_PATH} element={<RolesScreen />} />
+              </Route>
             </Route>
           </Route>
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </QueryProvider>
