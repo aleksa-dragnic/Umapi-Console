@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router';
 
@@ -72,7 +72,8 @@ describe('the directory rows (inventory sections 3.3 and 4)', () => {
     const stops = () => links.filter((link) => link.tabIndex === 0);
 
     expect(stops()).toEqual([links[0]]);
-    links[0]?.focus();
+    // Focus moved by the test itself, so React hears the update inside act.
+    act(() => links[0]?.focus());
 
     await userEvent.keyboard('{ArrowDown}');
     expect(links[1]).toHaveFocus();

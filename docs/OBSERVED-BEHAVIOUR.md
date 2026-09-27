@@ -146,6 +146,7 @@ document, the mock and the error handling follow these rows.
 | - | Search and diacritics: `ovic` against `Petrović` | 5b again, after the M5 seed | Nothing; PR 12 is designed for no folding (row 43) |
 | - | Query parameters in the document's PascalCase, live (row 64) | Any probe session | Nothing; binding ignores case |
 | - | Rejection of an unsupported media type - documented as 406 (row 63) | 9, repeated | Nothing; the inspector renders whatever arrives |
+| - | A 304 to a browser origin carries the CORS headers (rows 23, 24 were measured without `Origin`; row 53 lists `If-None-Match` as allowed) | The M5 live specs, from the deployed console | Nothing before M5; the mock answers 304 in the browser |
 | - | `User.LastRoleCannotBeRemoved`, and locking oneself | **Not probed against production** - row 50: nothing would refuse locking the only administrator. Exercised against the local API in M5 step 3. | PR 13's lock and remove-role dialogs |
 
 Row 26 needs no probe any more: the source settles it (row 45). Probe 10a ran

@@ -10,6 +10,12 @@ import { retryAfterSeconds, toProblem, type Problem } from '@/lib/api/problem';
  * keys start with `users`, so a write can invalidate every read of a user in
  * one call. The previous page stays on screen while the next one loads
  * (`loading-refetch`, inventory section 3.3).
+ *
+ * Every read is conditional once its key has been read before (ADR 0013). The
+ * `ETag` is kept with the data it validates, in the cache entry itself, and
+ * sent back as `If-None-Match`; a 304 (rows 23, 24) keeps that data and says
+ * so, instead of being turned into a 200 by anyone along the way. Nothing
+ * keeps a validator apart from its body, so the two cannot disagree.
  */
 
 export type User = Schema<'UserResponse'>;
@@ -31,18 +37,26 @@ export interface Pagination {
   hasNext: boolean;
 }
 
-export interface DirectoryPage {
-  users: User[];
-  pagination: Pagination;
-  /** The status of the response that produced this view, for the footer. */
+/** What every read keeps beside its body. */
+export interface Validated {
+  /** 200, or 304 when the API confirmed the data already held (section 2.9). */
   status: number;
+  /** Exactly as received, `W/` prefix included (row 22); null when absent. */
+  etag: string | null;
 }
 
-/** A user's detail as read, with the validator it came with (row 22). */
-export interface UserRead {
+export interface DirectoryPage extends Validated {
+  users: User[];
+  pagination: Pagination;
+}
+
+/** A user's detail as read, with the validator it came with. */
+export interface UserRead extends Validated {
   user: UserDetails;
-  /** Exactly as received, `W/` prefix included; null when the header is absent. */
-  etag: string | null;
+}
+
+export interface RolesRead extends Validated {
+  roles: Role[];
 }
 
 /** Why a request produced no data: the API refused it, or nothing answered. */
@@ -122,61 +136,101 @@ export function paginationOf(header: string | null, users: User[], page: number)
 
 const withSignal = (signal?: AbortSignal) => (signal === undefined ? {} : { signal });
 
+/** `If-None-Match` for a key read before, and nothing for one that was not. */
+function validating(previous: Validated | undefined) {
+  const etag = previous?.etag ?? null;
+  return etag === null ? {} : { headers: { 'If-None-Match': etag } };
+}
+
+/**
+ * The data already held, confirmed by a 304. Its body is the same object, so
+ * nothing on screen re-renders; only the status the screen reports changes.
+ * A 304 without a new `ETag` keeps the one that was sent (row 44: the API
+ * compares weakly, so the tag it would send is the tag it matched).
+ */
+function confirmed<T extends Validated>(previous: T, response: Response): T {
+  return { ...previous, status: 304, etag: response.headers.get('ETag') ?? previous.etag };
+}
+
 export async function fetchDirectory(
   query: DirectoryQuery,
   signal?: AbortSignal,
+  previous?: DirectoryPage,
 ): Promise<DirectoryPage> {
   const { data, error, response } = await send(
-    () => api.GET('/api/v1/users', { params: { query: toApiQuery(query) }, ...withSignal(signal) }),
+    () =>
+      api.GET('/api/v1/users', {
+        params: { query: toApiQuery(query) },
+        ...validating(previous),
+        ...withSignal(signal),
+      }),
     signal,
   );
+  // Row 44: the tag covers `X-Pagination` as well, so a 304 confirms the page
+  // and its position together.
+  if (response.status === 304 && previous !== undefined) return confirmed(previous, response);
   if (!response.ok || data === undefined) throw refused(response, error);
   return {
     users: data,
     pagination: paginationOf(response.headers.get('X-Pagination'), data, query.page),
     status: response.status,
+    etag: response.headers.get('ETag'),
   };
 }
 
 export function useDirectory(query: DirectoryQuery) {
   return useQuery({
     queryKey: [...DIRECTORY_KEY, query],
-    queryFn: ({ signal }) => fetchDirectory(query, signal),
+    queryFn: ({ signal, client, queryKey }) =>
+      fetchDirectory(query, signal, client.getQueryData<DirectoryPage>(queryKey)),
     placeholderData: keepPreviousData,
   });
 }
 
 /** `GET /api/v1/users/{id}`, the v1 detail (row 21). A 404 is `not-found`. */
-export async function fetchUser(id: string, signal?: AbortSignal): Promise<UserRead> {
+export async function fetchUser(
+  id: string,
+  signal?: AbortSignal,
+  previous?: UserRead,
+): Promise<UserRead> {
   const { data, error, response } = await send(
-    () => api.GET('/api/v1/users/{id}', { params: { path: { id } }, ...withSignal(signal) }),
+    () =>
+      api.GET('/api/v1/users/{id}', {
+        params: { path: { id } },
+        ...validating(previous),
+        ...withSignal(signal),
+      }),
     signal,
   );
+  if (response.status === 304 && previous !== undefined) return confirmed(previous, response);
   if (!response.ok || data === undefined) throw refused(response, error);
-  return { user: data, etag: response.headers.get('ETag') };
+  return { user: data, status: response.status, etag: response.headers.get('ETag') };
 }
 
 export function useUser(id: string) {
   return useQuery({
     queryKey: detailKey(id),
-    queryFn: ({ signal }) => fetchUser(id, signal),
+    queryFn: ({ signal, client, queryKey }) =>
+      fetchUser(id, signal, client.getQueryData<UserRead>(queryKey)),
   });
 }
 
 /** `GET /api/v1/roles` (row 48: `roles.read`). Read when the assign dialog opens. */
-export async function fetchRoles(signal?: AbortSignal): Promise<Role[]> {
+export async function fetchRoles(signal?: AbortSignal, previous?: RolesRead): Promise<RolesRead> {
   const { data, error, response } = await send(
-    () => api.GET('/api/v1/roles', withSignal(signal)),
+    () => api.GET('/api/v1/roles', { ...validating(previous), ...withSignal(signal) }),
     signal,
   );
+  if (response.status === 304 && previous !== undefined) return confirmed(previous, response);
   if (!response.ok || data === undefined) throw refused(response, error);
-  return data;
+  return { roles: data, status: response.status, etag: response.headers.get('ETag') };
 }
 
 export function useRoles(enabled: boolean) {
   return useQuery({
     queryKey: ROLES_KEY,
-    queryFn: ({ signal }) => fetchRoles(signal),
+    queryFn: ({ signal, client, queryKey }) =>
+      fetchRoles(signal, client.getQueryData<RolesRead>(queryKey)),
     enabled,
   });
 }

@@ -104,6 +104,7 @@ describe('the directory (inventory section 3.3)', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Clear search' }));
 
+    // The unfiltered view was never read here, so it is a 200, not a 304.
     expect(await screen.findByText('200 · 130 results')).toBeInTheDocument();
     expect(where()).toBe('/users');
     expect(screen.getByLabelText('Search')).toHaveValue('');
@@ -150,6 +151,32 @@ describe('the directory (inventory section 3.3)', () => {
     const rows = dataRows();
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.every((row) => row.textContent?.includes('Locked'))).toBe(true);
+  });
+
+  it('not-modified: a page read again answers 304, and the footer says so (section 2.9)', async () => {
+    await renderDirectory();
+    await footerLine();
+    const first = dataRows().map((row) => row.textContent);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await screen.findByText('Page 2 of 13');
+    await userEvent.click(screen.getByRole('button', { name: 'Previous' }));
+
+    expect(await screen.findByText('304 · 130 results')).toBeInTheDocument();
+    expect(screen.getByText('Page 1 of 13')).toBeInTheDocument();
+    expect(dataRows().map((row) => row.textContent)).toEqual(first);
+  });
+
+  it('an invalid address falls back to page 1 and the default order, rather than erroring (Gate 4)', async () => {
+    await renderDirectory('/users?page=-3&sort=nonsense');
+
+    expect(await footerLine()).toHaveTextContent('200 · 130 results');
+    expect(screen.getByText('Page 1 of 13')).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Email' })).toHaveAttribute(
+      'aria-sort',
+      'ascending',
+    );
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('error: the status, the title and the traceId in place of the table, and Retry (section 2.8)', async () => {
@@ -217,6 +244,7 @@ describe('which empty state a page with no rows is', () => {
   const data = (totalCount: number, totalPages: number): DirectoryPage => ({
     users: [],
     status: 200,
+    etag: null,
     pagination: {
       currentPage: 1,
       totalPages,

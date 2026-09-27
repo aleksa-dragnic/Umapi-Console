@@ -30,6 +30,12 @@ describe('createApiClient', () => {
     expect(seen[0]?.credentials).toBe('include');
   });
 
+  it('bypasses the browser cache, so a 304 on the wire is never turned into a cached 200 (ADR 0013)', async () => {
+    const seen = captureRequests();
+    await createApiClient(BASE).GET('/api/v1/users');
+    expect(seen[0]?.cache).toBe('no-store');
+  });
+
   it('joins the base URL and the generated path without doubling the version prefix', async () => {
     const seen = captureRequests();
     await createApiClient(`${BASE}/`).GET('/api/v1/users/{id}', {

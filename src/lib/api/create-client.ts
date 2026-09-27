@@ -20,6 +20,13 @@ export type Schema<K extends keyof components['schemas']> = components['schemas'
  * `credentials: 'include'` is set once, here, so the refresh cookie travels on
  * every call to the API origin (build plan section 3.2).
  *
+ * `cache: 'no-store'` keeps the browser's HTTP cache out of the way. The API
+ * marks its reads `private, no-cache` (observed row 22), so the browser would
+ * otherwise revalidate on its own and hand the console a 200 from its cache
+ * for what was a 304 on the wire. The console keeps its own validators and
+ * sends `If-None-Match` itself, so what it shows is what crossed the network.
+ * See docs/adr/0013-the-console-keeps-its-own-validators.md.
+ *
  * `fetch` is looked up on every request instead of being captured when the
  * client is created. openapi-fetch would otherwise keep the `fetch` that
  * existed at import time, and a request interceptor installed later - the
@@ -33,6 +40,7 @@ export function createApiClient<Paths extends object = paths>(baseUrl: string = 
   return createClient<Paths>({
     baseUrl,
     credentials: 'include',
+    cache: 'no-store',
     fetch: (request: Request) => globalThis.fetch(request),
   });
 }
