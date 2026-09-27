@@ -32,8 +32,8 @@ export async function requestSignOut(): Promise<void> {
 /**
  * One line for a failure no screen state names more precisely: the `status`
  * and `title` every problem shape carries (row 34), or the absence of any
- * answer. The inventory's server-error copy adds a pointer to the inspector,
- * which arrives in PR 15.
+ * answer. Sign-in and boot use it without the inventory's pointer to the
+ * inspector, which is behind the login (section 3.8).
  */
 export function describeFailure(failure: AuthFailure): string {
   if (failure.kind === 'unreachable') {

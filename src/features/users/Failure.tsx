@@ -9,10 +9,12 @@ import { RateLimitNotice } from '@/ui/RateLimitNotice';
  * (inventory sections 2.7 and 2.8): the status and the title, the `traceId`
  * when the body carried one, and Retry, which refetches rather than reloading.
  * A 429 holds Retry until `Retry-After` has passed. A request nothing answered
- * says so.
+ * says so. A read the API answered points to the inspector, which holds the
+ * whole response (section 2.8); one nothing answered has no response to show.
  */
 
 export const UNREACHABLE_COPY = 'No response from the API.';
+export const INSPECTOR_POINTER_COPY = 'Open the inspector to see the full response.';
 
 export function Failure({ error, onRetry }: { error: unknown; onRetry: () => void }) {
   const [elapsedFor, setElapsedFor] = useState<unknown>(null);
@@ -37,6 +39,7 @@ export function Failure({ error, onRetry }: { error: unknown; onRetry: () => voi
       {problem.traceId === undefined ? null : (
         <p className="font-mono text-app-meta text-fg-secondary">{problem.traceId}</p>
       )}
+      <p className="text-app-meta text-fg-muted">{INSPECTOR_POINTER_COPY}</p>
       <Button
         onClick={onRetry}
         disabledReason={

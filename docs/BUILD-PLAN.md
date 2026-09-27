@@ -253,9 +253,10 @@ umapi-console/
 │   ├── features/
 │   │   ├── auth/         Login, session, silent refresh, permission gates
 │   │   ├── users/        List, detail, roles, lock/unlock
-│   │   └── inspector/    Request/response capture and rendering
+│   │   └── inspector/    Request/response rendering, copy as curl
 │   ├── lib/
-│   │   ├── api/          Generated types, openapi-fetch client, interceptors
+│   │   ├── api/          Generated types, openapi-fetch client, middleware,
+│   │   │                 the transport and the request record (ADR 0014)
 │   │   ├── design/       Token module, contrast helper
 │   │   └── testing/      MSW handlers, render helpers, factories
 │   └── ui/               Primitives: Button, Input, Card, Table, Badge, Dot,
@@ -307,8 +308,9 @@ exists still sees every call. It carries:
 
 - the access token from memory, as an `Authorization` header
 - `credentials: 'include'`, so the refresh cookie travels
-- a response interceptor that captures method, path, status, timing and
-  selected headers into the inspector store
+- a transport that records every request and its response for the inspector:
+  method, URL, the headers the page can read, bodies to 64 kB, timing, with
+  every credential replaced by a placeholder as it is recorded (ADR 0014)
 - a 401 handler that triggers exactly one silent refresh, with concurrent
   requests queued behind it rather than each firing its own
 - a 429 on refresh read as **rate limiting, not as a lost session**. Refresh
@@ -568,7 +570,10 @@ on 13 September 2026.
 | PR | Branch | Contents |
 |---|---|---|
 | 15 | `feat/inspector` | Capture store, dockable panel, status dots, request/response rendering, copy as `curl`. |
-| 16 | `feat/app-shell` | Navigation, the editorial sign-in screen at display type sizes, cold-start handling, the 404 route, the error boundary, the narrow-viewport layout. |
+| 16 | `feat/app-shell` | Navigation, the editorial sign-in screen at display type sizes, cold-start handling, the 404 route, the error boundary, the narrow-viewport layout, and the read-only `roles` screen (decision 17). `/` redirects to `/users` (decision 1). |
+
+After PR 16, the format fix runs as its own pull request (decision 18). On
+GitHub it takes number 17, so the plan's PR 17 is GitHub's #18.
 
 **Exit:** Gate 5.
 
@@ -723,6 +728,12 @@ Closed 2026-09-27 with PR 14.
 | The keyboard contract in section 4 of the inventory holds | Component tests, one per row of that table |
 | The whole inventory is implemented or deferred by name | Inventory walked end to end; gaps listed in the PR Notes |
 
+**Status, 2026-09-27:** the first two rows proven in PR 15 -
+`src/lib/api/capture.test.ts` counts what crossed the network against the
+record, the silent refresh's replay included, and shows a request pending
+before it settles; `src/features/inspector/curl.test.ts` and
+`e2e/inspector.spec.ts` find `$TOKEN` and no token. The other three are PR 16.
+
 **Unblocks:** M5. Nothing touches the API repository before this gate closes.
 
 ### Gate 6 — the bridge, verified step by step
@@ -809,7 +820,7 @@ deciding them wrong now is not.
 
 | # | Question | Bearing |
 |---|---|---|
-| 1 | **A public landing page in front of the console.** One page, editorial density, explaining the project and linking into the demo. | The console is behind a login, so a reviewer arriving from a CV link currently meets a sign-in form and nothing else. A landing page is roughly one additional PR and is where the project is actually read. Decide before M4, since the app shell is shaped by whether `/` is a landing page or a redirect to `/users`. |
+| 1 | **A public landing page in front of the console.** One page, editorial density, explaining the project and linking into the demo. | The console is behind a login, so a reviewer arriving from a CV link currently meets a sign-in form and nothing else. A landing page is roughly one additional PR and is where the project is actually read. Decide before M4, since the app shell is shaped by whether `/` is a landing page or a redirect to `/users`. Decided on 2026-09-27, below. |
 | 2 | **Whether `docs/SCREEN-INVENTORY.md` ships publicly.** | It is unusually thorough and reads well to a reviewer. It also makes any gap between the document and the build visible. Ship it only if the build matches it at `v1.0.0`. |
 | 3 | **Light theme.** | Currently declined in the design decisions. Revisit only if a reviewer's environment forces it, which is unlikely for a demo opened deliberately. |
 
@@ -838,6 +849,15 @@ decided on 2026-09-25 as proposed.
 | 14 | **Nothing stops locking the only administrator.** | The API refuses locking yourself — one domain rule, one test, in M5 step 1. It protects production from a single mis-click. | Bridge specification section 3, inventory §3.6 |
 | 15 | **`X-Correlation-Id` is not readable by the browser.** | Exposed through CORS in M5 step 1, so the inspector can show the id a log line carries. `WWW-Authenticate` stays unexposed; `errorCode` already says more. | Section 4.4, inventory §3.8 |
 | 16 | **The cookie's `Path`.** Frozen as `/api/v1/auth/refresh`, which the browser would not send to `/api/v1/auth/logout` — and logout revokes by the token it is given (observed row 54). | `Path=/api/v1/auth`: sent to login, refresh and logout, still never to a user or role request, so `SameSite=Strict` keeps its argument. | Section 3.2, bridge specification section 2 |
+
+Raised at the end of M3 and decided on 2026-09-27, each as proposed. Items 17
+and 18 were first listed in README-FIRST section 5.
+
+| # | Question | Decided | Bearing |
+|---|---|---|---|
+| 1 | **A public landing page.** | None in v1. `/` redirects to `/users`, and the sign-in screen - already the one editorial screen - carries two sentences on the project and links to both repositories. The README of PR 17, with its diagram and screenshots, is where the project is read. A public route would have had to bypass the boot refresh that Gate 3 proved runs before every route. Overturning it after `v1.0.0` is a route and one exception in boot. | Section 7 PR 16, inventory §3.2 |
+| 17 | **The `roles` screen was assigned to no pull request.** | PR 16, where navigation first has more than one destination. The read already exists for the assign-role dialog. | Inventory §3.7, §6 |
+| 18 | **When the format fix for PR 1-3 runs, and what it covers.** `pnpm format:check` fails on 33 files at `13d53cf`, not 37: 23 lack only a final newline, 4 also reflow (`Button.tsx`, `Dialog.tsx`, `Table.tsx`, ADR 0004), and 6 documents differ otherwise, ADR 0013 among them. | Its own pull request, straight after PR 16, GitHub #17; the plan's PR 17 becomes GitHub #18. `docs/**/*.md` enters `.prettierignore` - hand-wrapped documents whose tables Prettier would realign on every edit - the other 23 files are formatted, and `pnpm format:check` joins `build-and-test` so the list cannot grow again. | Section 7, section 14, protocol section 5 |
 
 ---
 
@@ -961,3 +981,10 @@ pull request that made the change.
 | Inventory §3.4 | A 304 visible in the directory's footer only | Also in the detail's concurrency panel: *The last read answered 304 Not Modified: the record has not changed since this tag.* It is what the tag is for. PR 14. |
 | §8 Gate 3 | Two rows still saying the reload spec and the real actions "arrive in PR 13" | Corrected after the fact; PR 13 moved the spec and added the actions but not these two rows. PR 14. |
 | Observed, still to measure | 304 measured without an `Origin` | Rows 23 and 24 were measured from PowerShell. Whether a 304 to a browser origin carries the CORS headers is unmeasured, and proven in M5 by the live specs. PR 14. |
+| §4.2, §4.4 | The inspector store in `features/inspector/`, fed by a response interceptor | The record is `src/lib/api/capture.ts`, written by the transport both clients send through (`transport` in `create-client.ts`); the feature only renders it. The client writes it and `lib/` imports nothing above it, and a middleware would not have seen the silent refresh's replay, which is now sent through the transport too. ADR 0014. PR 15. |
+| Inventory §3.8 | Only `copy as curl` keeps the token out | Nothing in the record is a credential: the `Authorization` header, and `password`, `accessToken` and `refreshToken` in any JSON body, sent or received, become placeholders as they are recorded. Sign-in bodies carry a password and sign-in and refresh answers an access token; the inventory had covered only the header. PR 15. |
+| Inventory §3.8, ADR 0010 | The record's lifetime unstated | One session: dropped when the token goes from held to none, like the query cache. So `revoked` cannot show the race's pair, and inventory §3.9 says so. PR 15. |
+| Inventory §3.8 | "Dockable"; `expanded` and `selected` as two states | Docked at the bottom, collapsed or expanded; no choice of edge. One row is always selected - the newest until another is chosen - so opening the inspector after an error lands on its response. The list is newest first. `unanswered` added: `StatusDot` gained it, because a request nothing answered would otherwise read `pending` for ever. PR 15. |
+| Inventory §2.8, §3.2 | The pointer to the inspector joins sign-in's `failed` in PR 15 | Not on sign-in or boot: the inspector is behind the login. It is in `Failure`, shared by every read, and only when the API answered. PR 15. |
+| Inventory §3.9 | The pair listed on the session screen until PR 15 | Removed from the screen; `raced` and `unexpected` keep their sentences, and the pair is in the inspector. `e2e/race.spec.ts` finds it there. PR 15. |
+| §8 Gate 5 | Captures equal requests; `$TOKEN` in curl | Both proven in PR 15, each test failing when its rule is removed: the replay sent past the transport, the redaction switched off. The session's clearing and the body redaction likewise. PR 15. |

@@ -121,6 +121,7 @@ The *expected* form of this — the demo account meeting a write action — is
 | Trigger | 5xx, or a response that is not JSON when JSON was expected |
 | Renders | The screen's error state with the status and the `title` from the problem details body, plus *Open the inspector to see the full response.* A `traceId`, when the body has one, is shown in mono so it can be quoted. |
 | Note | Only `status` and `title` are present in every problem-details shape the API produces (observed row 34). Nothing on this screen depends on any other field. |
+| Note | The pointer is carried by the read states behind the login - the directory, the detail, the roles a dialog reads - and only when the API answered. Sign-in and boot have no inspector (section 3.8); a write states its failure where the action is (section 3.4), and the inspector holds it like every other request. |
 | The way out | Retry, which refetches rather than reloading the page |
 
 ### 2.9 `not-modified` — 304
@@ -173,7 +174,7 @@ Editorial density. The only screen in the application that uses display type.
 | `invalid-field` | 422 | Field-level messages taken from the problem details `errors` object, rendered under the field they name — matched case-insensitively, because the API's keys are PascalCase (observed row 19) — in alarm red mono 12px. Focus moves to the first invalid field. A message for a key the form has no field for is shown above the form instead of being dropped. The form sets `noValidate`: the API's 422 is the validation. | Correct and resubmit |
 | `invalid-credentials` | 401 | One message above the form: *Email or password is incorrect.* Never *"user not found"* — that is an account enumeration oracle. The API already answers an unknown email and a wrong password identically (observed row 5); the console adds no distinction. | Retry |
 | `account-locked` | 401 with `errorCode` `Auth.AccountLocked` | One message above the form: *This account is locked. An administrator can unlock it.* Chosen by `errorCode`, never by `detail`. The console repeats what the API chose to say; whether the API checks the lock before or after the password - which decides whether this is an enumeration oracle - is not measured, and is on the API's own list. The mock checks the password first (row 51, wording not measured). | Contact an administrator |
-| `failed` | No response, or any status without a row above | One message above the form: the status and `title` (*The API answered 503 Service Unavailable.*), or *The console cannot reach the API.*; a `traceId`, when the body has one, beneath it in mono. §2.8's pointer to the inspector joins it in PR 15 | Resubmit |
+| `failed` | No response, or any status without a row above | One message above the form: the status and `title` (*The API answered 503 Service Unavailable.*), or *The console cannot reach the API.*; a `traceId`, when the body has one, beneath it in mono. No pointer to the inspector: it is behind the login (section 3.8) | Resubmit |
 | `rate-limited` | 429 | §2.7 | Wait |
 | `session-ended` | Arrived from §2.4 | The banner, above the form | Sign in |
 | `cold-start` | §2.1 | Beneath the submit button | Resolves |
@@ -220,8 +221,9 @@ because that is the order the API applies. The footer reads *200 · 130 results*
 (*1 result* for one) and *Page 2 of 13*; **Previous** and **Next** are present
 only where there is a page to go to, and neither is shown past the last page,
 where `empty-page` offers page 1 instead. With no term, no filter and no rows
-the table reads *No users.* The line *Open the inspector to see the full
-response.* of section 2.8 joins `error` with the inspector in PR 15.
+the table reads *No users.* Whenever the API answered, `error` and
+`rate-limited` carry the line *Open the inspector to see the full response.* of
+section 2.8; a request nothing answered has no response to point to.
 
 **Row states.** Default, hover (surface lift), focused (visible ring, reached by
 keyboard), and selected. A row opens the user's detail: the email is a link to
@@ -290,33 +292,50 @@ absence.
 
 ### 3.8 `inspector` — the docked panel
 
-Not a route. Available from every screen behind the login, and the reason the
-project exists.
+Not a route. Docked at the bottom of every screen behind the login, and the
+reason the project exists. Sign-in and boot do not have it: a visitor there has
+no session, and the one request worth seeing, the sign-in, is in the record
+once the session begins.
 
 | State | Trigger | Renders | The way out |
 |---|---|---|---|
-| `collapsed` | Default | A strip showing the most recent request: status dot, code, method, path, duration | Expand |
-| `empty` | Expanded with no requests captured yet | *No requests yet. Everything this console sends to the API appears here.* | Do something |
-| `expanded` | Expand | Request list on the left, request and response panes on the right | Select, copy, clear |
-| `selected` | A row is selected | The two panes fill; the selected row carries a left border in its status colour | Select another |
-| `pending` | A request in flight | The row appears immediately with a pending dot and no duration, then updates in place. Requests are not held back until they resolve. | Resolves |
-| `truncated` | A response body over 64 kB | The first 64 kB with *Response truncated at 64 kB.* | Copy as `curl` |
+| `collapsed` | Default | A strip with **Inspector** and the most recent request: status dot, code, method, path, duration | Expand |
+| `empty` | Expanded with no requests recorded | *No requests yet. Everything this console sends to the API appears here.* | Do something |
+| `expanded` | Expand | The request list on the left, newest first, and the request and response panes on the right. One row is always selected: the newest, until another is chosen. The selected row carries a left border in its status colour | Select another, copy, clear |
+| `pending` | A request in flight | The row appears at once with a pending dot and no duration, and the response pane reads *Waiting for the response.* It settles in place. Requests are not held back until they resolve. | Resolves |
+| `unanswered` | Nothing answered the request | The dot and the words *no response*, the time it took, and *No response from the API.* in the response pane | — |
+| `truncated` | A body over 64 kB | The first 64 kB with *Response truncated at 64 kB.* | Copy as `curl` |
 
 **Bodies and headers.** A body is rendered as JSON whenever it parses as JSON,
 whatever its media type: `application/json`, `application/problem+json` and
 `application/vnd.umapi.hateoas+json` all occur (observed rows 33, 34). A 304 has
-no body and says so.
+no body and says so: *No body: a 304 carries none, and the console kept the copy
+it already held.*
 
 **Which headers can be shown.** A browser reads only the response headers CORS
 exposes (observed row 53): `ETag`, `X-Pagination`, `Retry-After`,
 `api-supported-versions`, `api-deprecated-versions`, and the CORS-safelisted
 ones such as `Content-Type` and `Cache-Control`. The inspector shows those, and a
-line under the list says the rest are withheld by the API's CORS policy rather
-than absent. `X-Correlation-Id` joins the list when decision 15 exposes it in M5.
+line under the panes says the rest are withheld rather than absent: *Response
+headers not listed are withheld by the API's CORS policy, not absent.*
+`X-Correlation-Id` joins the list when decision 15 exposes it in M5.
 
-**Copy as curl** produces a command that runs, with the `Authorization` header
-replaced by `$TOKEN` rather than the real token. A copied credential in a
-reviewer's clipboard is a defect, not a feature.
+**No credential is kept.** The record is written at the transport (ADR 0014),
+and at that moment the `Authorization` header becomes `Bearer $TOKEN` and, in
+any JSON body sent or received, a `password` becomes `$PASSWORD`, an
+`accessToken` `$TOKEN` and a `refreshToken` `$REFRESH_TOKEN`. What was never
+kept cannot be shown, screenshotted or copied.
+
+**Copy as curl** produces a command a POSIX shell runs, with `$TOKEN` and
+`$PASSWORD` left for the shell to expand. It then says *Copied. Set TOKEN, and
+PASSWORD for a sign-in, before running it.*, or *The browser refused access to
+the clipboard.* A copied credential in a reviewer's clipboard is a defect, not a
+feature. The refresh cookie is the browser's and in neither.
+
+**The record belongs to one session.** It is dropped when a session ends, as the
+query cache is (ADR 0010), so a second account on the same tab never sees the
+first one's responses. **Clear** empties it at any time. `Escape` closes the
+inspector after any open dialog and returns focus to **Inspector** (section 4).
 
 ### 3.9 `session` — diagnostics and the reuse demonstration
 
@@ -343,7 +362,7 @@ warns about it.
 | `ready` | — | Token expiry counting down from `exp - iat` since the token arrived, never from the client clock (observed row 40); the claims decoded as a table; and one action, **Race two refreshes**, with a paragraph explaining both possible outcomes | Trigger it |
 | `confirming` | The action | *If the API treats the second request as a replay, it ends your session and every other session of this account. The demo account is shared: anyone else signed in as demo would be signed out at their next refresh.* | Confirm |
 | `raced` | One 200 and one 409 `Concurrency.Conflict` | Both responses in the inspector and one line: *The API refused the second request because the first had just rotated the token. Nothing was revoked; your session continues.* | Race again |
-| `revoked` | One 200 and one 401 `Auth.RefreshTokenReused` | Both responses in the inspector, then §2.4 with the reuse wording | Sign in |
+| `revoked` | One 200 and one 401 `Auth.RefreshTokenReused` | §2.4 with the reuse wording. The session's record goes with it (section 3.8), so the pair is not kept | Sign in |
 | `unexpected` | Any other pair — two 200s would be an API defect | Both responses, and the pair stated as it arrived | — |
 
 The copy that surrounds the table. Beside the action: *Sends two refresh
@@ -356,12 +375,10 @@ session of this account is revoked.* Under the countdown, *Expires in 14:59.*:
 *Counted from the moment it arrived: exp - iat is 900 s. The client clock is not
 consulted.* When it reaches zero: *Expired. The next request will refresh it.*
 
-Until the inspector arrives in PR 15, each answer of the pair is listed on the
-screen, one line each, in the order the requests were sent: *Request 1: 200,
-with a new access token*, *Request 2: 409 Concurrency.Conflict* - the status and
-the `errorCode`, or the `title` when there is none. `unexpected` states the pair
-in one sentence: *The API answered 429 Too Many Requests and 429 Too Many
-Requests.* `revoked` lists neither, because the session ends at once.
+The pair itself is in the inspector, not on the screen. `unexpected` also
+states it in one sentence, the status and the `errorCode`, or the `title` when
+there is none: *The API answered 429 Too Many Requests and 429 Too Many
+Requests.* `revoked` keeps neither, because the session ends at once.
 
 The confirmation is drawn in place, not as a dialog, with **Cancel** and
 **Confirm**. It opens on **Cancel**, as a destructive dialog does (section 4),
@@ -459,8 +476,8 @@ selection, which are per-session and would make every link carry debug state.
 | `users` and all its states | 12 |
 | `users/:id` and all its states, `conflict` included; `assign-role`, `lock-user`, `unlock-user`, `remove-role` | 13 |
 | `not-modified` | 14 |
-| `inspector` | 15 |
-| `404`, `error-boundary`, `cold-start` shown once per session, `offline`, narrow viewport | 16 |
+| `inspector`, and the pointer of §2.8 in `error` and `rate-limited` | 15 |
+| `roles`, `404`, `error-boundary`, `cold-start` shown once per session, `offline`, narrow viewport | 16 |
 
 A pull request is not done until every state this document lists for its screens
 either exists or is deferred by name in the PR's Notes.

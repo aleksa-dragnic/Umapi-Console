@@ -31,7 +31,7 @@ import { Table, TableBody, TableHead, TableHeaderCell, TableRow } from '@/ui/Tab
  */
 
 export { USERS_PATH } from '@/features/users/paths';
-export { UNREACHABLE_COPY } from '@/features/users/Failure';
+export { INSPECTOR_POINTER_COPY, UNREACHABLE_COPY } from '@/features/users/Failure';
 
 const SEARCH_DEBOUNCE_MS = 300;
 const COLUMNS: ReadonlyArray<{ field: SortField; label: string }> = [

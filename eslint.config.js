@@ -8,7 +8,7 @@ import prettier from 'eslint-config-prettier';
 // group of import patterns forbidden to one part of src/. A file group gets one
 // `no-restricted-imports` setting, so every group it is subject to is listed
 // in it: flat config replaces a rule's options, it does not merge them.
-const FEATURES = ['auth', 'users'];
+const FEATURES = ['auth', 'inspector', 'users'];
 
 const noFeatures = {
   group: ['@/features/*', '@/features/**', '**/features/*', '**/features/**'],

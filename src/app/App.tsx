@@ -14,7 +14,7 @@ const LINK =
 
 export default function App() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-app-4">
+    <main className="flex flex-1 flex-col items-center justify-center gap-app-4">
       <h1 className="text-fg-emphasis text-app-title">Umapi Console</h1>
       <nav aria-label="Console" className="flex gap-app-4">
         <Link to={USERS_PATH} className={LINK}>

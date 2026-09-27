@@ -116,6 +116,7 @@ function Gallery({ density }: { density: 'application' | 'editorial' }) {
         <StatusDot status={422} />
         <StatusDot status={503} />
         <StatusDot />
+        <StatusDot unanswered />
       </Specimens>
 
       <Specimens label="CodeWindow">
