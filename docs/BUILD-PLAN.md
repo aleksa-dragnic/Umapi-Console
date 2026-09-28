@@ -572,8 +572,9 @@ on 13 September 2026.
 | 15 | `feat/inspector` | Capture store, dockable panel, status dots, request/response rendering, copy as `curl`. |
 | 16 | `feat/app-shell` | Navigation, the editorial sign-in screen at display type sizes, cold-start handling, the 404 route, the error boundary, the narrow-viewport layout, and the read-only `roles` screen (decision 17). `/` redirects to `/users` (decision 1). |
 
-After PR 16, the format fix runs as its own pull request (decision 18). On
-GitHub it takes number 17, so the plan's PR 17 is GitHub's #18.
+After PR 16, two pull requests the plan does not count come before its PR 17:
+the directory fix of section 14 as GitHub #17, and the format fix as its own
+pull request (decision 18), GitHub #18. The plan's PR 17 is GitHub's #19.
 
 **Exit:** Gate 5.
 
@@ -862,7 +863,7 @@ and 18 were first listed in README-FIRST section 5.
 |---|---|---|---|
 | 1 | **A public landing page.** | None in v1. `/` redirects to `/users`, and the sign-in screen - already the one editorial screen - carries two sentences on the project and links to both repositories. The README of PR 17, with its diagram and screenshots, is where the project is read. A public route would have had to bypass the boot refresh that Gate 3 proved runs before every route. Overturning it after `v1.0.0` is a route and one exception in boot. | Section 7 PR 16, inventory §3.2 |
 | 17 | **The `roles` screen was assigned to no pull request.** | PR 16, where navigation first has more than one destination. The read already exists for the assign-role dialog. | Inventory §3.7, §6 |
-| 18 | **When the format fix for PR 1-3 runs, and what it covers.** `pnpm format:check` fails on 33 files at `13d53cf`, not 37: 23 lack only a final newline, 4 also reflow (`Button.tsx`, `Dialog.tsx`, `Table.tsx`, ADR 0004), and 6 documents differ otherwise, ADR 0013 among them. | Its own pull request, straight after PR 16, GitHub #17; the plan's PR 17 becomes GitHub #18. `docs/**/*.md` enters `.prettierignore` - hand-wrapped documents whose tables Prettier would realign on every edit - the other 23 files are formatted, and `pnpm format:check` joins `build-and-test` so the list cannot grow again. | Section 7, section 14, protocol section 5 |
+| 18 | **When the format fix for PR 1-3 runs, and what it covers.** `pnpm format:check` fails on 33 files at `13d53cf`, not 37: 23 lack only a final newline, 4 also reflow (`Button.tsx`, `Dialog.tsx`, `Table.tsx`, ADR 0004), and 6 documents differ otherwise, ADR 0013 among them. | Its own pull request after PR 16, GitHub #18, behind the directory fix (#17); the plan's PR 17 becomes GitHub #19. `docs/**/*.md` enters `.prettierignore` - hand-wrapped documents whose tables Prettier would realign on every edit - the other 23 files are formatted, and `pnpm format:check` joins `build-and-test` so the list cannot grow again. | Section 7, section 14, protocol section 5 |
 
 ---
 
@@ -999,3 +1000,5 @@ pull request that made the change.
 | Inventory §4 | Route change moves focus to the `h1` | The shell does it, unless the screen has placed focus inside its `main` - the directory's opened row, the detail's heading - because a parent's effect runs after its children's and would otherwise take it back. `Escape` clears the search by a handler, since not every browser does it for a search field. PR 16. |
 | Inventory §3.10 | `404` inside the product | Outside the shell, in editorial density, with a session or without. PR 16. |
 | §2 Testing | `axe-core` in Playwright | `@axe-core/playwright` 4.13.0, pinned exactly, its first release older than the workspace's minimum release age; `pnpm-workspace.yaml` unchanged. PR 16. |
+| §7, §12 decision 18 | The format fix as GitHub #17, the plan's PR 17 as #18 | Two pull requests outside the plan's count come before its PR 17: the directory fix is GitHub #17, the format fix #18, and the plan's PR 17 is GitHub #19. The plan keeps its own numbers. GitHub #17. |
+| §5.3, inventory §3.3 | Each change to the view written from the view on screen | Built from the address as last written, kept beside the screen and brought up to date by every navigation, not from the render's query. A status chosen right after a sort, before the sort's navigation had rendered, dropped the sort; the same held for paging, the empty states' actions and the debounced search. Present since PR 12, seen as a test that passed only on retry in PR 16's CI run. React Router's updater form of `setSearchParams` is handed the render's parameters too, so it does not fix it. A unit test makes two changes with no render between them. GitHub #17. |
