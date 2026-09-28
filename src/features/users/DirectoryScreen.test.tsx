@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
@@ -165,6 +165,37 @@ describe('the directory (inventory section 3.3)', () => {
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.every((row) => row.textContent?.includes('Locked'))).toBe(true);
   });
+
+  it.each([
+    [
+      'a status right after a sort',
+      () => fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'Active' } }),
+      '/users?sort=lastName%3Aasc&status=active',
+    ],
+    [
+      'the next page right after a sort',
+      () => fireEvent.click(screen.getByRole('button', { name: 'Next' })),
+      '/users?page=2&sort=lastName%3Aasc',
+    ],
+  ] as const)(
+    'builds each change on the address, not on the last render: %s',
+    async (_, second, expected) => {
+      await renderDirectory();
+      await footerLine();
+
+      // Both in one act: the screen does not render between them, as a fast
+      // user or a browser that defers the navigation's render can arrange.
+      act(() => {
+        fireEvent.click(
+          within(screen.getByRole('columnheader', { name: 'Last name' })).getByRole('button'),
+        );
+        second();
+      });
+
+      expect(where()).toBe(expected);
+      await waitFor(() => expect(table()).not.toHaveClass('opacity-60'));
+    },
+  );
 
   it('not-modified: a page read again answers 304, and the footer says so (section 2.9)', async () => {
     await renderDirectory();
