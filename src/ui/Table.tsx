@@ -22,7 +22,9 @@ export function Table({
   className?: string | undefined;
 }) {
   return (
-    <table className={['w-full border-collapse text-app-body', className].filter(Boolean).join(' ')}>
+    <table
+      className={['w-full border-collapse text-app-body', className].filter(Boolean).join(' ')}
+    >
       {caption !== undefined ? <caption className="sr-only">{caption}</caption> : null}
       {children}
     </table>
@@ -67,7 +69,8 @@ export function TableRow({
   );
 }
 
-const HEADER = 'h-[var(--size-row)] px-app-3 text-left font-mono text-app-label uppercase text-fg-muted';
+const HEADER =
+  'h-[var(--size-row)] px-app-3 text-left font-mono text-app-label uppercase text-fg-muted';
 
 export function TableHeaderCell({
   children,
@@ -107,6 +110,8 @@ export function TableCell({
   className?: string | undefined;
 }) {
   return (
-    <td className={['px-app-3 text-fg-primary', className].filter(Boolean).join(' ')}>{children}</td>
+    <td className={['px-app-3 text-fg-primary', className].filter(Boolean).join(' ')}>
+      {children}
+    </td>
   );
 }
