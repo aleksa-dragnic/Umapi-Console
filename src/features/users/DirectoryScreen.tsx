@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
 import { useDirectory, type DirectoryPage } from '@/features/users/api';
@@ -49,9 +49,12 @@ export function emptyPageCopy(page: number, totalPages: number): string {
 }
 export const NO_USERS_COPY = 'No users.';
 
+/** A change to the view, applied to the address as it stands when it runs. */
+export type QueryUpdate = (current: DirectoryQuery) => DirectoryQuery;
+
 export interface EmptyState {
   message: string;
-  action: { label: string; next: DirectoryQuery } | null;
+  action: { label: string; update: QueryUpdate } | null;
 }
 
 /** Which empty state a page with no rows is, in the inventory's order. */
@@ -59,19 +62,22 @@ export function emptyStateOf(data: DirectoryPage, query: DirectoryQuery): EmptyS
   if (data.pagination.totalCount > 0) {
     return {
       message: emptyPageCopy(query.page, data.pagination.totalPages),
-      action: { label: 'Go to page 1', next: { ...query, page: 1 } },
+      action: { label: 'Go to page 1', update: (current) => ({ ...current, page: 1 }) },
     };
   }
   if (query.q !== '') {
     return {
       message: emptySearchCopy(query.q),
-      action: { label: 'Clear search', next: { ...query, q: '', page: 1 } },
+      action: { label: 'Clear search', update: (current) => ({ ...current, q: '', page: 1 }) },
     };
   }
   if (query.status !== null) {
     return {
       message: emptyFilterCopy(query.status),
-      action: { label: 'Clear filter', next: { ...query, status: null, page: 1 } },
+      action: {
+        label: 'Clear filter',
+        update: (current) => ({ ...current, status: null, page: 1 }),
+      },
     };
   }
   return { message: NO_USERS_COPY, action: null };
@@ -84,14 +90,14 @@ function Empty({
 }: {
   data: DirectoryPage;
   query: DirectoryQuery;
-  onChange: (next: DirectoryQuery) => void;
+  onChange: (update: QueryUpdate) => void;
 }) {
   const { message, action } = emptyStateOf(data, query);
   return (
     <div className="flex flex-col items-start gap-app-2 p-app-3">
       <p className="text-fg-secondary">{message}</p>
       {action === null ? null : (
-        <Button onClick={() => onChange(action.next)}>{action.label}</Button>
+        <Button onClick={() => onChange(action.update)}>{action.label}</Button>
       )}
     </div>
   );
@@ -112,19 +118,31 @@ export function DirectoryScreen() {
     setTerm(query.q);
   }
 
-  function change(next: DirectoryQuery, replace = false) {
-    setParams(writeQuery(next), { replace });
+  // The address as last written. A change builds on it, not on this render's
+  // `query`: a second change can arrive before the first one's navigation has
+  // rendered, and building on the render would undo the first. The router's
+  // own updater form does not help, because it too is handed the render's
+  // parameters. Back and Forward reach it through the effect.
+  const written = useRef(search);
+  useEffect(() => {
+    written.current = search;
+  }, [search]);
+
+  function change(update: QueryUpdate, replace = false) {
+    const next = writeQuery(update(readQuery(new URLSearchParams(written.current))));
+    written.current = next.toString();
+    setParams(next, { replace });
   }
 
+  // Typing is one edit, not a history entry per pause.
+  const commitTerm = useEffectEvent(() =>
+    change((current) => ({ ...current, q: term, page: 1 }), true),
+  );
   useEffect(() => {
-    const current = readQuery(new URLSearchParams(search));
-    if (term === current.q) return;
-    const timer = setTimeout(() => {
-      // Typing is one edit, not a history entry per pause.
-      setParams(writeQuery({ ...current, q: term, page: 1 }), { replace: true });
-    }, SEARCH_DEBOUNCE_MS);
+    if (term === readQuery(new URLSearchParams(search)).q) return;
+    const timer = setTimeout(commitTerm, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [term, search, setParams]);
+  }, [term, search]);
 
   const sort = effectiveSort(query);
   const data = directory.data;
@@ -156,7 +174,13 @@ export function DirectoryScreen() {
                           : 'descending'
                         : 'none'
                     }
-                    onSort={() => change({ ...query, sort: toggledSort(query, field), page: 1 })}
+                    onSort={() =>
+                      change((current) => ({
+                        ...current,
+                        sort: toggledSort(current, field),
+                        page: 1,
+                      }))
+                    }
                   >
                     {label}
                   </TableHeaderCell>
@@ -175,7 +199,7 @@ export function DirectoryScreen() {
           </Table>
         </div>
         {data !== undefined && data.users.length === 0 ? (
-          <Empty data={data} query={query} onChange={(next) => change(next)} />
+          <Empty data={data} query={query} onChange={(update) => change(update)} />
         ) : null}
         {data === undefined ? null : (
           <Footer
@@ -183,7 +207,7 @@ export function DirectoryScreen() {
             pagination={data.pagination}
             searchPending={term !== query.q}
             paging={data.users.length > 0 || data.pagination.totalCount === 0}
-            onPage={(page) => change({ ...query, page })}
+            onPage={(page) => change((current) => ({ ...current, page }))}
           />
         )}
       </>
@@ -202,7 +226,7 @@ export function DirectoryScreen() {
         term={term}
         onTermChange={setTerm}
         status={query.status}
-        onStatusChange={(status) => change({ ...query, status, page: 1 })}
+        onStatusChange={(status) => change((current) => ({ ...current, status, page: 1 }))}
       />
       {body}
     </main>
