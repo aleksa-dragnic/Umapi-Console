@@ -12,8 +12,10 @@ import { useId, type ButtonHTMLAttributes, type ReactNode, type Ref } from 'reac
 
 export type ButtonVariant = 'ghost' | 'destructive';
 
-export interface ButtonProps
-  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'disabled' | 'aria-disabled'> {
+export interface ButtonProps extends Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  'disabled' | 'aria-disabled'
+> {
   /** React 19 passes ref as an ordinary prop. Dialog uses it to place focus. */
   ref?: Ref<HTMLButtonElement> | undefined;
   variant?: ButtonVariant | undefined;

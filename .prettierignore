@@ -6,3 +6,7 @@ pnpm-lock.yaml
 docs/tokens.css
 src/lib/api/schema.d.ts
 public/mockServiceWorker.js
+
+# Hand-wrapped documents: Prettier would realign their tables on every edit
+# (build plan decision 18).
+docs/**/*.md

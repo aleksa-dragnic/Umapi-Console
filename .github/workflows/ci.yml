@@ -18,10 +18,13 @@ permissions:
   contents: read
 
 jobs:
+  # Every job names its runner image. ubuntu-latest moves to a new image on
+  # GitHub's schedule, so a change of operating system arrives as a pull
+  # request here rather than as a red run nobody caused.
   build-and-test:
     name: build-and-test
     if: github.event_name != 'schedule'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
 
@@ -42,6 +45,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm lint
+      # Hand-wrapped documents under docs/ are excluded in .prettierignore
+      # (build plan decision 18); everything else is held to Prettier here.
+      - run: pnpm format:check
       - run: pnpm test:run
       - run: pnpm build
 
@@ -60,7 +66,7 @@ jobs:
   e2e:
     name: e2e
     if: github.event_name != 'schedule'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
 
@@ -87,7 +93,7 @@ jobs:
   # must not wait on it. See docs/adr/0006-generated-api-types.md.
   contract:
     name: contract
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       API_ORIGIN: https://usermanagementapi-j1if.onrender.com
     steps:

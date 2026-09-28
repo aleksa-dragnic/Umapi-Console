@@ -799,6 +799,7 @@ API repository — where a promised architecture test turned out not to exist.
 | No manual memoisation if the compiler is on | Lint rule, decided in PR 1 |
 | Status colour is never applied to an entity status | Lint rule restricting the status tokens to the inspector and response modules |
 | The mock never reaches a production bundle | `no-restricted-imports` on `@/lib/testing` outside tests, and the `build-and-test` job searching `dist/assets` after the production build (ADR 0012) |
+| Code and configuration stay formatted | `pnpm format:check` in `build-and-test`; the hand-wrapped documents under `docs/` are excluded in `.prettierignore` (decision 18) |
 
 ---
 
@@ -1002,3 +1003,5 @@ pull request that made the change.
 | §2 Testing | `axe-core` in Playwright | `@axe-core/playwright` 4.13.0, pinned exactly, its first release older than the workspace's minimum release age; `pnpm-workspace.yaml` unchanged. PR 16. |
 | §7, §12 decision 18 | The format fix as GitHub #17, the plan's PR 17 as #18 | Two pull requests outside the plan's count come before its PR 17: the directory fix is GitHub #17, the format fix #18, and the plan's PR 17 is GitHub #19. The plan keeps its own numbers. GitHub #17. |
 | §5.3, inventory §3.3 | Each change to the view written from the view on screen | Built from the address as last written, kept beside the screen and brought up to date by every navigation, not from the render's query. A status chosen right after a sort, before the sort's navigation had rendered, dropped the sort; the same held for paging, the empty states' actions and the debounced search. Present since PR 12, seen as a test that passed only on retry in PR 16's CI run. React Router's updater form of `setSearchParams` is handed the render's parameters too, so it does not fix it. A unit test makes two changes with no render between them. GitHub #17. |
+| §12 decision 18 | The format fix as decided | As decided: `docs/**/*.md` in `.prettierignore`, which also covers the ten documents on the list, the 23 code and configuration files formatted - 20 gained only their final newline, `Button.tsx`, `Dialog.tsx` and `Table.tsx` also reflowed - and `pnpm format:check` in `build-and-test` after lint. Section 10 gained the row. GitHub #18. |
+| §2, CI | The runner image unstated | Every job on `ubuntu-24.04` instead of `ubuntu-latest`, which GitHub moves to Ubuntu 26 from 2026-10-19. A change of image becomes a pull request rather than a run that turns red on its own. GitHub #18. |
