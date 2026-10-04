@@ -144,7 +144,7 @@ where M5 deliberately changes the API.
 | Cookie name | `umapi_rt` |
 | Attributes | `HttpOnly`, `Secure`, host-only (no `Domain`), `SameSite=Strict`, `Path=/api/v1/auth` — decision 16: the path first frozen here, `/api/v1/auth/refresh`, would keep the cookie away from `/auth/logout`, which needs it to revoke the token |
 | Set by | `POST /auth/login` and `POST /auth/refresh` |
-| Cleared by | `POST /auth/logout`, and by the API when reuse is detected |
+| Cleared by | `POST /auth/logout`, and by the API whenever it refuses a refresh that carried a cookie - reuse, an unknown, revoked or expired token, a locked or deactivated account. Never by a 409: a lost race's answer can land after the winner's new cookie (API ADR 0019, observed row 70) |
 | Lifetime | `Max-Age` equal to the refresh token's remaining lifetime — 7 days today (observed row 3) — so closing the browser does not end the session. Decision 11; a session cookie was the alternative |
 | Login response body | `accessToken` and `accessTokenExpiresAtUtc`, nothing else. `refreshToken` and `refreshTokenExpiresAtUtc` leave the body; the cookie carries both |
 | Refresh response body | The same two fields as the login body |
@@ -430,14 +430,16 @@ validates, and the browser's own HTTP cache is bypassed, because the API's
 `private, no-cache` would let the browser revalidate on its own and hand the
 console a 200 for a 304 (ADR 0013).
 
-Production holds two users (observed row 20). The directory is the screen the
+Production held two users (observed row 20). The directory is the screen the
 project is judged on, and two rows demonstrate neither pagination nor search.
-Realistic data is seeded into production in M5 step 2 (decision 7); until
-then the mock's factories produce it.
+M5 step 2 seeded it once (decision 7): 132 users since 2026-10-03 (row 67); the
+mock's factories produce a directory of the same kind.
 
-Search compares one field at a time (observed row 56): `Petrović` finds Marko
-Petrović, `Marko Petrović` finds no one. The console sends the term as typed,
-and the `empty-search` state repeats it, so the reason is visible.
+Search compared one field at a time at Gate 0 (row 56). Since the API's #56 it
+folds case and diacritics and matches the full name, first and last joined by a
+space (rows 67, 73): `Marko Petrović` finds Marko Petrović, `Petrović Marko`
+finds no one, and `djordjevic` finds no Đorđević. The console sends the term as
+typed, and the `empty-search` state repeats it, so the reason is visible.
 
 ### 6.3 User detail and mutations
 Role assignment and removal, lock and unlock, profile update. Optimistic updates
@@ -464,9 +466,10 @@ related refusals `User.NotLocked`, `User.LastRoleCannotBeRemoved` and
 a reload would not help, so its `detail` lands on the email field like a 422.
 
 Locking does not end the locked user's sessions at once: their refresh is
-refused, so the session lapses within fifteen minutes (row 51). And nothing
-stops an administrator locking the only administrator (row 50) — decision 14
-adds the rule in M5 step 1.
+refused, so the session lapses within fifteen minutes (row 51). Since the
+API's #50, decision 14, an administrator cannot lock their own account (row
+72), which also keeps the only administrator from locking themselves; no rule
+stops one administrator locking another (row 50).
 
 ### 6.4 Permission-driven UI
 Route guards and action affordances derive from token claims. The published demo
@@ -574,11 +577,13 @@ on 13 September 2026.
 
 After PR 16, two pull requests the plan does not count come before its PR 17:
 the directory fix of section 14 as GitHub #17, and the format fix as its own
-pull request (decision 18), GitHub #18. The plan's PR 17 is GitHub's #19.
+pull request (decision 18), GitHub #18. M5 step 3 adds console pull requests of
+its own before PR 17 (section 14), so the plan's PR 17 takes the next GitHub
+number after them.
 
 **Exit:** Gate 5.
 
-### M5 — The bridge (1 PR here, 1 PR in the API, then manual)
+### M5 — The bridge (pull requests on both sides, then manual)
 
 This is the milestone where the two repositories meet. It is ordered, and each
 step is verified before the next begins — Gate 6.
@@ -587,7 +592,7 @@ step is verified before the next begins — Gate 6.
 |---|---|---|
 | 1 | `UserManagementAPI` | The cookie pull request: refresh token moves from the response body to the `HttpOnly` cookie of section 3.2, `POST /auth/refresh` reads it, `POST /auth/logout` clears it, reuse detection clears it. The reuse check made atomic if probe 8b shows a race. CORS given the exact console origin with `AllowCredentials`. Its own tests. Bridge specification, section 3. |
 | 2 | `UserManagementAPI` and Render | Every item on the API repository's list of unverified claims closed or deferred by name; the API's documentation corrected where Gate 0 contradicted it; realistic data seeded into production once. Bridge specification section 4. |
-| 3 | Local | Console pointed at the local API over `localhost`, no dev proxy. Full flow verified by hand. |
+| 3 | Local | First the mock brought to the API's M5 behaviour and the types regenerated from the deployed document, then the API's CORS for the dev origin. Console pointed at the local API over `localhost`, no dev proxy. Full flow verified by hand. |
 | 4 | Infrastructure | Domain registered. `console.<domain>` → Cloudflare Pages, `api.<domain>` → Render. `ASPNETCORE_HTTPS_PORT` and the CORS origin updated in the Render dashboard, which does not read `render.yaml`. |
 | 5 | The deployed pair | The live Playwright suite in `e2e/live/`, run on demand. |
 | 6 | `umapi-console` PR 17, `docs/release-1.0` | The live suite from step 5 committed, accessibility pass, README with the architecture diagram, screenshots and the demo credentials, the ADR index, cross-links to the API repository. |
@@ -751,7 +756,7 @@ are coupled, so a skipped check is expensive.
 |---|---|---|
 | 1 | Cookie pull request merged in the API | Its own tests green; `Set-Cookie` observed with every attribute of section 3.2; both refresh fields absent from the login body; two concurrent refreshes produce exactly one 200 |
 | 2 | The API's own loose ends closed in the same session | Every item on the API repository's list of unverified claims ticked with its proof or deferred by name; the API's README and ADRs say what Gate 0 measured; production holds the seeded data and the demo account is still refused a write |
-| 3 | Console against the local API | By hand over `localhost`: login, reload, silent refresh, the refresh race, a domain 409 from a stale second tab, 403 on the demo account, and the self-lock guard if decision 14 added it. CORS exercised against the real origin, not a dev proxy |
+| 3 | Console against the local API | By hand over `localhost`: login, reload, silent refresh, the refresh race, a domain 409 from a stale second tab, 403 on the demo account, and the self-lock guard (row 72). CORS exercised against the real origin, not a dev proxy |
 | 4 | Domain and DNS | `console.<domain>` and `api.<domain>` both resolve and serve TLS; the cookie is observed on a request from the console origin — the step that proves section 3.3 |
 | 5 | The deployed pair | Playwright against the deployed API: the demo account's read-only boundary, a cold start, one full auth cycle |
 | 6 | Presentation | README screenshots taken from the live site; ADR index complete; both repositories link to each other; the live URL opened in a clean browser profile |
@@ -1005,3 +1010,9 @@ pull request that made the change.
 | §5.3, inventory §3.3 | Each change to the view written from the view on screen | Built from the address as last written, kept beside the screen and brought up to date by every navigation, not from the render's query. A status chosen right after a sort, before the sort's navigation had rendered, dropped the sort; the same held for paging, the empty states' actions and the debounced search. Present since PR 12, seen as a test that passed only on retry in PR 16's CI run. React Router's updater form of `setSearchParams` is handed the render's parameters too, so it does not fix it. A unit test makes two changes with no render between them. GitHub #17. |
 | §12 decision 18 | The format fix as decided | As decided: `docs/**/*.md` in `.prettierignore`, which also covers the ten documents on the list, the 23 code and configuration files formatted - 20 gained only their final newline, `Button.tsx`, `Dialog.tsx` and `Table.tsx` also reflowed - and `pnpm format:check` in `build-and-test` after lint. Section 10 gained the row. GitHub #18. |
 | §2, CI | The runner image unstated | Every job on `ubuntu-24.04` instead of `ubuntu-latest`, which GitHub moves to Ubuntu 26 from 2026-10-19. A change of image becomes a pull request rather than a run that turns red on its own. GitHub #18. |
+| §3.2, bridge §2 | The cookie cleared by logout and when reuse is detected | Cleared by logout and by every refusal of a refresh that carried a cookie; never by a 409. The API's #50 (ADR 0019, observed row 70), recorded in bridge §3; the two tables edited together, and the mock follows. Step 3, `fix/mock-api-parity`. |
+| §7 M5 | One console pull request in M5, the plan's PR 17 as GitHub #19 | Step 3 puts console pull requests ahead of PR 17: the mock brought to the API, the regenerated contract, the record of the checks. PR 17 takes the next GitHub number after them. Step 3, `fix/mock-api-parity`. |
+| §7 PR 8, the factories | Addresses transliterate đ as `dj` | `d`, as the API's seed folds addresses (row 73), so `djordjevic` finds no one in either. Step 3, `fix/mock-api-parity`. |
+| §7 PR 8, the mock in `pnpm dev` | A second tab signs in afresh | Since row 70 the second tab's refused refresh clears the cookie both tabs share, so the first tab's session ends at its next refresh. The mock's tokens are kept per tab (`persistence.ts`); the API's are not, so the API keeps both. Step 3, `fix/mock-api-parity`. |
+| §7 PR 8, the mock's headers | Response headers as measured (row 38) | The mock sends no `X-Correlation-Id`, which the API exposes since #50 (row 53's note): the inspector shows it against the API and not against the mock. Deferred by name. Step 3, `fix/mock-api-parity`. |
+| Inventory §3.1 | No state for a deactivated account | `Auth.AccountDeactivated` (row 71) reads as `invalid-credentials`. Unreachable on the demo directory, whose seeded users cannot sign in; the mock refuses its own deactivated users that way. Step 3, `fix/mock-api-parity`. |

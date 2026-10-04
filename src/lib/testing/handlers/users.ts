@@ -90,13 +90,33 @@ function parseStatus(raw: string): UserStatus | undefined {
 }
 
 function notFound(request: Request) {
-  // Row 49: `*.NotFound` is 404. Wording not measured.
+  // Row 49: `*.NotFound` is 404. Wording: row 74.
   return applicationProblem(request, 404, 'User.NotFound', 'The user was not found.');
 }
 
-// Row 49: modifying a deactivated user is 400. Wording not measured.
+// Row 49: modifying a deactivated user is 400. Wording: row 74.
 function deactivated(request: Request) {
-  return applicationProblem(request, 400, 'User.Deactivated', 'The user is deactivated.');
+  return applicationProblem(
+    request,
+    400,
+    'User.Deactivated',
+    'A deactivated user cannot be modified.',
+  );
+}
+
+const FOLDED: Record<string, string> = { đ: 'd', ł: 'l', ß: 'ss' };
+
+/**
+ * Row 73: what the search treats as the same text - lower case, diacritics
+ * removed. The API folds with `unaccent`, which also maps the letters that have
+ * no decomposition: đ, and the mock's Polish ł and German ß.
+ */
+function fold(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[đłß]/g, (character) => FOLDED[character] ?? character)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
 }
 
 function touch(user: MockUser): void {
@@ -138,16 +158,15 @@ export const userHandlers = [
       }
     }
 
-    // Rows 43 and 56: substring, case-insensitive, each field on its own, and no
-    // diacritic folding - `ovic` does not find Petrović.
-    const term = (queryParam(url, 'SearchTerm') ?? '').trim().toLowerCase();
+    // Rows 67 and 73: the term folded once; the email compared as stored, the
+    // full name - first and last joined by a space - folded the same way.
+    const term = fold((queryParam(url, 'SearchTerm') ?? '').trim());
     const matches = [...db().users.values()].filter(
       (user) =>
         (!status || user.status === status) &&
         (term === '' ||
-          [user.email, user.firstName, user.lastName].some((field) =>
-            field.toLowerCase().includes(term),
-          )),
+          user.email.includes(term) ||
+          fold(`${user.firstName} ${user.lastName}`).includes(term)),
     );
 
     const pageSize = Math.min(
@@ -201,7 +220,7 @@ export const userHandlers = [
         request,
         409,
         'User.EmailNotUnique',
-        'The email is already in use.',
+        'A user with this email already exists.',
       ); // Row 49.
     }
     const stamp = new Date(now()).toISOString();
@@ -245,7 +264,7 @@ export const userHandlers = [
         request,
         409,
         'User.EmailNotUnique',
-        'The email is already in use.',
+        'A user with this email already exists.',
       );
     }
     // Rows 26 and 45: no concurrency token and no `If-Match`: last write wins.
@@ -259,13 +278,22 @@ export const userHandlers = [
   http.post(endpoint('/api/v1/users/{id}/lock'), async ({ request, params }) => {
     const access = await guard(request, 'users.lock', 'write');
     if (!access.ok) return access.response;
+    if (params['id'] === access.user.id) {
+      // Row 72: refused before the user is read, so it outranks every other rule.
+      return applicationProblem(
+        request,
+        400,
+        'User.CannotLockSelf',
+        'A user cannot lock their own account.',
+      );
+    }
     const user = findUser(params['id']);
     if (!user) return notFound(request);
     if (user.status === 'Deactivated') return deactivated(request);
     if (user.status === 'Locked') {
       return applicationProblem(request, 409, 'User.AlreadyLocked', 'The user is already locked.'); // Row 49.
     }
-    // Row 50: nothing refuses locking yourself, or the only administrator.
+    // Row 50: nothing refuses locking the only administrator.
     // Row 51: locking revokes no session.
     user.status = 'Locked';
     touch(user);
@@ -333,7 +361,7 @@ export const userHandlers = [
         request,
         400,
         'User.LastRoleCannotBeRemoved',
-        'A user must keep at least one role.',
+        'A user must retain at least one role.',
       );
     }
     user.roles = user.roles.filter((assignment) => assignment.roleId !== roleId);

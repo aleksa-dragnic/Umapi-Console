@@ -13,9 +13,10 @@ import { db, type MockRefreshToken, type RefreshTokenState } from '@/lib/testing
  * Only the tokens are kept. Users and roles are rebuilt from the same seed on
  * every load, so a token's user id still names the same user; changes made to
  * users in the dev server are lost on reload, as before. `sessionStorage`
- * rather than `localStorage`: a new tab starts with an empty table, so it meets
- * the cookie as an unknown token and signs in afresh, while a reload keeps the
- * session.
+ * rather than `localStorage`: a reload keeps the session, while a new tab starts
+ * with an empty table and meets the cookie as an unknown token. Since row 70
+ * that refusal clears the cookie the tabs share, so the first tab's session ends
+ * at its next refresh. The API keeps both: its tokens are not per tab.
  *
  * This is the one file in `src/` allowed to touch browser storage outside a
  * test (`eslint.config.js`). It is mock code, never in a production bundle.

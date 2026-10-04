@@ -237,7 +237,7 @@ describe('the user detail (inventory section 3.4)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     const field = await screen.findByLabelText('Email');
-    expect(field).toHaveAccessibleDescription('The email is already in use.');
+    expect(field).toHaveAccessibleDescription('A user with this email already exists.');
     expect(field).toHaveValue(MOCK_ACCOUNTS.admin.email);
     expect(screen.queryByText(CONFLICT_COPY)).not.toBeInTheDocument();
   });
@@ -383,9 +383,24 @@ describe('lock-user and unlock-user (inventory section 3.6)', () => {
     const dialog = screen.getByRole('dialog');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Lock' }));
 
-    expect(await within(dialog).findByRole('alert')).toHaveTextContent('The user is deactivated.');
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+      'A deactivated user cannot be modified.',
+    );
     expect(within(dialog).queryByRole('button', { name: 'Lock' })).not.toBeInTheDocument();
     expect(within(identity()).getByText('Deactivated')).toBeInTheDocument();
+  });
+
+  it('refused: an administrator locking their own account is told why, and stays Active (row 72)', async () => {
+    await renderDetail(MOCK_ACCOUNTS.admin.id);
+    await userEvent.click(await screen.findByRole('button', { name: 'Lock' }));
+    const dialog = screen.getByRole('dialog');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Lock' }));
+
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+      'A user cannot lock their own account.',
+    );
+    expect(within(dialog).queryByRole('button', { name: 'Lock' })).not.toBeInTheDocument();
+    expect(within(identity()).getByText('Active')).toBeInTheDocument();
   });
 
   it('rate-limited: a 429 holds the action until Retry-After has passed (section 2.7)', async () => {
@@ -543,7 +558,7 @@ describe('remove-role (inventory section 3.6)', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Remove' }));
 
     expect(await within(dialog).findByRole('alert')).toHaveTextContent(
-      'A user must keep at least one role.',
+      'A user must retain at least one role.',
     );
     expect(within(dialog).queryByRole('button', { name: 'Remove' })).not.toBeInTheDocument();
     expect(within(roles()).getByText('Member')).toBeInTheDocument();
