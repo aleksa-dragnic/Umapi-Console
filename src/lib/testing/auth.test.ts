@@ -10,7 +10,7 @@ import { call, claimsOf, json, refresh, refreshCookieOf, signIn } from '@/lib/te
 const login = (email: string, password: string) =>
   call('/api/v1/auth/login', { method: 'POST', ...json({ email, password }) });
 
-describe('mock: login (rows 1-5, section 3.2)', () => {
+describe('mock: login (rows 1-5, 65, 71)', () => {
   it('answers with the access token and its expiry only, and sets the refresh cookie', async () => {
     const response = await login(MOCK_ACCOUNTS.demo.email, MOCK_ACCOUNTS.demo.password);
     expect(response.status).toBe(200);
@@ -69,9 +69,19 @@ describe('mock: login (rows 1-5, section 3.2)', () => {
     expect(response.status).toBe(401);
     expect(await response.json()).toMatchObject({ errorCode: 'Auth.AccountLocked' });
   });
+
+  it('refuses a deactivated account that knows its password, and sets no cookie (row 71)', async () => {
+    const deactivated = buildUsers().find(
+      (user) => user.status === 'Deactivated' && user.password === SYNTHETIC_PASSWORD,
+    );
+    const response = await login(deactivated?.email ?? '', SYNTHETIC_PASSWORD);
+    expect(response.status).toBe(401);
+    expect(await response.json()).toMatchObject({ errorCode: 'Auth.AccountDeactivated' });
+    expect(response.headers.get('Set-Cookie')).toBeNull();
+  });
 });
 
-describe('mock: refresh (rows 6-9, 11, section 3.2)', () => {
+describe('mock: refresh (rows 6-9, 11, 66, 70)', () => {
   it('is a 401 with no cookie, and a 200 with one (Gate 2)', async () => {
     const without = await refresh();
     expect(without.status).toBe(401);
@@ -84,6 +94,19 @@ describe('mock: refresh (rows 6-9, 11, section 3.2)', () => {
       'accessToken',
       'accessTokenExpiresAtUtc',
     ]);
+  });
+
+  it('sets no cookie when it refuses a refresh that sent none (row 70)', async () => {
+    const response = await refresh();
+    expect(response.status).toBe(401);
+    expect(response.headers.get('Set-Cookie')).toBeNull();
+  });
+
+  it('clears the cookie when it refuses one it was sent (row 70)', async () => {
+    const response = await refresh('umapi_rt=not-a-token-the-api-issued');
+    expect(response.status).toBe(401);
+    expect(await response.json()).toMatchObject({ errorCode: 'Auth.InvalidRefreshToken' });
+    expect(response.headers.get('Set-Cookie')).toMatch(/^umapi_rt=;.*Max-Age=0/);
   });
 
   it('rotates the cookie on every refresh', async () => {
@@ -121,6 +144,7 @@ describe('mock: refresh (rows 6-9, 11, section 3.2)', () => {
     expect(outcomes.map((response) => response.status).sort()).toEqual([200, 409]);
     const loser = outcomes.find((response) => response.status === 409);
     expect(await loser?.json()).toMatchObject({ errorCode: 'Concurrency.Conflict' });
+    expect(loser?.headers.get('Set-Cookie')).toBeNull(); // Row 70.
     expect((await refresh()).status).toBe(200);
   });
 
@@ -152,6 +176,7 @@ describe('mock: refresh (rows 6-9, 11, section 3.2)', () => {
     const refused = await refresh(`umapi_rt=${cookie}`);
     expect(refused.status).toBe(401);
     expect(await refused.json()).toMatchObject({ errorCode: 'Auth.AccountLocked' });
+    expect(refused.headers.get('Set-Cookie')).toContain('Max-Age=0'); // Row 70.
     const read = await call('/api/v1/users', {
       headers: { Authorization: `Bearer ${accessToken}` },
     });

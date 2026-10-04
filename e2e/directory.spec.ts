@@ -69,9 +69,10 @@ test('a search with no match repeats the term as sent, and clears', async ({ pag
   await signInAsDemo(page, '/users');
   await expect(results(page)).toHaveText('200 · 130 results');
 
-  await page.getByLabel('Search').fill('Marko Petrović');
+  // Row 73: Đ folds to d, so the spelling with dj finds no Đorđević.
+  await page.getByLabel('Search').fill('djordjevic');
 
-  await expect(page.getByText('No users match "Marko Petrović".')).toBeVisible();
+  await expect(page.getByText('No users match "djordjevic".')).toBeVisible();
   await expect(results(page)).toHaveText('200 · 0 results');
 
   await page.getByRole('button', { name: 'Clear search' }).click();

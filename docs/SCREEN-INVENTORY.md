@@ -75,7 +75,7 @@ Requests that fail together wait for one refresh and replay behind it (ADR 0008)
 
 | | |
 |---|---|
-| Trigger | Refresh returns 401: with `errorCode` `Auth.InvalidRefreshToken`, `Auth.AccountLocked` (the account was locked since sign-in, row 51) or none, or with `Auth.RefreshTokenReused` (observed rows 7, 8, 34) |
+| Trigger | Refresh returns 401: with `errorCode` `Auth.InvalidRefreshToken`, `Auth.AccountLocked` (the account was locked since sign-in, row 51), `Auth.AccountDeactivated` (row 71) or none, or with `Auth.RefreshTokenReused` (observed rows 7, 8, 34). Every one of them clears the cookie (row 70) |
 | Renders | Everything is cleared from memory and the router navigates to `/sign-in`, with a banner on that screen: *Your session ended. Sign in again.* After reuse detection the wording is specific: *This session was ended because a refresh token was used twice. Every session of this account has been revoked.* |
 | The way out | Sign in |
 | Note | The intended destination is kept in the URL as `?next=` and honoured after sign-in. |
@@ -173,7 +173,7 @@ Editorial density. The only screen in the application that uses display type.
 | `ready` | — | Under the heading: *An admin console for UserManagementAPI that does not hide HTTP. Every request it sends is in the inspector, with its status, headers and body, and a copy for curl.* Email, password, submit. Demo credentials printed below the form in mono, and links to both repositories: *Console source*, *API source* (build plan decision 1). | Submit |
 | `submitting` | Submit | Button shows a pending state, fields are `readonly` not disabled, so focus is not lost | Response |
 | `invalid-field` | 422 | Field-level messages taken from the problem details `errors` object, rendered under the field they name — matched case-insensitively, because the API's keys are PascalCase (observed row 19) — in alarm red mono 12px. Focus moves to the first invalid field. A message for a key the form has no field for is shown above the form instead of being dropped. The form sets `noValidate`: the API's 422 is the validation. | Correct and resubmit |
-| `invalid-credentials` | 401 | One message above the form: *Email or password is incorrect.* Never *"user not found"* — that is an account enumeration oracle. The API already answers an unknown email and a wrong password identically (observed row 5); the console adds no distinction. | Retry |
+| `invalid-credentials` | 401 | One message above the form: *Email or password is incorrect.* Never *"user not found"* — that is an account enumeration oracle. The API already answers an unknown email and a wrong password identically (observed row 5); the console adds no distinction. A deactivated account that knows its password, `Auth.AccountDeactivated` (row 71), lands here too; no account in the demo directory can meet it (row 67). | Retry |
 | `account-locked` | 401 with `errorCode` `Auth.AccountLocked` | One message above the form: *This account is locked. An administrator can unlock it.* Chosen by `errorCode`, never by `detail`. The console repeats what the API chose to say; whether the API checks the lock before or after the password - which decides whether this is an enumeration oracle - is not measured, and is on the API's own list. The mock checks the password first (row 51, wording not measured). | Contact an administrator |
 | `failed` | No response, or any status without a row above | One message above the form: the status and `title` (*The API answered 503 Service Unavailable.*), or *The console cannot reach the API.*; a `traceId`, when the body has one, beneath it in mono. No pointer to the inspector: it is behind the login (section 3.8) | Resubmit |
 | `rate-limited` | 429 | §2.7 | Wait |
@@ -199,12 +199,11 @@ Application density. The screen the project is judged on.
 
 **Toolbar states.** The search input is debounced at 300 ms; the debounce is
 visible as a pending dot in the footer rather than hidden. The term is sent as
-`searchTerm`, a case-insensitive substring match on email, first and last name
-that does **not** fold diacritics (observed row 43): `ovic` does not match the
-name Petrović, though it finds him through an ASCII address such as
-`marko.petrovic@…`.
-It also compares one field at a time (row 56): `Petrović` finds Marko
-Petrović, `Marko Petrović` finds no one.
+`searchTerm`, a substring match that folds case and diacritics (observed rows
+67, 73): `petrovic` finds Petrović, `dordevic` finds Đorđević, and
+`djordjevic` finds no one, because Đ folds to d. It matches the email, and the
+full name as first and last joined by a space: `Marko Petrović` finds Marko
+Petrović, `Petrović Marko` finds no one.
 The `empty-search` copy repeats the term exactly as sent, so the reason is
 visible. Sorting is restricted to the API's whitelisted fields — `email`,
 `firstName`, `lastName`, `status`, `createdAt` (row 47) — and an unsortable
@@ -277,7 +276,7 @@ Deactivated. See the design decisions, section 10.
 | `open` | **Lock** | Titled *Lock Marko Petrović*. The consequence in plain words: *Locking Marko Petrović refuses their next sign-in and ends the session they have within fifteen minutes. Unlocking reverses it.* (Locking does not revoke sessions at once; observed row 51.) Confirm is a ghost control with an alarm-red border. Focus starts on **Cancel**, not on the destructive control. | Confirm or cancel |
 | `open` | **Unlock** | Titled *Unlock Marko Petrović*: *Unlocking Marko Petrović lets them sign in again.* Not destructive: the confirm control is a plain ghost, and focus starts on it. | Confirm or cancel |
 | `open` | **Remove** on a role | Titled *Remove Support from Marko Petrović*: *Marko Petrović will no longer hold Support. A user keeps at least one role: the API refuses to remove the last.* Destructive, like the lock: alarm-red border, focus on **Cancel**. | Confirm or cancel |
-| `refused` | The API refuses: locking yourself, once decision 14 adds that rule in M5 (today nothing refuses it, row 50); unlocking a user who is not locked, `User.NotLocked`; any of them on a deactivated user, `User.Deactivated`; or, in the remove-role dialog, removing a user's last role — `User.LastRoleCannotBeRemoved`, 400 | The domain rule stated as the API returned it, not paraphrased. The confirm control leaves; **Cancel** stays. | Cancel |
+| `refused` | The API refuses: locking yourself, `User.CannotLockSelf`, 400 (row 72); unlocking a user who is not locked, `User.NotLocked`; any of them on a deactivated user, `User.Deactivated`; or, in the remove-role dialog, removing a user's last role — `User.LastRoleCannotBeRemoved`, 400 | The domain rule stated as the API returned it, not paraphrased. The confirm control leaves; **Cancel** stays. | Cancel |
 | `submitting` / `conflict` / `forbidden` / `error` | As in section 3.5: `User.AlreadyLocked` is the conflict here | | |
 
 ### 3.7 `roles` — read-only list
@@ -315,11 +314,12 @@ it already held.*
 
 **Which headers can be shown.** A browser reads only the response headers CORS
 exposes (observed row 53): `ETag`, `X-Pagination`, `Retry-After`,
-`api-supported-versions`, `api-deprecated-versions`, and the CORS-safelisted
-ones such as `Content-Type` and `Cache-Control`. The inspector shows those, and a
+`api-supported-versions`, `api-deprecated-versions`, `X-Correlation-Id` since
+the API's #50, and the CORS-safelisted ones such as `Content-Type` and
+`Cache-Control`. The inspector shows those, and a
 line under the panes says the rest are withheld rather than absent: *Response
 headers not listed are withheld by the API's CORS policy, not absent.*
-`X-Correlation-Id` joins the list when decision 15 exposes it in M5.
+The mock does not send `X-Correlation-Id` (build plan section 14).
 
 **No credential is kept.** The record is written at the transport (ADR 0014),
 and at that moment the `Authorization` header becomes `Bearer $TOKEN` and, in

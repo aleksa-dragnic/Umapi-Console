@@ -21,7 +21,7 @@ const pagination = (response: Response) =>
 const emails = async (response: Response) =>
   ((await response.json()) as Array<{ email: string }>).map((user) => user.email);
 
-describe('mock: the user directory (rows 12-21, 43, 47, 56)', () => {
+describe('mock: the user directory (rows 12-21, 47, 67, 73)', () => {
   it('answers a bare array with pagination in a camelCase header, ten per page by default', async () => {
     const response = await list('');
     const body = (await response.json()) as unknown[];
@@ -89,7 +89,7 @@ describe('mock: the user directory (rows 12-21, 43, 47, 56)', () => {
     });
   });
 
-  it('searches each field on its own, ignoring case but not diacritics', async () => {
+  it('folds case and diacritics, and matches the full name (rows 67, 73)', async () => {
     const search = async (term: string) => {
       const response = await list(`?pageSize=50&searchTerm=${encodeURIComponent(term)}`);
       return {
@@ -103,17 +103,27 @@ describe('mock: the user directory (rows 12-21, 43, 47, 56)', () => {
     };
     expect((await search('ADMIN')).total).toBe((await search('admin')).total);
     expect((await search('reader')).total).toBe(1);
-    expect((await search('demo reader')).total).toBe(0);
+    expect((await search('demo reader')).total).toBe(1);
+    expect((await search('reader demo')).total).toBe(0);
     expect((await search('zzz')).total).toBe(0);
+    expect((await search('systém')).users.map((user) => user.email)).toEqual([
+      MOCK_ACCOUNTS.admin.email,
+    ]);
 
-    // Names keep their diacritics; addresses are ASCII. So `ović` finds people
-    // by name, and `ovic` finds them only through the address, never the name.
-    const accented = await search('ović');
-    expect(accented.total).toBeGreaterThan(0);
-    expect(accented.users.every((user) => !user.email.includes('ović'))).toBe(true);
+    // Folding is symmetric: the accented and the plain term find the same people.
     const plain = await search('ovic');
-    expect(plain.users.every((user) => user.email.includes('ovic'))).toBe(true);
+    expect(plain.total).toBeGreaterThan(0);
+    expect((await search('ović')).total).toBe(plain.total);
     expect((await search('ĆIRIĆ')).total).toBe((await search('ćirić')).total);
+
+    // Đ has no decomposition; it folds to d, as the API's seed folds addresses.
+    const djordjevic = buildUsers().filter((user) => user.lastName === 'Đorđević');
+    expect(djordjevic.length).toBeGreaterThan(0);
+    expect((await search('dordevic')).total).toBe(djordjevic.length);
+    expect((await search('djordjevic')).total).toBe(0);
+    const [first] = djordjevic;
+    const fullName = await search(`${first?.firstName} ${first?.lastName}`);
+    expect(fullName.users.map((user) => user.email)).toContain(first?.email);
   });
 
   it('answers the detail with the v1 body, and an unknown id with 404', async () => {
@@ -215,7 +225,10 @@ describe('mock: caching and writes (rows 22-27, 49, 57, 58)', () => {
   });
 
   it('lets an administrator lock and unlock, and assign and remove a role', async () => {
-    const active = buildUsers().find((user) => user.status === 'Active' && user.roles.length === 1);
+    const active = buildUsers().find(
+      (user) =>
+        user.status === 'Active' && user.roles.length === 1 && user.id !== MOCK_ACCOUNTS.admin.id,
+    );
     const supportId = ROLES[1]?.id ?? '';
     expect(
       (await call(`/api/v1/users/${active?.id}/lock`, { method: 'POST', headers: admin.auth }))
@@ -241,6 +254,19 @@ describe('mock: caching and writes (rows 22-27, 49, 57, 58)', () => {
         })
       ).status,
     ).toBe(204);
+  });
+
+  it('refuses an administrator locking their own account before reading it (row 72)', async () => {
+    const response = await call(`/api/v1/users/${MOCK_ACCOUNTS.admin.id}/lock`, {
+      method: 'POST',
+      headers: admin.auth,
+    });
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+      errorCode: 'User.CannotLockSelf',
+      detail: 'A user cannot lock their own account.',
+    });
+    expect((await signIn(MOCK_ACCOUNTS.admin)).accessToken).toBeTruthy();
   });
 
   it('lists roles with their permissions', async () => {
