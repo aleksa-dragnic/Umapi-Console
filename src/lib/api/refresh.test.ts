@@ -1,5 +1,5 @@
 import { currentAccessToken, setAccessToken } from '@/lib/api/access-token';
-import { authApi } from '@/lib/api/auth-contract';
+import { authApi } from '@/lib/api/auth-client';
 import { api } from '@/lib/api/client';
 import { DEMO_ACCOUNT } from '@/lib/api/demo-account';
 import type { Problem } from '@/lib/api/problem';

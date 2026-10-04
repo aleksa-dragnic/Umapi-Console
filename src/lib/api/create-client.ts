@@ -16,8 +16,7 @@ export const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL || DEPLOYE
 export type Schema<K extends keyof components['schemas']> = components['schemas'][K];
 
 /**
- * Creates a typed client for the API. The paths default to the generated
- * document; `auth-contract.ts` passes its own until M5.
+ * Creates a typed client for the API, its paths from the generated document.
  *
  * `credentials: 'include'` is set once, here, so the refresh cookie travels on
  * every call to the API origin (build plan section 3.2).
@@ -37,8 +36,8 @@ export type Schema<K extends keyof components['schemas']> = components['schemas'
  * call.
  *
  * This file imports nothing from `lib/api` that makes a request, so the auth
- * contract's client and the application's client can both be built from it
- * without a cycle: the application's client refreshes through the auth one.
+ * client and the application's client can both be built from it without a
+ * cycle: the application's client refreshes through the auth one.
  */
 export function createApiClient<Paths extends object = paths>(baseUrl: string = API_BASE_URL) {
   return createClient<Paths>({
