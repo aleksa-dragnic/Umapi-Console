@@ -1,6 +1,6 @@
 import { shellWord, toCurl } from '@/features/inspector/curl';
 import { setAccessToken } from '@/lib/api/access-token';
-import { authApi } from '@/lib/api/auth-contract';
+import { authApi } from '@/lib/api/auth-client';
 import { clearCaptures, currentCaptures } from '@/lib/api/capture';
 import { api } from '@/lib/api/client';
 import { MOCK_ACCOUNTS } from '@/lib/testing/mock';

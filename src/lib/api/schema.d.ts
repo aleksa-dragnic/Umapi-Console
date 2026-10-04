@@ -52,13 +52,7 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["RefreshTokenRequest"];
-                    "text/json": components["schemas"]["RefreshTokenRequest"];
-                    "application/*+json": components["schemas"]["RefreshTokenRequest"];
-                };
-            };
+            requestBody?: never;
             responses: {
                 /** @description OK */
                 200: {
@@ -80,8 +74,8 @@ export interface paths {
                         "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Unprocessable Entity */
-                422: {
+                /** @description Conflict */
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -114,13 +108,7 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["RefreshTokenRequest"];
-                    "text/json": components["schemas"]["RefreshTokenRequest"];
-                    "application/*+json": components["schemas"]["RefreshTokenRequest"];
-                };
-            };
+            requestBody?: never;
             responses: {
                 /** @description No Content */
                 204: {
@@ -129,16 +117,6 @@ export interface paths {
                     };
                     content: {
                         "application/json": unknown;
-                    };
-                };
-                /** @description Unprocessable Entity */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                        "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
                     };
                 };
             };
@@ -563,9 +541,6 @@ export interface components {
             detail?: null | string;
             instance?: null | string;
         };
-        RefreshTokenRequest: {
-            refreshToken: string;
-        };
         RegisterUserRequest: {
             email: string;
             firstName: string;
@@ -585,9 +560,6 @@ export interface components {
             accessToken: string;
             /** Format: date-time */
             accessTokenExpiresAtUtc: string;
-            refreshToken: string;
-            /** Format: date-time */
-            refreshTokenExpiresAtUtc: string;
         };
         UpdateUserRequest: {
             email: string;
@@ -1128,6 +1100,16 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                    "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
                 };
             };
             /** @description Unauthorized */

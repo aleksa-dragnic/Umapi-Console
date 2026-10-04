@@ -1,4 +1,5 @@
-import { authApi, type LoginRequest } from '@/lib/api/auth-contract';
+import { authApi } from '@/lib/api/auth-client';
+import type { Schema } from '@/lib/api/create-client';
 import type { Problem } from '@/lib/api/problem';
 import { settle, type AuthFailure, type AuthResult } from '@/lib/api/refresh';
 
@@ -11,13 +12,13 @@ export { requestRefresh } from '@/lib/api/refresh';
 export type { AuthFailure, AuthResult };
 
 /** `POST /auth/login`. On success the API also sets the refresh cookie. */
-export function requestSignIn(credentials: LoginRequest): Promise<AuthResult> {
+export function requestSignIn(credentials: Schema<'LoginRequest'>): Promise<AuthResult> {
   return settle(() => authApi.POST('/api/v1/auth/login', { body: credentials }));
 }
 
 /**
  * `POST /auth/logout`, with the cookie as the credential: the API revokes the
- * token it is given and clears the cookie (observed row 54, section 3.2). The
+ * token it is given and clears the cookie (observed row 70, section 3.2). The
  * answer changes nothing the console does - the session in memory is cleared
  * either way - so it is not returned.
  */

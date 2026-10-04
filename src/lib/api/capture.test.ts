@@ -1,7 +1,7 @@
 import { http, HttpResponse } from 'msw';
 
 import { setAccessToken } from '@/lib/api/access-token';
-import { authApi } from '@/lib/api/auth-contract';
+import { authApi } from '@/lib/api/auth-client';
 import {
   BODY_LIMIT_BYTES,
   captureExchange,
