@@ -188,8 +188,10 @@ const LAST_NAMES = [
   'Krajnc',
 ] as const;
 
+// Row 73: addresses are folded the way the API's seed folds them, so đ is d
+// and "djordjevic" finds no Đorđević here either.
 const ASCII: Record<string, string> = {
-  đ: 'dj',
+  đ: 'd',
   ł: 'l',
   ș: 's',
   ț: 't',

@@ -8,11 +8,11 @@ import { REFRESH_TOKEN_SECONDS, issueAccessToken, issueRefreshToken } from '@/li
 import type { MockUser } from '@/lib/testing/factories';
 
 /**
- * The auth contract of build plan section 3.2, which the API adopts in M5: the
- * refresh token travels only in the `umapi_rt` cookie, and the login and refresh
- * bodies carry the access token and its expiry, nothing else. Everything else
- * here - status codes, error codes, rotation, reuse - is what the instance does
- * today (rows 1-11).
+ * The auth contract of build plan section 3.2, which the API adopted in #50
+ * (rows 65 and 66): the refresh token travels only in the `umapi_rt` cookie,
+ * and the login and refresh bodies carry the access token and its expiry,
+ * nothing else. Status codes, error codes, rotation and reuse are rows 1-11;
+ * which refusals clear the cookie is row 70.
  */
 
 export const REFRESH_COOKIE = 'umapi_rt';
@@ -37,19 +37,35 @@ function tokenResponse(user: MockUser) {
   });
 }
 
-// Row 8, and section 3.2's "no cookie": the same answer, so neither says why.
-function invalidRefreshToken(request: Request) {
-  return applicationProblem(
-    request,
-    401,
-    'Auth.InvalidRefreshToken',
-    'The refresh token is not valid.',
-  );
+const INVALID_REFRESH_TOKEN = [
+  'Auth.InvalidRefreshToken',
+  'The refresh token is not valid.',
+] as const;
+
+// Rows 51 and 71: the two refusals of a user who proved who they are.
+const ACCOUNT_LOCKED = ['Auth.AccountLocked', 'The account is locked.'] as const;
+const ACCOUNT_DEACTIVATED = [
+  'Auth.AccountDeactivated',
+  'The account has been deactivated.',
+] as const;
+
+type Refusal = readonly [errorCode: string, detail: string];
+
+function refusal(request: Request, [errorCode, detail]: Refusal) {
+  return applicationProblem(request, 401, errorCode, detail);
 }
 
-// Row 51. Wording not measured.
-function accountLocked(request: Request) {
-  return applicationProblem(request, 401, 'Auth.AccountLocked', 'The account is locked.');
+// Row 70: once a cookie was read, every refusal of the refresh clears it.
+function refusedRefresh(request: Request, [errorCode, detail]: Refusal) {
+  return applicationProblem(request, 401, errorCode, detail, undefined, {
+    'Set-Cookie': clearRefreshCookie(),
+  });
+}
+
+function loginRefusal(user: MockUser): Refusal | undefined {
+  if (user.status === 'Locked') return ACCOUNT_LOCKED;
+  if (user.status === 'Deactivated') return ACCOUNT_DEACTIVATED;
+  return undefined;
 }
 
 export const authHandlers = [
@@ -81,10 +97,11 @@ export const authHandlers = [
         'The email or password is incorrect.',
       );
     }
-    if (user.status === 'Locked') {
-      return accountLocked(request);
+    const refused = loginRefusal(user);
+    if (refused) {
+      return refusal(request, refused); // Rows 51 and 71.
     }
-    return tokenResponse(user); // Rows 1-4, and section 3.2.
+    return tokenResponse(user); // Rows 1-4 and 65.
   }),
 
   http.post(endpoint('/api/v1/auth/refresh'), async ({ request, cookies }) => {
@@ -93,20 +110,24 @@ export const authHandlers = [
       return rateLimitProblem(request, RETRY_AFTER_SECONDS); // Row 52: refresh shares login's limit.
     }
     const value = cookies[REFRESH_COOKIE];
-    const token = value ? db().refreshTokens.get(value) : undefined;
+    if (!value) {
+      // Row 70: no cookie is row 8's answer, and there is nothing to clear.
+      return refusal(request, INVALID_REFRESH_TOKEN);
+    }
+    const token = db().refreshTokens.get(value);
     if (!token || token.state === 'revoked' || token.expiresAtMs <= now()) {
-      return invalidRefreshToken(request);
+      return refusedRefresh(request, INVALID_REFRESH_TOKEN); // Rows 8 and 70.
     }
 
     if (token.state === 'rotating') {
       if (refreshRace() === 'conflict') {
         // Rows 11 and 46: the loser collided with the winner's write. Nothing
-        // is revoked. Wording not measured.
+        // is revoked, and row 70: a 409 never clears the cookie.
         return applicationProblem(
           request,
           409,
           'Concurrency.Conflict',
-          'The resource was changed by another request.',
+          'The record was modified by another request. Read it again and retry.',
         );
       }
       // Row 46's other outcome: the loser reads the row after the winner wrote
@@ -115,28 +136,25 @@ export const authHandlers = [
     }
 
     if (token.state === 'rotated') {
-      // Rows 7 and 8: every session of the account is revoked, and section 3.2
-      // clears the cookie.
+      // Rows 7, 8 and 66: every session of the account is revoked, and the
+      // cookie is cleared.
       revokeAllRefreshTokens(token.userId);
-      return applicationProblem(
-        request,
-        401,
+      return refusedRefresh(request, [
         'Auth.RefreshTokenReused',
         'The refresh token was already exchanged. Every session for this account has been revoked.',
-        undefined,
-        { 'Set-Cookie': clearRefreshCookie() },
-      );
+      ]);
     }
     if (token.state !== 'active') {
-      return invalidRefreshToken(request);
+      return refusedRefresh(request, INVALID_REFRESH_TOKEN);
     }
 
     const user = db().users.get(token.userId);
     if (!user) {
-      return invalidRefreshToken(request);
+      return refusedRefresh(request, INVALID_REFRESH_TOKEN);
     }
-    if (user.status === 'Locked') {
-      return accountLocked(request); // Row 51.
+    const refused = loginRefusal(user);
+    if (refused) {
+      return refusedRefresh(request, refused); // Rows 51, 70 and 71.
     }
 
     // Row 6: rotation. The old token is superseded, a new one is issued.
@@ -147,7 +165,7 @@ export const authHandlers = [
     if (token.state !== 'rotating') {
       // Revoked while in flight by a reuse detected elsewhere.
       written();
-      return invalidRefreshToken(request);
+      return refusedRefresh(request, INVALID_REFRESH_TOKEN);
     }
     token.state = 'rotated';
     written();
@@ -164,7 +182,7 @@ export const authHandlers = [
     if (token && token.state === 'active') {
       token.state = 'revoked';
     }
-    // Row 54: 204. Section 3.2: logout clears the cookie.
+    // Row 70: 204, and the cookie is cleared, with or without one.
     return new HttpResponse(null, { status: 204, headers: { 'Set-Cookie': clearRefreshCookie() } });
   }),
 ];
