@@ -1,7 +1,7 @@
 import type { Middleware } from 'openapi-fetch';
 
 import { currentAccessToken, setAccessToken } from '@/lib/api/access-token';
-import { authApi } from '@/lib/api/auth-contract';
+import { authApi } from '@/lib/api/auth-client';
 import { transport } from '@/lib/api/create-client';
 import { retryAfterSeconds, toProblem, type Problem } from '@/lib/api/problem';
 
