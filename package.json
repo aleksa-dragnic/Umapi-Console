@@ -22,7 +22,7 @@
     "test:run": "vitest run",
     "test:e2e": "playwright test",
     "coverage": "vitest run --coverage",
-    "api:generate": "openapi-typescript https://usermanagementapi-j1if.onrender.com/openapi/v1.json -o src/lib/api/schema.d.ts",
+    "api:generate": "openapi-typescript https://api.aleksadragnic.com/openapi/v1.json -o src/lib/api/schema.d.ts",
     "mock:worker": "msw init public --no-save"
   },
   "dependencies": {

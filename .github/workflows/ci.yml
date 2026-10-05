@@ -95,7 +95,7 @@ jobs:
     name: contract
     runs-on: ubuntu-24.04
     env:
-      API_ORIGIN: https://usermanagementapi-j1if.onrender.com
+      API_ORIGIN: https://api.aleksadragnic.com
     steps:
       - uses: actions/checkout@v7
 

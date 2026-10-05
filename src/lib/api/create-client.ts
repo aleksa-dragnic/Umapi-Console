@@ -8,7 +8,7 @@ import type { components, paths } from '@/lib/api/schema';
  * (`pnpm api:generate`), so the types and the default target cannot disagree
  * about which API they describe. See docs/adr/0006-generated-api-types.md.
  */
-export const DEPLOYED_API_ORIGIN = 'https://usermanagementapi-j1if.onrender.com';
+export const DEPLOYED_API_ORIGIN = 'https://api.aleksadragnic.com';
 
 export const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL || DEPLOYED_API_ORIGIN;
 
