@@ -83,6 +83,17 @@ describe('the capture store (inventory section 3.8, ADR 0014)', () => {
     expect(capture?.outcome.kind).toBe('unanswered');
   });
 
+  it('records a request the console cancelled as cancelled, not unanswered', async () => {
+    setAccessToken((await signIn()).accessToken);
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(api.GET('/api/v1/roles', { signal: controller.signal })).rejects.toThrow();
+
+    const [capture] = currentCaptures();
+    expect(capture?.outcome.kind).toBe('cancelled');
+  });
+
   it('keeps no credential: the token, the password and the tokens a body carries become placeholders', async () => {
     const { data } = await authApi.POST('/api/v1/auth/login', {
       body: { email: MOCK_ACCOUNTS.demo.email, password: MOCK_ACCOUNTS.demo.password },

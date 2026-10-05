@@ -45,17 +45,29 @@ export interface StatusDotProps {
    * say what happened.
    */
   unanswered?: boolean | undefined;
+  /**
+   * The console cancelled the request before an answer arrived. Neutral too,
+   * and named, so it is not read as a request the API failed to answer.
+   */
+  cancelled?: boolean | undefined;
   className?: string | undefined;
 }
 
-export function StatusDot({ status, unanswered = false, className }: StatusDotProps) {
-  const responseClass = unanswered ? 'pending' : responseClassOf(status);
+export function StatusDot({
+  status,
+  unanswered = false,
+  cancelled = false,
+  className,
+}: StatusDotProps) {
+  const responseClass = unanswered || cancelled ? 'pending' : responseClassOf(status);
 
   return (
     <span className={['inline-flex items-center gap-app-1', className].filter(Boolean).join(' ')}>
       <span aria-hidden="true" className={`size-2 rounded-pill ${DOT[responseClass]}`} />
       {unanswered ? (
         <span className="font-mono text-app-meta text-fg-muted">no response</span>
+      ) : cancelled ? (
+        <span className="font-mono text-app-meta text-fg-muted">cancelled</span>
       ) : status === undefined ? (
         <span className="font-mono text-app-meta text-fg-muted">pending</span>
       ) : (

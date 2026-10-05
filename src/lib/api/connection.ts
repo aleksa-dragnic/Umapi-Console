@@ -7,7 +7,8 @@ import { currentCaptures, subscribeCaptures } from '@/lib/api/capture';
  * section 2.2. Offline when the browser says so, or when the most recent
  * request to settle got no answer at all - which is how a browser reports a
  * dropped network, DNS and a CORS refusal alike. Read from the transport's
- * record (ADR 0014), so every request counts, whichever screen sent it.
+ * record (ADR 0014), so every request counts, whichever screen sent it - except
+ * one the console cancelled itself, which says nothing about the connection.
  *
  * It ends with the browser's `online` event, or with the next request that is
  * answered: a single unanswered request on a working network must not leave the
@@ -23,7 +24,7 @@ const listeners = new Set<() => void>();
 
 function lastSettled() {
   return currentCaptures()
-    .filter(({ outcome }) => outcome.kind !== 'pending')
+    .filter(({ outcome }) => outcome.kind !== 'pending' && outcome.kind !== 'cancelled')
     .at(-1);
 }
 
