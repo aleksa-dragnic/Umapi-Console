@@ -66,12 +66,16 @@ export interface CapturedResponse {
 
 /**
  * Where a request stands. `unanswered` is a request nothing answered - offline,
- * DNS, or a CORS refusal, which a browser reports the same way.
+ * DNS, or a CORS refusal, which a browser reports the same way. `cancelled` is
+ * a request the console abandoned itself before an answer arrived - a screen
+ * that stopped needing it, or React mounting a screen twice in development - so
+ * it says nothing about the network or the API.
  */
 export type Outcome =
   | { readonly kind: 'pending' }
   | { readonly kind: 'response'; readonly response: CapturedResponse; readonly durationMs: number }
-  | { readonly kind: 'unanswered'; readonly durationMs: number };
+  | { readonly kind: 'unanswered'; readonly durationMs: number }
+  | { readonly kind: 'cancelled'; readonly durationMs: number };
 
 export interface Capture {
   readonly id: number;
@@ -234,7 +238,13 @@ export async function captureExchange(
   try {
     response = await send(request);
   } catch (error) {
-    settle(id, { kind: 'unanswered', durationMs: performance.now() - started });
+    const durationMs = performance.now() - started;
+    settle(
+      id,
+      request.signal.aborted
+        ? { kind: 'cancelled', durationMs }
+        : { kind: 'unanswered', durationMs },
+    );
     throw error;
   }
   const durationMs = performance.now() - started;

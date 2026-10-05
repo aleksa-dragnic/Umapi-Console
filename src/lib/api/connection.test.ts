@@ -21,6 +21,16 @@ describe('the connection (inventory section 2.2)', () => {
     await vi.waitFor(() => expect(isOffline()).toBe(false));
   });
 
+  it('stays online when the console cancels a request itself', async () => {
+    setAccessToken((await signIn()).accessToken);
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(api.GET('/api/v1/roles', { signal: controller.signal })).rejects.toThrow();
+
+    expect(isOffline()).toBe(false);
+  });
+
   it("follows the browser's offline and online events", () => {
     window.dispatchEvent(new Event('offline'));
     expect(isOffline()).toBe(true);

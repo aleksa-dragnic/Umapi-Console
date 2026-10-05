@@ -53,7 +53,7 @@ not thirty seconds.
 
 | | |
 |---|---|
-| Trigger | `navigator.onLine` is false, or a request fails with no response at all |
+| Trigger | `navigator.onLine` is false, or a request fails with no response at all - not one the console cancelled itself (section 3.8), which says nothing about the connection |
 | Renders | A persistent bar under the app shell header: *No connection. The console cannot reach the API.* Mutations are disabled while it shows: every write in the detail, with the reason *No connection to the API.* |
 | The way out | The `online` event, after which the active query refetches; or the next request the API answers, so that one unanswered request on a working network does not mark the console offline for the rest of the visit |
 
@@ -304,6 +304,7 @@ once the session begins.
 | `expanded` | Expand | The request list on the left, newest first, and the request and response panes on the right. One row is always selected: the newest, until another is chosen. The selected row carries a left border in its status colour | Select another, copy, clear |
 | `pending` | A request in flight | The row appears at once with a pending dot and no duration, and the response pane reads *Waiting for the response.* It settles in place. Requests are not held back until they resolve. | Resolves |
 | `unanswered` | Nothing answered the request | The dot and the words *no response*, the time it took, and *No response from the API.* in the response pane | — |
+| `cancelled` | The console cancelled the request before an answer arrived: a screen that no longer needed it, or React mounting a screen twice in development | The dot and the word *cancelled*, the time it took, and *Cancelled by the console before an answer arrived: the screen that sent it no longer needed it.* in the response pane. It never sets §2.2 | — |
 | `truncated` | A body over 64 kB | The first 64 kB with *Response truncated at 64 kB.* | Copy as `curl` |
 
 **Bodies and headers.** A body is rendered as JSON whenever it parses as JSON,
