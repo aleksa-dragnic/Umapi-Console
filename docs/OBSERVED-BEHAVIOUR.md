@@ -15,7 +15,8 @@ change made untrue keeps what was measured and gains a note naming the row that
 replaces it.
 
 Rows 65-69 were measured on 2026-10-03, after the API's #50 and #55-#58
-deployed (API `main` at `097e83f`); each says where.
+deployed (API `main` at `097e83f`); each says where. Rows 76-82 were measured
+by hand against the local API in M5 step 3; their section says how.
 
 Rows 43-55 are different in kind: they were **read from the API's source**,
 not measured. The source says what the code intends; only the deployed instance
@@ -130,11 +131,11 @@ see the note at the top.
 
 | # | Fact | Where in the source | Confirmed live by |
 |---|---|---|---|
-| 70 | Which refusals clear the cookie. A refresh with no cookie, or a blank one, is 401 `Auth.InvalidRefreshToken` and sets none. Once a cookie was read, every refusal clears it: reuse, an unknown, revoked or expired token, a locked or deactivated account. A lost race, 409, is raised as an exception and never clears it, because its answer can land after the winner's new cookie. Logout is 204 and clears it, with or without one. | `AuthController.Refresh` and `Logout`, `RefreshTokenCookie`, `RefreshCookieTests`, `ConcurrentRefreshTests`; API ADR 0019 | Row 66 for reuse; the rest in M5 step 3 |
+| 70 | Which refusals clear the cookie. A refresh with no cookie, or a blank one, is 401 `Auth.InvalidRefreshToken` and sets none. Once a cookie was read, every refusal clears it: reuse, an unknown, revoked or expired token, a locked or deactivated account. A lost race, 409, is raised as an exception and never clears it, because its answer can land after the winner's new cookie. Logout is 204 and clears it, with or without one. | `AuthController.Refresh` and `Logout`, `RefreshTokenCookie`, `RefreshCookieTests`, `ConcurrentRefreshTests`; API ADR 0019 | Row 66 for reuse, row 78 for the 409; the other refusals were not met by hand |
 | 71 | A user who proves their password is still refused at login and at refresh: Locked is 401 `Auth.AccountLocked` "The account is locked.", Deactivated is 401 `Auth.AccountDeactivated` "The account has been deactivated." | `User.EnsureCanLogIn`, `LoginCommandHandler`, `RefreshTokenCommandHandler` | Not on the demo directory: no seeded user can sign in (row 67) |
-| 72 | Locking yourself is 400 `User.CannotLockSelf`, "A user cannot lock their own account.", checked against the caller before the user is read, so it comes before `User.NotFound`, `User.Deactivated` and `User.AlreadyLocked`. Since #50. | `LockUserCommandHandler`, `AuthFlowTests` | M5 step 3, by hand |
+| 72 | Locking yourself is 400 `User.CannotLockSelf`, "A user cannot lock their own account.", checked against the caller before the user is read, so it comes before `User.NotFound`, `User.Deactivated` and `User.AlreadyLocked`. Since #50. | `LockUserCommandHandler`, `AuthFlowTests` | Row 81 |
 | 73 | Search since #56: the term is trimmed and folded once - lower case, combining marks dropped after decomposition, đ to d; in SQL, `lower(unaccent(...))`. The email is compared as stored, in lower case; the name as first and last joined by one space, folded. `Marko Petrović` matches, `Petrović Marko` does not. The seed folds addresses the same way, `first.last@example.org`, so Đorđe Đorđević is `dorde.dordevic@…` and `djordjevic` finds no one. | `SearchText`, `UserQueryExtensions.Search`, `DemoDirectorySeeder`; API ADR 0020 | Row 67 |
-| 74 | The `detail` of each refusal the console shows as returned: `User.NotFound` "The user was not found.", `User.Deactivated` "A deactivated user cannot be modified.", `User.AlreadyLocked` "The user is already locked.", `User.NotLocked` "The user is not locked.", `User.EmailNotUnique` "A user with this email already exists.", `User.RoleAlreadyAssigned` "The user already holds this role.", `User.RoleNotAssigned` "The user does not hold this role.", `User.LastRoleCannotBeRemoved` "A user must retain at least one role.", `Role.NotFound` "The role was not found.", and 409 `Concurrency.Conflict` "The record was modified by another request. Read it again and retry." | `User`, `Role`, `ConcurrencyExceptionHandler` | Row 58 for `User.RoleAlreadyAssigned` |
+| 74 | The `detail` of each refusal the console shows as returned: `User.NotFound` "The user was not found.", `User.Deactivated` "A deactivated user cannot be modified.", `User.AlreadyLocked` "The user is already locked.", `User.NotLocked` "The user is not locked.", `User.EmailNotUnique` "A user with this email already exists.", `User.RoleAlreadyAssigned` "The user already holds this role.", `User.RoleNotAssigned` "The user does not hold this role.", `User.LastRoleCannotBeRemoved` "A user must retain at least one role.", `Role.NotFound` "The role was not found.", and 409 `Concurrency.Conflict` "The record was modified by another request. Read it again and retry." | `User`, `Role`, `ConcurrencyExceptionHandler` | Row 58 for `User.RoleAlreadyAssigned`; row 81 for `User.AlreadyLocked` and `User.LastRoleCannotBeRemoved` |
 
 ## The OpenAPI document
 
@@ -153,6 +154,24 @@ document, the mock and the error handling follow these rows.
 | 64 | Query parameters are named in PascalCase | Read `/openapi/v1.json` | `PageNumber`, `PageSize`, `SearchTerm`, `Status`, `OrderBy`; the first two typed `integer \| string`. Rows 13-19 and 56 were measured with camelCase names and bound, so binding ignores case; the typed client sends the document's spelling, which has not itself been sent live. | 2026-09-25 |
 | 75 | The document after #50 | `pnpm api:generate` against the instance | `TokenResponse` has `accessToken` and `accessTokenExpiresAtUtc` only; `RefreshTokenRequest` is gone; refresh and logout take no body. Refresh lists 200, 401 and 409, no longer 422; logout lists 204 only; lock adds 400. Nothing else changed. The committed `schema.d.ts` is this document. | 2026-10-04 |
 
+## The console against the local API (M5 step 3)
+
+Measured by hand on 2026-10-04 and 2026-10-05, from Chrome 154 with DevTools
+and from Windows PowerShell 5.1 with `curl.exe`, against `dotnet run` on
+`http://localhost:5085` - API `main` at `605526d`, Development, Neon `dev` -
+with the console's dev server on `http://localhost:5173` and the mock off.
+These rows describe the local pair, not production, and say where it differs.
+
+| # | Behaviour | Request | Response | Measured |
+|---|---|---|---|---|
+| 76 | CORS for the console's dev origin | `OPTIONS /api/v1/users` with `Origin: http://localhost:5173`, `Access-Control-Request-Method: GET`, `Access-Control-Request-Headers: authorization`; then a login refused for the demo account | 204 with `Access-Control-Allow-Origin: http://localhost:5173`, `Access-Control-Allow-Credentials: true`, `Access-Control-Allow-Headers: Authorization,Content-Type,Accept,If-None-Match`, `Access-Control-Allow-Methods: GET,HEAD,POST,PUT,DELETE,OPTIONS`, no `Max-Age`. The refused login, 401 `Auth.InvalidCredentials`, carries the origin, the credentials and `Access-Control-Expose-Headers: X-Pagination,ETag,Retry-After,X-Correlation-Id,api-supported-versions,api-deprecated-versions`. The origin comes from `appsettings.Development.json` (API #59). | 2026-10-04 |
+| 77 | The cookie in a browser | Sign-in as the administrator, a reload of `/users/{id}`, the browser closed and opened again | Login 200 with `Set-Cookie: umapi_rt=…; max-age=604799; path=/api/v1/auth; secure; samesite=strict; httponly`, no `Domain`. DevTools lists it for `localhost` - a cookie's host has no port - with HttpOnly, Secure and SameSite Strict, for seven days. The reload sends it from port 5173 to 5085 and rotates it, with no sign-in screen; the reopened browser is still signed in. | 2026-10-04 |
+| 78 | The refresh race, from the Session screen | **Race two refreshes**, seven rounds | Every round one 200 and one 409 `Concurrency.Conflict`, the screen in `raced`; the 409 carries no `Set-Cookie` (row 70). No 401 reuse in seven rounds, as in row 11. | 2026-10-05 |
+| 79 | Refresh under the auth limit | An eighth round, after 17 refreshes from one browser in about two minutes | Both 429, and the screen in `unexpected`, stating the pair. A later boot refresh met 429, was sent again after the wait and answered 200 (row 52). | 2026-10-05 |
+| 80 | Neon `dev` | `GET /api/v1/users`; a login as the demo account | 133 users: the 130 seeded, the administrator, and two left from earlier local runs, one on `example.com`. No demo account: the login is 401 `Auth.InvalidCredentials`. `DatabaseSeeder` creates it only where `Seed:DemoPassword` is set, and it is not set for this database; production has it (row 67). | 2026-10-04 |
+| 81 | Refusals, and a 401 replayed, in a browser | Locking yourself; removing a user's last role; locking from a second tab after the first had locked; a read with an access token whose signature was broken by hand | 400 `User.CannotLockSelf` and 400 `User.LastRoleCannotBeRemoved`, each `detail` as in rows 72 and 74, shown in the dialog with only **Cancel**; 409 `User.AlreadyLocked`, "The user is already locked.", shown as the Conflict panel with the record rolled back; the broken token's read 401, one refresh 200, the read replayed 200. | 2026-10-05 |
+| 82 | A 304 to the console's origin | A directory page read again, from the browser | The inspector records `304 GET /api/v1/users`: the browser handed the 304 to the page, which it does only with the CORS headers present (rows 23, 24 were measured without `Origin`). Locally; production is M5 step 5. | 2026-10-05 |
+
 ## Not API behaviour, but measured and relevant
 
 | # | Observation | Consequence |
@@ -166,8 +185,7 @@ document, the mock and the error handling follow these rows.
 | # | What | Probe | Blocks |
 |---|---|---|---|
 | - | Query parameters in the document's PascalCase, live (row 64) | Any probe session | Nothing; binding ignores case |
-| - | A 304 to a browser origin carries the CORS headers (rows 23, 24 were measured without `Origin`; row 53 lists `If-None-Match` as allowed) | The M5 live specs, from the deployed console | Nothing before M5; the mock answers 304 in the browser |
-| - | `User.LastRoleCannotBeRemoved`, and locking oneself (rows 50, 72) | **Not probed against production.** Against the local API in M5 step 3. | Nothing; the dialogs show the `detail` as returned |
+| - | A 304 to a browser origin carries the CORS headers in production (row 82 measured it locally) | The M5 live specs, from the deployed console | Nothing; the mock answers 304 in the browser |
 
 Row 26 needs no probe any more: the source settles it (row 45). Probe 10a ran
 as the first step of PR 7: rows 59-64. Diacritics and the 406 were measured on
