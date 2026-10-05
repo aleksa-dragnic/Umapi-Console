@@ -27,6 +27,8 @@ export const NOT_MODIFIED_BODY_COPY =
 export const NO_BODY_COPY = 'No body.';
 export const PENDING_COPY = 'Waiting for the response.';
 export const UNANSWERED_COPY = 'No response from the API.';
+export const CANCELLED_COPY =
+  'Cancelled by the console before an answer arrived: the screen that sent it no longer needed it.';
 export const COPIED_COPY = 'Copied. Set TOKEN, and PASSWORD for a sign-in, before running it.';
 export const COPY_REFUSED_COPY = 'The browser refused access to the clipboard.';
 
@@ -46,6 +48,7 @@ function Dot({ capture }: { capture: Capture }) {
       className="shrink-0"
       status={outcome.kind === 'response' ? outcome.response.status : undefined}
       unanswered={outcome.kind === 'unanswered'}
+      cancelled={outcome.kind === 'cancelled'}
     />
   );
 }
@@ -71,6 +74,7 @@ function requestText({ request }: Capture): string {
 function responseTitle({ outcome }: Capture): string {
   if (outcome.kind === 'pending') return 'Response';
   if (outcome.kind === 'unanswered') return `No response · ${Math.round(outcome.durationMs)} ms`;
+  if (outcome.kind === 'cancelled') return `Cancelled · ${Math.round(outcome.durationMs)} ms`;
   const { status, statusText } = outcome.response;
   return `${[status, statusText].filter(Boolean).join(' ')} · ${Math.round(outcome.durationMs)} ms`;
 }
@@ -78,6 +82,7 @@ function responseTitle({ outcome }: Capture): string {
 function responseText({ outcome }: Capture): string {
   if (outcome.kind === 'pending') return PENDING_COPY;
   if (outcome.kind === 'unanswered') return UNANSWERED_COPY;
+  if (outcome.kind === 'cancelled') return CANCELLED_COPY;
   const { status, headers, body } = outcome.response;
   const empty = status === 304 ? NOT_MODIFIED_BODY_COPY : NO_BODY_COPY;
   return [headerLines(headers), body === null ? empty : bodyText(body)]

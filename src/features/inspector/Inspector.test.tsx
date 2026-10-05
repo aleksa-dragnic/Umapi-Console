@@ -150,6 +150,18 @@ describe('the inspector (inventory section 3.8)', () => {
     expect(screen.getByText('no response')).toBeInTheDocument();
   });
 
+  it('a request the console cancelled reads "cancelled", not "no response"', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    await captureExchange(new Request(url('/api/v1/users'), { signal: controller.signal }), () =>
+      Promise.reject(new DOMException('The operation was aborted.', 'AbortError')),
+    ).catch(() => undefined);
+    render(<Inspector />);
+
+    expect(screen.getByText('cancelled')).toBeInTheDocument();
+    expect(screen.queryByText('no response')).not.toBeInTheDocument();
+  });
+
   it('copies the selected request as curl, with $TOKEN and not the token', async () => {
     const user = userEvent.setup();
     const token = await signedIn();

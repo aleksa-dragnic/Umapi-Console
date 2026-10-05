@@ -16,7 +16,7 @@ export function durationOf({ outcome }: Capture): string {
   return outcome.kind === 'pending' ? '' : `${Math.round(outcome.durationMs)} ms`;
 }
 
-/** The class a capture is coloured by. A request nothing answered has none. */
+/** The class a capture is coloured by. A request nothing answered, or one cancelled, has none. */
 export function classOf({ outcome }: Capture): ResponseClass {
   return outcome.kind === 'response' ? responseClassOf(outcome.response.status) : 'pending';
 }
