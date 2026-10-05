@@ -11,7 +11,7 @@ import { clearCaptures } from '@/lib/api/capture';
 import { api } from '@/lib/api/client';
 import { MOCK_ACCOUNTS, simulateColdStart } from '@/lib/testing/mock';
 import { signIn } from '@/lib/testing/support';
-import { COLD_START_COPY } from '@/ui/ColdStartNotice';
+import { COLD_START_AFTER_MS, COLD_START_COPY } from '@/ui/ColdStartNotice';
 
 function Screen({ title }: { title: string }) {
   return (
@@ -60,7 +60,9 @@ async function renderShell(entry = '/users') {
       </MemoryRouter>
     </QueryClientProvider>,
   );
-  await screen.findByRole('navigation', { name: 'Console' });
+  // The boot refresh goes through the mock in real time. On a loaded machine it
+  // has taken longer than findBy's default second, so the wait is stated.
+  await screen.findByRole('navigation', { name: 'Console' }, { timeout: 3000 });
 }
 
 const nav = () => screen.getByRole('navigation', { name: 'Console' });
@@ -112,23 +114,41 @@ describe('the shell', () => {
 
   it('cold-start: the line comes with the first slow request and not again this session (section 2.1)', async () => {
     await renderShell();
+    // From here the clock is the test's: the threshold and the mock's cold
+    // start are both timers, so the outcome no longer depends on the machine.
+    vi.useFakeTimers();
+    try {
+      simulateColdStart(1500);
+      let read: Promise<unknown> = Promise.resolve();
+      act(() => {
+        read = api.GET('/api/v1/roles');
+      });
+      await act(() => vi.advanceTimersByTimeAsync(COLD_START_AFTER_MS - 1));
+      expect(screen.queryByText(COLD_START_COPY)).not.toBeInTheDocument();
+      await act(() => vi.advanceTimersByTimeAsync(1));
+      // The line is ColdStartNotice with afterMs 0: it shows on its next tick.
+      await act(() => vi.advanceTimersByTimeAsync(1));
+      expect(screen.getByText(COLD_START_COPY)).toBeInTheDocument();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1500 - COLD_START_AFTER_MS);
+        await read;
+      });
+      expect(screen.queryByText(COLD_START_COPY)).not.toBeInTheDocument();
 
-    simulateColdStart(1500);
-    let read: Promise<unknown> = Promise.resolve();
-    act(() => {
-      read = api.GET('/api/v1/roles');
-    });
-    expect(await screen.findByText(COLD_START_COPY, {}, { timeout: 2000 })).toBeInTheDocument();
-    await act(() => read);
-    await vi.waitFor(() => expect(screen.queryByText(COLD_START_COPY)).not.toBeInTheDocument());
-
-    simulateColdStart(1500);
-    act(() => {
-      read = api.GET('/api/v1/roles');
-    });
-    await act(() => new Promise((resolve) => setTimeout(resolve, 1300)));
-    expect(screen.queryByText(COLD_START_COPY)).not.toBeInTheDocument();
-    await act(() => read);
+      simulateColdStart(1500);
+      act(() => {
+        read = api.GET('/api/v1/roles');
+      });
+      await act(() => vi.advanceTimersByTimeAsync(COLD_START_AFTER_MS + 100));
+      await act(() => vi.advanceTimersByTimeAsync(1));
+      expect(screen.queryByText(COLD_START_COPY)).not.toBeInTheDocument();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1500);
+        await read;
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('error boundary: a screen that fails to render is replaced, and the navigation survives (section 3.11)', async () => {
