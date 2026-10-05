@@ -367,6 +367,10 @@ warns about it.
 | `revoked` | One 200 and one 401 `Auth.RefreshTokenReused` | §2.4 with the reuse wording. The session's record goes with it (section 3.8), so the pair is not kept | Sign in |
 | `unexpected` | Any other pair — two 200s would be an API defect | Both responses, and the pair stated as it arrived | — |
 
+Repeated rounds meet the auth limit: measured in M5 step 3, a pair of 429s reads
+`unexpected`, stated as it arrived, without §2.7's countdown (observed row 79).
+Open for step 6; v1 leaves it.
+
 The copy that surrounds the table. Beside the action: *Sends two refresh
 requests at the same moment with the same cookie - the mistake single-flight
 exists to prevent. The API lets one through and refuses the other, in one of two
