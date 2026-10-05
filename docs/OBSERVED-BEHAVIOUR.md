@@ -16,7 +16,10 @@ replaces it.
 
 Rows 65-69 were measured on 2026-10-03, after the API's #50 and #55-#58
 deployed (API `main` at `097e83f`); each says where. Rows 76-82 were measured
-by hand against the local API in M5 step 3; their section says how.
+by hand against the local API in M5 step 3; their section says how. Rows 83-87
+were measured on 2026-10-05 against the production pair - the API at
+`https://api.aleksadragnic.com`, the same Render service, and the console on
+Cloudflare Pages at `https://console.aleksadragnic.com` - in M5 step 4.
 
 Rows 43-55 are different in kind: they were **read from the API's source**,
 not measured. The source says what the code intends; only the deployed instance
@@ -172,6 +175,23 @@ These rows describe the local pair, not production, and say where it differs.
 | 81 | Refusals, and a 401 replayed, in a browser | Locking yourself; removing a user's last role; locking from a second tab after the first had locked; a read with an access token whose signature was broken by hand | 400 `User.CannotLockSelf` and 400 `User.LastRoleCannotBeRemoved`, each `detail` as in rows 72 and 74, shown in the dialog with only **Cancel**; 409 `User.AlreadyLocked`, "The user is already locked.", shown as the Conflict panel with the record rolled back; the broken token's read 401, one refresh 200, the read replayed 200. | 2026-10-05 |
 | 82 | A 304 to the console's origin | A directory page read again, from the browser | The inspector records `304 GET /api/v1/users`: the browser handed the 304 to the page, which it does only with the CORS headers present (rows 23, 24 were measured without `Origin`). Locally; production is M5 step 5. | 2026-10-05 |
 
+## The console against the deployed API (M5 step 4)
+
+Measured by hand on 2026-10-05, from Chrome 154 with DevTools in an Incognito
+window and from Windows PowerShell 5.1 with `curl.exe`, against API `main` at
+`605526d` on Render, served at `https://api.aleksadragnic.com`, and console
+`main` at `90e40e5` (#24) on Cloudflare Pages, served at
+`https://console.aleksadragnic.com`. Both hostnames are in one Cloudflare zone,
+`aleksadragnic.com`.
+
+| # | Behaviour | Request | Response | Measured |
+|---|---|---|---|---|
+| 83 | `api.aleksadragnic.com`, the same Render service | `Resolve-DnsName -Type CNAME`; `GET /health/ready`; `HEAD` and `GET /openapi/v1.json` | CNAME to `usermanagementapi-j1if.onrender.com`, DNS only, so Render issues the certificate and its own Cloudflare edge is the only one in front (row 39). Ready 200, with `Strict-Transport-Security: max-age=2592000` and `x-render-origin-server: Kestrel` as on the old address, which still answers. `HEAD /openapi/v1.json` is 405 with `Allow: GET`: the document is mapped for `GET` only, which is 200 `application/json;charset=utf-8`. | 2026-10-05 |
+| 84 | The document from the new address | `pnpm exec openapi-typescript https://api.aleksadragnic.com/openapi/v1.json`, written outside the repository | SHA-256 `d5f6178d0e073bacef4bfec09c104d0c3d28cd31d336b3cb0bec59f3c2cf2516`: the committed `schema.d.ts`, byte for byte. The `contract` job agreed on #24 and on `main` after it. | 2026-10-05 |
+| 85 | CORS for the console's production origin | `OPTIONS /api/v1/auth/login` with `Origin: https://console.aleksadragnic.com`, `Access-Control-Request-Method: POST`, `Access-Control-Request-Headers: content-type`; the same with `Origin: https://evil.example` | 204 with `Access-Control-Allow-Origin: https://console.aleksadragnic.com`, `Access-Control-Allow-Credentials: true`, `Access-Control-Allow-Headers: Authorization,Content-Type,Accept,If-None-Match`, `Access-Control-Allow-Methods: GET,HEAD,POST,PUT,DELETE,OPTIONS`, as locally (row 76). The foreign origin: 204 with no `Access-Control-Allow-*` header, so the browser refuses it. | 2026-10-05 |
+| 86 | The cookie from the console's origin, in production | The console opened; a sign-in as the demo account; a reload; a user opened and `/users/{id}` reloaded; sign out; a reload | Boot refresh 401 `application/problem+json`, and the sign-in screen. Login preflight 204, login 200. On reload the refresh is 200 and the page stays signed in: the refresh carries nothing but the cookie, so the 200 is the cookie travelling from `console.aleksadragnic.com` to `api.aleksadragnic.com`, one site (section 3.3). `Set-Cookie: umapi_rt=…; max-age=604799; path=/api/v1/auth; secure; samesite=strict; httponly`, as locally (row 77). `/users/{id}` reloaded: refresh 200, `GET /api/v1/users/{id}` 200, no sign-in screen. Logout 204 with `Set-Cookie: umapi_rt=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/api/v1/auth; secure; samesite=strict; httponly`, and the next refresh 401. Every response carries `Access-Control-Expose-Headers` with its six names. The detail screen shows the demo account's writes disabled, each naming the permission it needs: the visible half of bridge section 5's check 5. | 2026-10-05 |
+| 87 | The console on Cloudflare Pages | `GET /` and `GET /users/00000000-0000-0000-0000-000000000000` with `curl.exe`; the document's headers in DevTools | Both 200 `text/html; charset=utf-8`: with no top-level `404.html`, Pages answers every path with `index.html`. Pages' own headers: `Access-Control-Allow-Origin: *`, `Cache-Control: public, max-age=0, must-revalidate`, `Referrer-Policy: strict-origin-when-cross-origin`, `Server: cloudflare`, `Nel`, `Report-To`. No `Content-Security-Policy`: the console sets no headers of its own yet (build plan section 14). | 2026-10-05 |
+
 ## Not API behaviour, but measured and relevant
 
 | # | Observation | Consequence |
@@ -179,6 +199,9 @@ These rows describe the local pair, not production, and say where it differs.
 | 40 | The development machine's clock ran 1 min 50 s to 2 min 19 s ahead of the server's `Date` header | Expiry is never computed by comparing a server timestamp to the client clock. The session screen counts down `exp - iat` from the moment the response arrived. |
 | 41 | Windows PowerShell 5.1 returns a `byte[]` as `Content` for the vendor media type, and throws on 304 | Probe artefacts only. Decode with `[Text.Encoding]::UTF8.GetString`; read 304 from the exception. A browser `fetch` has neither problem. |
 | 42 | An access token expires mid-session during a long probe run | Every probe block starts with a fresh login. |
+| 88 | Cloudflare's edge injected its Web Analytics beacon into the console's HTML: a `<script>` from `static.cloudflareinsights.com/beacon.min.js` with `"spa":2`, and `POST /cdn-cgi/rum` 204 on the console's own host, 13 in one session and none in the inspector. Only for a request that looks like a browser's: `curl.exe` saw it with `Accept: text/html` and a browser `User-Agent`, not without. The Pages project's Web Analytics was off; the injection was the zone's automatic setup | Removed on 2026-10-05: the zone added under Web Analytics, then **Manage site**, automatic setup disabled; the same `curl.exe` then finds no `cloudflareinsights`. The bundle search in `build-and-test` cannot see it: it reads `dist`, not what the edge serves. |
+| 89 | Cloudflare Pages' build image reads Node from `.nvmrc` and pnpm from `packageManager` (`Detected the following tools from environment: nodejs@24.19.0, pnpm@12.4.2`) and activates that pnpm before the build command | A build command that also ran `npm install --global pnpm@12.4.2` failed with `EEXIST` on `pnpx`. The command is `pnpm install --frozen-lockfile && pnpm build`, with `SKIP_DEPENDENCY_INSTALL=1`; it produced `index-CV8q0mpq.js`, the content hash of the bundle verified locally. |
+| 90 | On 2026-10-05 the dashboard offers Pages only behind "Need to use the legacy Pages workflow?"; its default for a Git repository is a Worker with `wrangler deploy` | The console stays on Pages: it needs no file in the repository, and section 2 of the build plan holds. A Worker with static assets would need a `wrangler` configuration - a later decision, if Pages is withdrawn. |
 
 ## Still to measure
 
