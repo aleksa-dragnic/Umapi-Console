@@ -28,6 +28,10 @@ const baseURL = `http://127.0.0.1:${PORT}`;
 
 export default defineConfig({
   testDir: './e2e',
+  // e2e/live/ runs against the deployed pair, on demand only, through its own
+  // configuration (playwright.live.config.ts). The required e2e check never
+  // runs it: it depends on a free instance waking (build plan section 9).
+  testIgnore: '**/live/**',
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
