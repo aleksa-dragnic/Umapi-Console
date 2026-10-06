@@ -53,7 +53,11 @@ test('the directory pages, answers 304 when read again, and the demo account sen
   await expect(page).toHaveURL('/users?q=reader');
   await page.getByRole('link', { name: DEMO_ACCOUNT.email }).click();
   await expect(page.getByRole('heading', { level: 1, name: DEMO_ACCOUNT.email })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Concurrency' })).toContainText('W/');
+  // The detail has settled once its tag is shown. The API makes strong tags
+  // (row 44) and the edge weakened them when it compressed (row 22); on
+  // 2026-10-06 production served this one strong. The console shows a tag
+  // exactly as received (ADR 0013), so either form is accepted here.
+  await expect(page.getByRole('region', { name: 'Concurrency' })).toContainText(/ETag(W\/)?"/);
 
   const held = 'This account holds users.read, roles.read.';
   const writes = [
