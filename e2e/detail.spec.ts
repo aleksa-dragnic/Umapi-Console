@@ -62,3 +62,18 @@ test('the demo account meets every write disabled, with the permission it needs'
   await page.goBack();
   await expect(page.getByText('304 · 1 result')).toBeVisible();
 });
+
+test('the demo account reads why Remove is disabled, whole, at desktop width', async ({ page }) => {
+  // The roles table kept every cell on one line, so the reason under Remove
+  // ran past the card and the table scrolled sideways even at full width
+  // (found in the README's screenshots, step 6). At 380px it may still scroll.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signInAsDemo(page, '/users?q=reader');
+  await page.getByRole('link', { name: DEMO_ACCOUNT.email }).click();
+
+  const roles = page.getByRole('table', { name: 'Roles' });
+  await expect(roles.getByRole('button', { name: 'Remove Member' })).toBeVisible();
+  const scroller = roles.locator('xpath=..');
+  const overflow = await scroller.evaluate((element) => element.scrollWidth - element.clientWidth);
+  expect(overflow).toBe(0);
+});
