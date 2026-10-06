@@ -1,7 +1,7 @@
 {
   "name": "umapi-console",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "description": "Admin console for UserManagementAPI - a console that does not hide HTTP",
   "license": "MIT",

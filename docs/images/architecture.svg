@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 450" width="760" height="450" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>Umapi Console: how it runs and how it is built</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="760" height="450" fill="#ffffff"/>
+  <text x="24" y="34" font-size="17" font-weight="600" fill="#0f172a">How it runs</text>
+  <text x="24" y="56" font-size="13" fill="#475569">Static files from Cloudflare Pages; every request goes from the browser straight to the API.</text>
+
+  <rect x="24" y="84" width="200" height="86" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="124" y="112" font-size="14" font-weight="600" fill="#431407" text-anchor="middle">Cloudflare Pages</text>
+  <text x="124" y="132" font-size="11" fill="#c2410c" text-anchor="middle">console.aleksadragnic.com</text>
+  <text x="124" y="148" font-size="11" fill="#c2410c" text-anchor="middle">dist/ and public/_headers:</text>
+  <text x="124" y="162" font-size="11" fill="#c2410c" text-anchor="middle">CSP, HSTS, no framing</text>
+
+  <rect x="280" y="84" width="200" height="86" rx="8" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="380" y="112" font-size="14" font-weight="600" fill="#1e1b4b" text-anchor="middle">Browser</text>
+  <text x="380" y="132" font-size="11" fill="#4338ca" text-anchor="middle">React 19 single-page app</text>
+  <text x="380" y="148" font-size="11" fill="#4338ca" text-anchor="middle">access token in memory only,</text>
+  <text x="380" y="162" font-size="11" fill="#4338ca" text-anchor="middle">every request in the inspector</text>
+
+  <rect x="536" y="84" width="200" height="86" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="636" y="112" font-size="14" font-weight="600" fill="#052e16" text-anchor="middle">UserManagementAPI</text>
+  <text x="636" y="132" font-size="11" fill="#15803d" text-anchor="middle">api.aleksadragnic.com, Render</text>
+  <text x="636" y="148" font-size="11" fill="#15803d" text-anchor="middle">CORS: the console's origin only;</text>
+  <text x="636" y="162" font-size="11" fill="#15803d" text-anchor="middle">PostgreSQL on Neon behind it</text>
+
+  <line x1="224" y1="127" x2="274" y2="127" stroke="#334155" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <line x1="480" y1="118" x2="530" y2="118" stroke="#334155" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <line x1="530" y1="140" x2="480" y2="140" stroke="#334155" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+  <text x="380" y="196" font-size="10.5" fill="#475569" text-anchor="middle">Bearer token on every call; the refresh token travels only as the umapi_rt cookie:</text>
+  <text x="380" y="210" font-size="10.5" fill="#475569" text-anchor="middle">HttpOnly, Secure, SameSite=Strict, Path=/api/v1/auth. Reads are conditional: If-None-Match, 304.</text>
+
+  <line x1="24" y1="236" x2="736" y2="236" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="24" y="270" font-size="17" font-weight="600" fill="#0f172a">How it is built</text>
+  <text x="24" y="292" font-size="13" fill="#475569">Imports point one way only, enforced by ESLint (ADR 0003). No feature imports another.</text>
+
+  <rect x="24" y="318" width="160" height="74" rx="8" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="104" y="346" font-size="14" font-weight="600" fill="#1e1b4b" text-anchor="middle">app/</text>
+  <text x="104" y="366" font-size="11" fill="#4338ca" text-anchor="middle">shell, routes,</text>
+  <text x="104" y="380" font-size="11" fill="#4338ca" text-anchor="middle">query client</text>
+
+  <rect x="224" y="318" width="160" height="74" rx="8" fill="#ecfeff" stroke="#0891b2" stroke-width="1.5"/>
+  <text x="304" y="346" font-size="14" font-weight="600" fill="#083344" text-anchor="middle">features/</text>
+  <text x="304" y="366" font-size="11" fill="#0e7490" text-anchor="middle">auth, users,</text>
+  <text x="304" y="380" font-size="11" fill="#0e7490" text-anchor="middle">inspector</text>
+
+  <rect x="424" y="318" width="140" height="74" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="494" y="346" font-size="14" font-weight="600" fill="#052e16" text-anchor="middle">lib/</text>
+  <text x="494" y="366" font-size="11" fill="#15803d" text-anchor="middle">api client, refresh,</text>
+  <text x="494" y="380" font-size="11" fill="#15803d" text-anchor="middle">permissions, record</text>
+
+  <rect x="596" y="318" width="140" height="74" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="666" y="346" font-size="14" font-weight="600" fill="#431407" text-anchor="middle">ui/</text>
+  <text x="666" y="366" font-size="11" fill="#c2410c" text-anchor="middle">components on</text>
+  <text x="666" y="380" font-size="11" fill="#c2410c" text-anchor="middle">design tokens only</text>
+
+  <line x1="184" y1="355" x2="218" y2="355" stroke="#334155" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <line x1="384" y1="355" x2="418" y2="355" stroke="#334155" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <path d="M 304 392 L 304 428 L 666 428 L 666 398" fill="none" stroke="#334155" stroke-width="1.8" marker-end="url(#arrow)"/>
+</svg>
