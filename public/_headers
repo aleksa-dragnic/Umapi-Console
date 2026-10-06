@@ -1,0 +1,9 @@
+# Security headers for every response of the console, applied by Cloudflare
+# Pages from the build output. The API sends the same set on its own responses.
+# What each line allows, and why: docs/adr/0015-the-console-sends-its-own-security-headers.md.
+/*
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self' data:; img-src 'self'; connect-src https://api.aleksadragnic.com; worker-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Strict-Transport-Security: max-age=2592000
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer
