@@ -19,7 +19,9 @@ deployed (API `main` at `097e83f`); each says where. Rows 76-82 were measured
 by hand against the local API in M5 step 3; their section says how. Rows 83-87
 were measured on 2026-10-05 against the production pair - the API at
 `https://api.aleksadragnic.com`, the same Render service, and the console on
-Cloudflare Pages at `https://console.aleksadragnic.com` - in M5 step 4.
+Cloudflare Pages at `https://console.aleksadragnic.com` - in M5 step 4. Rows
+91-94 were measured on 2026-10-06 against the same pair, after the console's
+own headers (#26) and with its live suite (#27), in M5 step 5.
 
 Rows 43-55 are different in kind: they were **read from the API's source**,
 not measured. The source says what the code intends; only the deployed instance
@@ -66,7 +68,7 @@ same kind, read from API `main` at `097e83f` on 2026-10-04.
 
 | # | Behaviour | Request | Response | Measured |
 |---|---|---|---|---|
-| 22 | List responses carry a weak ETag | `GET /users?pageNumber=1` | `ETag: W/"..."`, `Vary: Accept,Accept-Encoding`, `Cache-Control: private, no-cache`. The API generates a **strong** tag (row 44); the `W/` is most likely added by the edge in front of it when it compresses the body (row 39). `If-None-Match` still works because the API compares weakly. | 2026-09-23 |
+| 22 | List responses carry a weak ETag | `GET /users?pageNumber=1` | `ETag: W/"..."`, `Vary: Accept,Accept-Encoding`, `Cache-Control: private, no-cache`. The API generates a **strong** tag (row 44); the `W/` is most likely added by the edge in front of it when it compresses the body (row 39). `If-None-Match` still works because the API compares weakly. **Measured again on 2026-10-06 (row 92): the guess is the wrong way round. The tag is weak when the body reaches the client uncompressed, as it did for PowerShell here, and strong with `Content-Encoding: br`, as a browser receives it.** | 2026-09-23 |
 | 23 | Conditional GET on the list | Repeat with `If-None-Match: <etag>` | 304, empty body | 2026-09-23 |
 | 24 | Conditional GET on the detail | `GET /users/{id}`, repeat with `If-None-Match` | 200 with a weak ETag, then 304 with an empty body | 2026-09-23 |
 | 25 | The ETag changes after a write | As administrator, `PUT /api/v1/users/{id}` changing the demo user's last name, then `GET` of the detail and of the list's first page; reverted afterwards | Both tags change, the detail's and the list's. The tag is a hash of the body (row 44), so any visible change moves it. | 2026-09-25 |
@@ -173,7 +175,7 @@ These rows describe the local pair, not production, and say where it differs.
 | 79 | Refresh under the auth limit | An eighth round, after 17 refreshes from one browser in about two minutes | Both 429, and the screen in `unexpected`, stating the pair. A later boot refresh met 429, was sent again after the wait and answered 200 (row 52). | 2026-10-05 |
 | 80 | Neon `dev` | `GET /api/v1/users`; a login as the demo account | 133 users: the 130 seeded, the administrator, and two left from earlier local runs, one on `example.com`. No demo account: the login is 401 `Auth.InvalidCredentials`. `DatabaseSeeder` creates it only where `Seed:DemoPassword` is set, and it is not set for this database; production has it (row 67). | 2026-10-04 |
 | 81 | Refusals, and a 401 replayed, in a browser | Locking yourself; removing a user's last role; locking from a second tab after the first had locked; a read with an access token whose signature was broken by hand | 400 `User.CannotLockSelf` and 400 `User.LastRoleCannotBeRemoved`, each `detail` as in rows 72 and 74, shown in the dialog with only **Cancel**; 409 `User.AlreadyLocked`, "The user is already locked.", shown as the Conflict panel with the record rolled back; the broken token's read 401, one refresh 200, the read replayed 200. | 2026-10-05 |
-| 82 | A 304 to the console's origin | A directory page read again, from the browser | The inspector records `304 GET /api/v1/users`: the browser handed the 304 to the page, which it does only with the CORS headers present (rows 23, 24 were measured without `Origin`). Locally; production is M5 step 5. | 2026-10-05 |
+| 82 | A 304 to the console's origin | A directory page read again, from the browser | The inspector records `304 GET /api/v1/users`: the browser handed the 304 to the page, which it does only with the CORS headers present (rows 23, 24 were measured without `Origin`). Locally; production is M5 step 5. **In production on 2026-10-06: rows 93 and 94.** | 2026-10-05 |
 
 ## The console against the deployed API (M5 step 4)
 
@@ -192,6 +194,22 @@ window and from Windows PowerShell 5.1 with `curl.exe`, against API `main` at
 | 86 | The cookie from the console's origin, in production | The console opened; a sign-in as the demo account; a reload; a user opened and `/users/{id}` reloaded; sign out; a reload | Boot refresh 401 `application/problem+json`, and the sign-in screen. Login preflight 204, login 200. On reload the refresh is 200 and the page stays signed in: the refresh carries nothing but the cookie, so the 200 is the cookie travelling from `console.aleksadragnic.com` to `api.aleksadragnic.com`, one site (section 3.3). `Set-Cookie: umapi_rt=…; max-age=604799; path=/api/v1/auth; secure; samesite=strict; httponly`, as locally (row 77). `/users/{id}` reloaded: refresh 200, `GET /api/v1/users/{id}` 200, no sign-in screen. Logout 204 with `Set-Cookie: umapi_rt=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/api/v1/auth; secure; samesite=strict; httponly`, and the next refresh 401. Every response carries `Access-Control-Expose-Headers` with its six names. The detail screen shows the demo account's writes disabled, each naming the permission it needs: the visible half of bridge section 5's check 5. | 2026-10-05 |
 | 87 | The console on Cloudflare Pages | `GET /` and `GET /users/00000000-0000-0000-0000-000000000000` with `curl.exe`; the document's headers in DevTools | Both 200 `text/html; charset=utf-8`: with no top-level `404.html`, Pages answers every path with `index.html`. Pages' own headers: `Access-Control-Allow-Origin: *`, `Cache-Control: public, max-age=0, must-revalidate`, `Referrer-Policy: strict-origin-when-cross-origin`, `Server: cloudflare`, `Nel`, `Report-To`. No `Content-Security-Policy`: the console sets no headers of its own yet (build plan section 14). **On 2026-10-06 `GET /` and `GET /assets/index-CV8q0mpq.js` also carried `X-Content-Type-Options: nosniff`, which this row did not list, and still no `Content-Security-Policy` or `Strict-Transport-Security`. Since #26 the console sends its own headers from `public/_headers` (ADR 0015).** | 2026-10-05 |
 
+## The deployed pair (M5 step 5)
+
+Measured on 2026-10-06 against API `main` at `a8cd92e` on Render, at
+`https://api.aleksadragnic.com`, and console `main` at `4721fae` (#26) on
+Cloudflare Pages, at `https://console.aleksadragnic.com`: from Windows
+PowerShell 5.1 with `curl.exe`, with the live suite of #27 (`pnpm test:live`,
+Playwright 1.63's Chromium), and by hand in Chrome with DevTools in an
+Incognito window, as the demo account.
+
+| # | Behaviour | Request | Response | Measured |
+|---|---|---|---|---|
+| 91 | The console's own headers on Pages, since #26 | `curl.exe -D -` with `Accept: text/html` and a browser `User-Agent`: `GET /`, `GET /users/00000000-0000-0000-0000-000000000000`, `GET /assets/index-CV8q0mpq.js` with and without `?after=26`, a font no one had requested, `GET /mockServiceWorker.js`; in the browser, `fetch('https://example.com/')` from the DevTools console | The HTML and every file fetched fresh (`cf-cache-status: MISS`) carry `Content-Security-Policy` exactly as `public/_headers` writes it, `Strict-Transport-Security: max-age=2592000`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` and `Referrer-Policy: no-referrer`, each once. `index-CV8q0mpq.js` without a query string, unchanged by the deploy and with the same `ETag`, still carried Pages' old headers with `cf-cache-status: REVALIDATED`: the edge keeps a stored response, headers included (`Cache-Control: public, max-age=14400, must-revalidate`); when that copy is replaced was not measured. No `cloudflareinsights` in the HTML. The `fetch` was refused: "violates the following Content Security Policy directive: connect-src https://api.aleksadragnic.com". | 2026-10-06 |
+| 92 | The form of the `ETag` follows the client's `Accept-Encoding` | As the demo account, `GET /api/v1/users?pageNumber=1` and `GET /api/v1/users/{id}` with `curl.exe`, each without `Accept-Encoding` and with `gzip, deflate, br, zstd` | Without: no `Content-Encoding`, `ETag: W/"7GFH…"` on the list and `W/"k_-31…"` on the detail. With: `Content-Encoding: br` and the same tags **strong**, `"7GFH…"` and `"k_-31…"`. `Vary: Accept` and `Vary: Accept-Encoding` on all four. The API makes strong tags (row 44); the edge weakens one when it serves the body uncompressed - the opposite of row 22's guess. A browser asks for compression, so the console meets the strong form; `If-None-Match` works with either, because the API compares weakly. | 2026-10-06 |
+| 93 | The live suite against the deployed pair | `pnpm test:live` (three specs, one worker, no retries), twice | First run: `auth-cycle` and `cold-start` passed; `directory` failed on its own assertion that the detail's tag starts with `W/` (row 92), after every step before it had passed. Fixed in #27 before merge; second run `3 passed` in 17.2 s. Proven: the boot refresh 401 without a cookie; login 200; `umapi_rt` in the browser host-only on `api.aleksadragnic.com`, `HttpOnly`, `Secure`, `SameSite=Strict`, `Path=/api/v1/auth`, expiring more than six days later; a detail reloaded through a refresh 200; logout 204 removing the cookie; the next refresh 401. The cold-start line shown while the boot refresh was held 2.5 s in the browser, and gone after the real 401. More than one page of users; page 1 read again answers `304` to the console's origin; `petrovic` finds a `Petrović`. The demo account's four writes `aria-disabled` with their reasons, and each activated by pointer, `Enter` and `Space` sent no request and opened no dialog. | 2026-10-06 |
+| 94 | The same, by hand | The directory's Next and Previous; the inspector; the demo account's detail with the Network panel cleared, every disabled write activated by pointer and keyboard | Footer `304 · 132 results`, `Page 1 of 14`. The inspector's newest row `304 GET /api/v1/users`, sent with `if-none-match` and answered with the same strong `etag`, `x-correlation-id` and `x-pagination`, no body; DevTools lists it as `304 fetch`, not from a cache. On the detail nothing reached the network and nothing opened: bridge section 5's check 5. | 2026-10-06 |
+
 ## Not API behaviour, but measured and relevant
 
 | # | Observation | Consequence |
@@ -208,7 +226,6 @@ window and from Windows PowerShell 5.1 with `curl.exe`, against API `main` at
 | # | What | Probe | Blocks |
 |---|---|---|---|
 | - | Query parameters in the document's PascalCase, live (row 64) | Any probe session | Nothing; binding ignores case |
-| - | A 304 to a browser origin carries the CORS headers in production (row 82 measured it locally) | The M5 live specs, from the deployed console | Nothing; the mock answers 304 in the browser |
 
 Row 26 needs no probe any more: the source settles it (row 45). Probe 10a ran
 as the first step of PR 7: rows 59-64. Diacritics and the 406 were measured on
