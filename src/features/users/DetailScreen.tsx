@@ -547,7 +547,9 @@ function RolesPanel({
     <Card title="Roles">
       <div className="mt-app-2 flex flex-col gap-app-3">
         {saving ? <Saving /> : null}
-        {/* Nothing in a role row breaks; at 380px the table scrolls instead. */}
+        {/* A role's name and time never break. The reason under Remove wraps
+            within a column at least 16rem wide, so the table fits its card at
+            desktop width and scrolls, rather than squeezing, at 380px. */}
         <div className="overflow-x-auto whitespace-nowrap">
           <Table caption="Roles">
             <TableHead>
@@ -566,7 +568,7 @@ function RolesPanel({
                   <TableCell className="font-mono text-app-meta">
                     {role.assignedAtUtc === UNCONFIRMED ? 'pending' : formatUtc(role.assignedAtUtc)}
                   </TableCell>
-                  <TableCell className="py-app-1">
+                  <TableCell className="min-w-64 py-app-1 whitespace-normal">
                     <Button
                       variant="destructive"
                       aria-label={`Remove ${role.name}`}
