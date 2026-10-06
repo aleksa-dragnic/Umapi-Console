@@ -19,3 +19,4 @@ One file per decision. Format and rules are the same as in
 | [0012](0012-e2e-runs-a-production-build-with-the-mock.md) | End-to-end tests run a production build that includes the mock, and CI proves the real production build does not | Accepted | 9 |
 | [0013](0013-the-console-keeps-its-own-validators.md) | The console keeps its own validators and bypasses the browser's HTTP cache | Accepted | 14 |
 | [0014](0014-the-inspector-records-at-the-transport.md) | The inspector records at the transport, keeps no credential, and belongs to one session | Accepted | 15 |
+| [0015](0015-the-console-sends-its-own-security-headers.md) | The console sends its own security headers, from a file in the repository | Accepted | 26 |
