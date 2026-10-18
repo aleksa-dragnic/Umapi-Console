@@ -1,6 +1,7 @@
 # Weekly, grouped, and no version younger than a week: the same caution as
 # pnpm's release-age policy (pnpm-workspace.yaml), applied to what Dependabot
-# proposes.
+# proposes. Minor and patch updates come grouped; a major version comes in a
+# pull request of its own, because it is a decision rather than an update.
 version: 2
 updates:
   - package-ecosystem: npm
@@ -12,8 +13,15 @@ updates:
     groups:
       development:
         dependency-type: development
+        update-types: [minor, patch]
       production:
         dependency-type: production
+        update-types: [minor, patch]
+    ignore:
+      # The types follow the Node line the console runs on (.nvmrc), not the
+      # newest Node.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: github-actions
     directory: /
