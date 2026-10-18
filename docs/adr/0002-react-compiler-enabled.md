@@ -81,4 +81,6 @@ section 14 lists it with the other corrections of `docs/correct-drift`.
 `build/enforce-documented-rules` makes the ban a lint error: `no-restricted-imports`
 refuses `memo`, `useMemo` and `useCallback` from `react` in every file under `src/`,
 and the plugin's React Compiler rules (`purity`, `refs`, `set-state-in-effect` and
-the rest) run with `exhaustive-deps`, all as errors, under `--max-warnings 0`.
+the rest) run with `exhaustive-deps` as errors or warnings, and `--max-warnings 0` fails
+the build on either. Reaching them through a namespace, `React.useMemo`, is
+refused as well (`no-restricted-properties`).

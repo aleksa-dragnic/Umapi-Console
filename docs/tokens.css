@@ -129,7 +129,7 @@
   --container-editorial: 1200px;
 
   /* ---------------------------------------------------------------
-     Geometry. Two radii, never mixed on one surface.
+     Geometry. Four radii, never mixed on one surface.
      --------------------------------------------------------------- */
 
   --radius-control: 6px;

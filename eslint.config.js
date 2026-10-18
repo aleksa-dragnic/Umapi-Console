@@ -92,6 +92,12 @@ const storageBan = {
       property: 'sessionStorage',
       message: 'Nothing is kept in browser storage (ADR 0007).',
     },
+    // The memoisation ban of ADR 0002, through a namespace import as well.
+    ...['memo', 'useMemo', 'useCallback'].map((property) => ({
+      object: 'React',
+      property,
+      message: 'The React Compiler memoises (ADR 0002). Manual memoisation is a defect here.',
+    })),
   ],
 };
 

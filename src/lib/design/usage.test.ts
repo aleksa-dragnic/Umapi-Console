@@ -84,6 +84,15 @@ describe('where a colour may appear (ADR 0004)', () => {
     expect(offenders(property)).toEqual([]);
   });
 
+  it('no Tailwind default palette and no literal colour function: tier 2 names only', () => {
+    const palette =
+      'slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose';
+    expect(
+      offenders(new RegExp(`(?<![\\w-])[a-z]+(?:-[a-z]+)?-(?:${palette})-\\d{2,3}\\b`, 'g')),
+    ).toEqual([]);
+    expect(offenders(/\b(?:rgba?|hsla?|oklch|oklab|lab|lch|color-mix)\(/g)).toEqual([]);
+  });
+
   it('the status colours only where a response is rendered', () => {
     const elsewhere = scanned().filter(({ file }) => !STATUS_ALLOWED.includes(file));
     expect(offenders(/status-(?:2xx|3xx|4xx|5xx|pending)/g, elsewhere)).toEqual([]);

@@ -109,9 +109,10 @@ section 14 lists it with the other corrections of `docs/correct-drift`.
 `feat/security-headers-hardening` strengthens the set and tests all of it.
 
 - **HSTS** for a year with `includeSubDomains`, up from thirty days.
-- **Permissions-Policy** turns off every browser feature the console does not
-  use, which is all of them: camera, microphone, geolocation, payment, USB and
-  the motion sensors.
+- **Permissions-Policy** turns off the powerful features the console has no use
+  for: camera, microphone, geolocation, payment, USB and the motion sensors.
+- **The favicon ships** since `feat/launch-basics`, so the correction above no
+  longer holds: `img-src 'self'` now has `/favicon.svg` to allow.
 - **Cross-Origin-Opener-Policy: same-origin** gives the console a window no
   other site can reach, and **Cross-Origin-Resource-Policy: same-origin** keeps
   its files to itself - except `og.png`, which link previewers on other sites
