@@ -142,6 +142,22 @@ describe('the capture store (inventory section 3.8, ADR 0014)', () => {
     expect(capture.outcome.response.body?.text).toHaveLength(BODY_LIMIT_BYTES);
   });
 
+  it('cuts a long body before a character, never inside one', async () => {
+    // 'č' is two bytes in UTF-8; one byte of padding puts a 'č' across the limit.
+    const big = 'x' + 'č'.repeat(BODY_LIMIT_BYTES);
+
+    await captureExchange(new Request(url('/big')), () =>
+      Promise.resolve(new Response(big, { status: 200 })),
+    );
+
+    await vi.waitFor(() => expect(currentCaptures()[0]?.outcome.kind).toBe('response'));
+    const [capture] = currentCaptures();
+    if (capture?.outcome.kind !== 'response') throw new Error('not settled');
+    const text = capture.outcome.response.body?.text ?? '';
+    expect(text).not.toContain('\uFFFD');
+    expect(new TextEncoder().encode(text).length).toBe(BODY_LIMIT_BYTES - 1);
+  });
+
   it('belongs to one session: dropped when the token goes, kept while it is replaced', async () => {
     const session = await signIn();
     setAccessToken(session.accessToken);

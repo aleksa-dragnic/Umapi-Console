@@ -67,7 +67,7 @@ const concurrency = () => screen.getByRole('region', { name: 'Concurrency' });
 const ready = () => screen.findByRole('button', { name: 'Edit' });
 const fieldValue = (label: string) =>
   within(identity()).getByText(label, { selector: 'dt' }).nextElementSibling?.textContent;
-const etagShown = () => within(concurrency()).getByText(/^W\//).textContent;
+const etagShown = () => within(concurrency()).getByText(/^"[\w-]{43}"$/).textContent;
 const STALE_DETAIL =
   'The user was changed after the version given in If-Match. Read it again and retry.';
 

@@ -4,6 +4,9 @@ import { expect, test, type Page } from '@playwright/test';
 import { MOCK_ACCOUNTS } from '../src/lib/testing/factories';
 import { coldStartOnLoad, respondOnce, signInAsAdmin, signInAsDemo } from './support';
 
+// Row 92: a browser gets the strong tag, a quoted SHA-256 in base64url.
+const STRONG_TAG = /"[\w-]{43}"/;
+
 // Gate 5: zero accessibility violations, measured by axe-core in a real browser
 // against WCAG 2.2 A and AA. Every screen in the state a visitor meets first,
 // every dialog, the inspector, and the states a visitor meets when something
@@ -37,7 +40,7 @@ test('every screen behind the login, and the inspector open', async ({ page }) =
   expect(await violations(page)).toEqual([]);
 
   await page.goto(DETAIL);
-  await expect(page.getByRole('region', { name: 'Concurrency' })).toContainText('W/');
+  await expect(page.getByRole('region', { name: 'Concurrency' })).toContainText(STRONG_TAG);
   expect(await violations(page)).toEqual([]);
 
   await page
@@ -170,6 +173,6 @@ test('sign-in, the directory and the detail at 375 px', async ({ page }) => {
   expect(await violations(page)).toEqual([]);
 
   await page.goto(DETAIL);
-  await expect(page.getByRole('region', { name: 'Concurrency' })).toContainText('W/');
+  await expect(page.getByRole('region', { name: 'Concurrency' })).toContainText(STRONG_TAG);
   expect(await violations(page)).toEqual([]);
 });

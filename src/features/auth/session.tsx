@@ -69,6 +69,14 @@ export interface SessionValue {
   signIn: (accessToken: string) => void;
   /** Tells the API, then forgets the session whatever it answered. */
   signOut: () => Promise<void>;
+  /**
+   * Whether this session has shown the cold-start line (inventory section
+   * 2.1: once per session). Kept here, not in the shell, so a shell mounted
+   * again in the same session does not show it again; a new session starts
+   * without it.
+   */
+  coldStartShown: boolean;
+  markColdStartShown: () => void;
 }
 
 const SessionContext = createContext<SessionValue | null>(null);
@@ -82,14 +90,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const booted = useRef(false);
   // A retry supersedes an answer still in flight.
   const generation = useRef(0);
+  const [coldStartShown, setColdStartShown] = useState(false);
 
   useEffect(
-    () => onRefresh((result) => setState((current) => sessionAfterRefresh(current, result))),
+    () =>
+      onRefresh((result) => {
+        setState((current) => sessionAfterRefresh(current, result));
+        if (sessionEndOf(result) !== null) setColdStartShown(false);
+      }),
     [],
   );
 
   function adopt(next: SessionState) {
     setAccessToken(next.status === 'authenticated' ? next.accessToken : null);
+    if (next.status !== 'authenticated') setColdStartShown(false);
     setState(next);
   }
 
@@ -119,6 +133,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       await requestSignOut();
       adopt({ status: 'anonymous', reason: 'signed-out' });
     },
+    coldStartShown,
+    markColdStartShown: () => setColdStartShown(true),
   };
 
   return <SessionContext value={value}>{children}</SessionContext>;

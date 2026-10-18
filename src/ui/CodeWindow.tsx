@@ -16,13 +16,21 @@ export interface CodeWindowProps {
   children: ReactNode;
   /** When set, the body was cut at this many kilobytes and the fact is shown. */
   truncatedAtKb?: number | undefined;
+  /** What was cut: the request's body or the response's. */
+  truncatedWhat?: 'Request' | 'Response' | undefined;
   className?: string | undefined;
 }
 
 const FRAME = 'rounded-card border border-border-default bg-lift';
 const STRIP = 'px-app-3 py-app-1 font-mono text-app-meta text-fg-muted';
 
-export function CodeWindow({ title, children, truncatedAtKb, className }: CodeWindowProps) {
+export function CodeWindow({
+  title,
+  children,
+  truncatedAtKb,
+  truncatedWhat = 'Response',
+  className,
+}: CodeWindowProps) {
   return (
     <figure className={[FRAME, className].filter(Boolean).join(' ')}>
       {title !== undefined ? (
@@ -33,7 +41,7 @@ export function CodeWindow({ title, children, truncatedAtKb, className }: CodeWi
       </pre>
       {truncatedAtKb !== undefined ? (
         <p className={`${STRIP} border-t border-border-default`}>
-          Response truncated at {truncatedAtKb} kB.
+          {truncatedWhat} truncated at {truncatedAtKb} kB.
         </p>
       ) : null}
     </figure>

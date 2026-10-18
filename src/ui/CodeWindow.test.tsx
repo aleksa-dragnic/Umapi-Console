@@ -21,4 +21,14 @@ describe('CodeWindow', () => {
 
     expect(screen.getByText('Response truncated at 64 kB.')).toBeInTheDocument();
   });
+
+  test('names a truncated request as the request', () => {
+    render(
+      <CodeWindow truncatedAtKb={64} truncatedWhat="Request">
+        {'[]'}
+      </CodeWindow>,
+    );
+
+    expect(screen.getByText('Request truncated at 64 kB.')).toBeInTheDocument();
+  });
 });

@@ -1,4 +1,5 @@
 import { createApiClient } from '@/lib/api/create-client';
+import { refuseNotJson } from '@/lib/api/not-json';
 import { silentRefresh } from '@/lib/api/refresh';
 import type { paths } from '@/lib/api/schema';
 
@@ -16,4 +17,4 @@ export type ApiClient = ReturnType<typeof createApiClient<paths>>;
  */
 export const api: ApiClient = createApiClient();
 
-api.use(silentRefresh);
+api.use(silentRefresh, refuseNotJson);

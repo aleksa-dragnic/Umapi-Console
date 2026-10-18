@@ -12,7 +12,7 @@ import {
   queryParam,
   readJson,
   stringField,
-  weakETag,
+  strongETag,
 } from '@/lib/testing/http';
 import { bodyTooLarge } from '@/lib/testing/limits';
 import { applicationProblem, validationProblem } from '@/lib/testing/problems';
@@ -161,7 +161,7 @@ function stale(request: Request, user: MockUser, expected: number | null) {
 
 async function conditional(request: Request, body: unknown, extra: Record<string, string> = {}) {
   const json = JSON.stringify(body);
-  const etag = await weakETag(json, extra['X-Pagination'] ?? '');
+  const etag = await strongETag(json, extra['X-Pagination'] ?? '');
   const headers = { ...CACHE_HEADERS, ...VERSION_HEADERS, ETag: etag, ...extra };
   if (matchesIfNoneMatch(request, etag)) {
     return new HttpResponse(null, { status: 304, headers }); // Rows 23 and 24.

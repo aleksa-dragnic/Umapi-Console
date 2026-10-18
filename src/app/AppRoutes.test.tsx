@@ -6,6 +6,9 @@ import { NOT_FOUND_HEADING } from '@/app/NotFound';
 import { MOCK_ACCOUNTS } from '@/lib/testing/mock';
 import { signIn } from '@/lib/testing/support';
 
+// Row 92: a browser gets the strong tag, a quoted SHA-256 in base64url.
+const STRONG_TAG = /"[\w-]{43}"/;
+
 function Where() {
   const location = useLocation();
   return <p data-testid="where">{location.pathname}</p>;
@@ -109,7 +112,9 @@ describe('AppRoutes', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: MOCK_ACCOUNTS.demo.email }),
     ).toBeInTheDocument();
-    expect(await screen.findByRole('region', { name: 'Concurrency' })).toHaveTextContent('W/');
+    expect(await screen.findByRole('region', { name: 'Concurrency' })).toHaveTextContent(
+      STRONG_TAG,
+    );
   });
 
   it('docks the inspector beneath every screen behind the login, and not beneath sign-in', async () => {

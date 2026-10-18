@@ -2,7 +2,13 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import { toApiQuery, type DirectoryQuery } from '@/features/users/url-state';
 import { api, type Schema } from '@/lib/api/client';
-import { retryAfterSeconds, toProblem, type Problem } from '@/lib/api/problem';
+import { NOT_JSON_TITLE, NotJsonError } from '@/lib/api/not-json';
+import {
+  RETRY_AFTER_FALLBACK_SECONDS,
+  retryAfterSeconds,
+  toProblem,
+  type Problem,
+} from '@/lib/api/problem';
 
 /**
  * The users feature's reads, through TanStack Query (ADR 0010): the directory's
@@ -95,6 +101,14 @@ export async function send<T>(request: () => Promise<T>, signal?: AbortSignal): 
     return await request();
   } catch (error) {
     if (signal?.aborted) throw error;
+    if (error instanceof NotJsonError) {
+      // An answer, so not `unreachable`: a server error with its status (section 2.8).
+      throw new RequestError({
+        kind: 'refused',
+        problem: { status: error.status, title: NOT_JSON_TITLE },
+        retryAfterSeconds: RETRY_AFTER_FALLBACK_SECONDS,
+      });
+    }
     throw new RequestError({ kind: 'unreachable' });
   }
 }
