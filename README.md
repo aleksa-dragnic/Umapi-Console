@@ -86,7 +86,9 @@ with the permission it needs; the API would refuse it anyway.
   [ADR 0011](docs/adr/0011-no-state-library-and-collection-state-in-the-url.md)).
 - **Security headers** come from `public/_headers`: a Content Security Policy
   that allows scripts and styles from the console itself and connections to the
-  API alone, HSTS, and no framing
+  API alone, with Trusted Types required; HSTS for a year; no framing, no
+  browser features, and an isolated window. A browser test runs a session under
+  the policy, and a weekly job compares what Pages serves with the file
   ([ADR 0015](docs/adr/0015-the-console-sends-its-own-security-headers.md)).
 
 ## Tech stack

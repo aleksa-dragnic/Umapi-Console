@@ -103,3 +103,30 @@ reads what Pages serves.
 
 The decision stands. This section corrects the record; `docs/BUILD-PLAN.md`
 section 14 lists it with the other corrections of `docs/correct-drift`.
+
+## Amended, 2026-10-18
+
+`feat/security-headers-hardening` strengthens the set and tests all of it.
+
+- **HSTS** for a year with `includeSubDomains`, up from thirty days.
+- **Permissions-Policy** turns off every browser feature the console does not
+  use, which is all of them: camera, microphone, geolocation, payment, USB and
+  the motion sensors.
+- **Cross-Origin-Opener-Policy: same-origin** gives the console a window no
+  other site can reach, and **Cross-Origin-Resource-Policy: same-origin** keeps
+  its files to itself - except `og.png`, which link previewers on other sites
+  must be able to load.
+- **Trusted Types.** `require-trusted-types-for 'script'` with `trusted-types
+  'none'`: no code may assign a string to an injection sink, and no policy may
+  be created to allow it. Adopted because a test proves the console needs none:
+  `e2e/csp.spec.ts` runs a session in Chromium under the policy from this file
+  and fails on any violation. Two directives are relaxed there for the mock,
+  and only for it: workers from `'self'`, and a default policy that passes the
+  mock's worker URL and refuses everything else.
+- **CSP reporting is declined.** A report needs an endpoint that receives it;
+  the API has none for this, and a third-party collector would send every
+  visitor's page addresses elsewhere for a console with one deployment.
+- **The served headers are no longer checked only by hand.** The `headers`
+  workflow, weekly and on demand, compares what Pages serves for `/`, a route,
+  `og.png` and a hashed asset with this file (`scripts/compare-headers.mjs`), and
+  `src/lib/api/security-headers.test.ts` asserts every header the file sends.
