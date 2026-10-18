@@ -54,7 +54,7 @@ not thirty seconds.
 | | |
 |---|---|
 | Trigger | `navigator.onLine` is false, or a request fails with no response at all - not one the console cancelled itself (section 3.8), which says nothing about the connection |
-| Renders | A persistent bar under the app shell header: *No connection. The console cannot reach the API.* Mutations are disabled while it shows: every write in the detail, with the reason *No connection to the API.* |
+| Renders | A persistent bar under the app shell header: *No connection. The console cannot reach the API.* Mutations are disabled while it shows: every write in the detail, **Save** in an open edit form and the action of an open dialog included, with the reason *No connection to the API.* |
 | The way out | The `online` event, after which the active query refetches; or the next request the API answers, so that one unanswered request on a working network does not mark the console offline for the rest of the visit |
 
 ### 2.3 `refreshing` — a 401 met by a silent refresh
@@ -217,7 +217,8 @@ footer reports what `X-Pagination` says, not what was asked for.
 **Columns and footer.** Four columns, each sortable: *Email*, *First name*,
 *Last name*, *Status* - row 47's whitelist less `createdAt`, which the list
 response does not carry. With no sort chosen, *Email* is marked ascending,
-because that is the order the API applies. The footer reads *200 · 130 results*
+because that is the order the API applies. The sorted column shows an arrow, ↑ or
+↓, in the header's own colour; `aria-sort` says the same to a screen reader. The footer reads *200 · 130 results*
 (*1 result* for one) and *Page 2 of 13*; **Previous** and **Next** are present
 only where there is a page to go to, and neither is shown past the last page,
 where `empty-page` offers page 1 instead. With no term, no filter and no rows
