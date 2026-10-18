@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useEffect, useRef } from 'react';
-import { MemoryRouter, Route, Routes } from 'react-router';
+import { Link, MemoryRouter, Route, Routes } from 'react-router';
 
 import { CRASHED_COPY, ISSUES_URL } from '@/app/ErrorBoundary';
 import { OFFLINE_COPY, SKIP_COPY, Shell } from '@/app/Shell';
@@ -19,6 +19,9 @@ function Screen({ title }: { title: string }) {
     <main>
       <h1 tabIndex={-1}>{title}</h1>
       <button type="button">Inside {title}</button>
+      <Link to={title === 'Outside' ? '/users' : '/outside'}>
+        {title === 'Outside' ? 'Back in' : 'Leave'}
+      </Link>
     </main>
   );
 }
@@ -56,6 +59,7 @@ async function renderShell(entry = '/users') {
                 <Route path="/directory" element={<DirectoryScreen />} />
                 <Route path="/session" element={<Crash />} />
               </Route>
+              <Route path="/outside" element={<Screen title="Outside" />} />
             </Route>
           </Route>
         </Routes>
@@ -179,6 +183,37 @@ describe('the shell', () => {
         await vi.advanceTimersByTimeAsync(1500);
         await read;
       });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('cold-start: a shell mounted again in the same session does not show the line again (section 2.1)', async () => {
+    await renderShell();
+    vi.useFakeTimers();
+    try {
+      const slowRead = async () => {
+        simulateColdStart(1500);
+        let read: Promise<unknown> = Promise.resolve();
+        act(() => {
+          read = api.GET('/api/v1/roles');
+        });
+        await act(() => vi.advanceTimersByTimeAsync(COLD_START_AFTER_MS));
+        await act(() => vi.advanceTimersByTimeAsync(1));
+        await act(() => vi.advanceTimersByTimeAsync(1));
+        const shown = screen.queryByText(COLD_START_COPY) !== null;
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(1500);
+          await read;
+        });
+        return shown;
+      };
+
+      expect(await slowRead()).toBe(true);
+      // Out of the shell and back: the shell is mounted afresh, the session is not.
+      fireEvent.click(screen.getByRole('link', { name: 'Leave' }));
+      fireEvent.click(screen.getByRole('link', { name: 'Back in' }));
+      expect(await slowRead()).toBe(false);
     } finally {
       vi.useRealTimers();
     }
