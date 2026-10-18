@@ -71,3 +71,12 @@ Enforced by `.github/workflows/ci.yml` (the bundle search) and
 `playwright.config.ts` (the build command). The mock's scenario controls are
 not yet reachable from a spec; the first spec that needs them, in PR 10, exposes
 them in the `e2e` mode only, behind the same literal.
+
+## Correction, 2026-10-18
+
+The scenario controls are reachable from a spec. In the `e2e` mode the mock
+places them on `window.__umapiMock` (`src/lib/testing/browser.ts`), and
+`e2e/support.ts` calls them.
+
+The decision stands. This section corrects the record; `docs/BUILD-PLAN.md`
+section 14 lists it with the other corrections of `docs/correct-drift`.

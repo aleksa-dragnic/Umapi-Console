@@ -36,7 +36,9 @@ async function sha256Base64url(text: string): Promise<string> {
 
 /**
  * Rows 22 and 44: the tag is a hash of the serialized body and the pagination
- * header, and the deployed instance serves it weak.
+ * header. The mock always serves it weak; the deployed instance does so only
+ * for a client that does not ask for compression, and a browser gets the strong
+ * tag (row 92).
  */
 export async function weakETag(body: string, pagination = ''): Promise<string> {
   return `W/"${await sha256Base64url(body + pagination)}"`;

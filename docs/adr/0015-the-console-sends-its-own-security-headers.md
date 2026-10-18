@@ -93,3 +93,13 @@ Enforced by `src/lib/api/security-headers.test.ts`: `connect-src` is exactly
 `DEPLOYED_API_ORIGIN`, so moving the origin without this file fails the unit
 suite, and `default-src`, `script-src`, `style-src` and `frame-ancestors` stay
 as decided. What Pages actually sends is not enforced by anything automated.
+
+## Correction, 2026-10-18
+
+No favicon ships yet, so the browser's favicon request is answered with the
+application's HTML and `img-src 'self'` has nothing to allow until one does.
+The served headers are still compared by hand after a deploy; nothing automated
+reads what Pages serves.
+
+The decision stands. This section corrects the record; `docs/BUILD-PLAN.md`
+section 14 lists it with the other corrections of `docs/correct-drift`.

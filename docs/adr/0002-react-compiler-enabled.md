@@ -62,3 +62,16 @@ rule that would express this properly was not verified to exist in
 `eslint-plugin-react-hooks` at the version pinned here. Replacing the grep with a
 lint rule is a follow-up, and until then this is honestly an enforced convention
 rather than a type-aware check.
+
+## Correction, 2026-10-18
+
+Two statements above did not match the repository. The compiler is switched on
+by `react({ compiler: true })` in `vite.config.ts`, which runs it inside
+`oxc-transform-react`; `babel-plugin-react-compiler` is not a dependency, as the
+Consequences section already says. And no grep ran: there is no verification
+block in the repository and no CI step, so the ban has held as a convention.
+`useMemo`, `useCallback` and `memo` were absent from `src/` when this was
+checked, but nothing would have failed had one appeared.
+
+The decision stands. This section corrects the record; `docs/BUILD-PLAN.md`
+section 14 lists it with the other corrections of `docs/correct-drift`.

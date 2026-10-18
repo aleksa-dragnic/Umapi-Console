@@ -127,7 +127,7 @@ the two are different sites.
 | Layer              | Command           | What runs                                                                                                              | At v1.0.0                        |
 | ------------------ | ----------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
 | Unit and component | `pnpm test:run`   | Vitest in jsdom, against the mock                                                                                      | 386 tests in 52 files            |
-| End to end         | `pnpm test:e2e`   | Playwright on a production build with the mock, axe on every screen, dialog and the inspector                          | 18 tests in 8 specs              |
+| End to end         | `pnpm test:e2e`   | Playwright on a production build with the mock, axe on every route, the inspector and the assign-role dialog           | 18 tests in 8 specs              |
 | Contract           | CI job `contract` | the committed API types compared with the live OpenAPI document                                                        | weekly and on every pull request |
 | Live               | `pnpm test:live`  | Playwright against the deployed console and API: one auth cycle, the directory, the read-only boundary, the cold start | 3 tests, by hand only            |
 

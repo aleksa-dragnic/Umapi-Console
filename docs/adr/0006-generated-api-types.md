@@ -96,3 +96,12 @@ every call. `src/lib/api/client.test.ts` asserts this, along with
 The deployed origin is written in two places, `package.json`'s `api:generate`
 and the `contract` job's `API_ORIGIN`, and a third time as the client's default.
 When the API moves to `api.<domain>` in M5, all three change together.
+
+## Correction, 2026-10-18
+
+The move happened. The client's default, `api:generate` and the contract job
+all name `https://api.aleksadragnic.com`, and `public/_headers` is a fourth
+place, as section 14 already records.
+
+The decision stands. This section corrects the record; `docs/BUILD-PLAN.md`
+section 14 lists it with the other corrections of `docs/correct-drift`.

@@ -117,3 +117,13 @@ The grep is the honest weak point: it is a step in a script rather than a lint
 rule, so it runs when a script runs and not when someone edits a file by hand.
 Promoting it to an ESLint rule is worth doing when `features/` exists and there
 is more than one place to get it wrong.
+
+## Correction, 2026-10-18
+
+The apply scripts named under *Where it is enforced* were never committed to
+this repository, so the grep for a literal hex colour and for tier 1 token names
+runs nowhere. Both rules hold today by convention. `contrast.test.ts` is real and
+runs on every pull request.
+
+The decision stands. This section corrects the record; `docs/BUILD-PLAN.md`
+section 14 lists it with the other corrections of `docs/correct-drift`.
