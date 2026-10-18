@@ -166,7 +166,7 @@ timing.
 
 ### 3.2 `sign-in`
 
-Editorial density. The only screen in the application that uses display type.
+Editorial density. With the 404, one of the two screens that use display type.
 
 | State | Trigger | Renders | The way out |
 |---|---|---|---|

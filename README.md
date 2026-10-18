@@ -44,7 +44,7 @@ with the permission it needs; the API would refuse it anyway.
 | Screen      | What it makes visible                                                                                                                                                                            |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Sign in     | The boot refresh that restores a session from the cookie alone; the cold-start state; a refusal in the one wording the API allows                                                                |
-| Users       | Search, status filter, sort and page held in the URL; every read conditional, so returning to a page answers 304                                                                                 |
+| Users       | Search, status filter, sort and page held in the URL; every repeated read conditional, so returning to a page answers 304                                                                        |
 | User detail | Identity, status and roles; each write gated by the permission it needs, with the reason written under it; the record's ETag, and its version sent with every write so a stale one is a conflict |
 | Roles       | Roles and the permissions each one grants                                                                                                                                                        |
 | Session     | The access token's claims, the permissions read from them, and a race of two refreshes against one cookie                                                                                        |
@@ -87,7 +87,7 @@ with the permission it needs; the API would refuse it anyway.
 - **Security headers** come from `public/_headers`: a Content Security Policy
   that allows scripts and styles from the console itself and connections to the
   API alone, with Trusted Types required; HSTS for a year; no framing, no
-  browser features, and an isolated window. A browser test runs a session under
+  camera, microphone or location, and an isolated window. A browser test runs a session under
   the policy, and a weekly job compares what Pages serves with the file
   ([ADR 0015](docs/adr/0015-the-console-sends-its-own-security-headers.md)).
 
@@ -100,7 +100,7 @@ with the permission it needs; the API would refuse it anyway.
 | Server state | TanStack Query 5, `openapi-fetch` on types from `openapi-typescript`                                  |
 | Styling      | Tailwind CSS 4 on two tiers of design tokens; Inter, Playfair Display and JetBrains Mono, self-hosted |
 | Build        | Vite 8, pnpm 12, Node 24                                                                              |
-| Tests        | Vitest 5 and Testing Library; Playwright 1.63 with axe; MSW 2 for the mock API                        |
+| Tests        | Vitest 5 and Testing Library; Playwright 1.64 with axe; MSW 2 for the mock API                        |
 | Hosting      | Cloudflare Pages, with headers from `public/_headers`                                                 |
 
 ## Running it
@@ -126,12 +126,12 @@ the two are different sites.
 
 ## Testing
 
-| Layer              | Command           | What runs                                                                                                                                                         | At v1.1.0                                      |
-| ------------------ | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| Unit and component | `pnpm test:run`   | Vitest in jsdom, against the mock; `pnpm coverage` holds it to a floor                                                                                            | 413 tests in 53 files                          |
-| End to end         | `pnpm test:e2e`   | Playwright on a production build with the mock, axe at WCAG 2.2 AA on every route, dialog and error state, and at 375 px; smoke and axe in Firefox and WebKit too | 24 tests in 9 specs, 42 runs in three browsers |
-| Contract           | CI job `contract` | the committed API types compared with the live OpenAPI document                                                                                                   | weekly and on every pull request               |
-| Live               | `pnpm test:live`  | Playwright against the deployed console and API: one auth cycle, the directory, the read-only boundary, the cold start                                            | 3 tests, by hand only                          |
+| Layer              | Command           | What runs                                                                                                                                                                                                                                        | At v1.1.0                                      |
+| ------------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------- |
+| Unit and component | `pnpm test:run`   | Vitest in jsdom, against the mock; `pnpm coverage` holds it to a floor                                                                                                                                                                           | 413 tests in 53 files                          |
+| End to end         | `pnpm test:e2e`   | Playwright on a production build with the mock, axe at WCAG 2.2 AA on every route and dialog, the boot screen, the error boundary, a failed, empty or rate-limited directory, a conflict, and at 375 px; smoke and axe in Firefox and WebKit too | 24 tests in 9 specs, 42 runs in three browsers |
+| Contract           | CI job `contract` | the committed API types compared with the live OpenAPI document                                                                                                                                                                                  | weekly and on every pull request               |
+| Live               | `pnpm test:live`  | Playwright against the deployed console and API: one auth cycle, the directory, the read-only boundary, the cold start                                                                                                                           | 3 tests, by hand only                          |
 
 `build-and-test` and `e2e` are required on every pull request. `build-and-test`
 also fails on a high or critical advisory (`pnpm audit`), on coverage below its
