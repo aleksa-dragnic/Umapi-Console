@@ -7,7 +7,7 @@
   "license": "MIT",
   "packageManager": "pnpm@12.4.2",
   "engines": {
-    "node": ">=24.15.0"
+    "node": ">=24.19.0"
   },
   "scripts": {
     "dev": "vite",
@@ -23,6 +23,7 @@
     "test:e2e": "playwright test",
     "test:live": "playwright test --config playwright.live.config.ts",
     "coverage": "vitest run --coverage",
+    "budget": "node scripts/bundle-budget.mjs",
     "api:generate": "openapi-typescript https://api.aleksadragnic.com/openapi/v1.json -o src/lib/api/schema.d.ts",
     "mock:worker": "msw init public --no-save"
   },
