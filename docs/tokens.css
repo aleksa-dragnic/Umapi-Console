@@ -61,9 +61,8 @@
   /* Navigation. The only place signal blue appears. */
   --color-nav-selected: var(--color-signal-blue);
 
-  /* HTTP response class. Used only by the inspector and the
-     response-rendering modules, by convention: no lint rule or test checks
-     it yet. Entity status never uses these. */
+  /* HTTP response class. Restricted to src/ui/StatusDot.tsx and the
+     inspector by src/lib/design/usage.test.ts. Entity status never uses these. */
   --color-status-2xx: var(--color-pulse-green);
   --color-status-3xx: var(--color-sky-blue);
   --color-status-4xx: var(--color-amber);
