@@ -236,9 +236,9 @@ The same rule governs role badges: a hairline border and ash gray text, never a
 colour per role. Roles are user-defined data in the API's seed, and a palette
 that has to grow when a role is added is not a palette.
 
-Enforced rather than written: the status tokens are restricted to
-`src/ui/StatusDot.tsx` and the inspector's response-rendering modules, so a
-status colour cannot reach a directory cell by hand. The primitive is on that
+Written, and not yet enforced: the status tokens are used only in
+`src/ui/StatusDot.tsx` and the inspector's response-rendering modules, and no
+lint rule or test fails when a status colour reaches a directory cell by hand. The primitive is on that
 list because the mapping has to live somewhere and one file is a narrower
 allowance than a whole feature folder; every other component is handed a
 `StatusDot`, never a colour.
