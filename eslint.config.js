@@ -20,8 +20,17 @@ const noApp = {
   message: 'Nothing imports back up into app/ (ADR 0003).',
 };
 
+// Every other feature, by alias and by relative path: `../users/api` from
+// features/auth is the same import as `@/features/users/api`.
 const noOtherFeature = (feature) => ({
-  group: ['@/features/*', '@/features/**', `!@/features/${feature}`, `!@/features/${feature}/**`],
+  group: FEATURES.filter((other) => other !== feature).flatMap((other) => [
+    `@/features/${other}`,
+    `@/features/${other}/**`,
+    `**/features/${other}`,
+    `**/features/${other}/**`,
+    `../${other}`,
+    `../${other}/**`,
+  ]),
   message: 'A feature does not import another feature (ADR 0003). Go through app/ or lib/.',
 });
 
@@ -32,7 +41,15 @@ const noMock = {
   message: 'Production code does not import the mock. Tests may.',
 };
 
-const restrict = (...patterns) => ['error', { patterns }];
+// The React Compiler memoises; nothing else does (ADR 0002). Part of every
+// `no-restricted-imports` setting below, since each one replaces the last.
+const noManualMemo = {
+  name: 'react',
+  importNames: ['memo', 'useMemo', 'useCallback'],
+  message: 'The React Compiler memoises (ADR 0002). Manual memoisation is a defect here.',
+};
+
+const restrict = (...patterns) => ['error', { paths: [noManualMemo], patterns }];
 
 // The access token lives in memory only (ADR 0007). Nothing in src/ reaches
 // for browser storage; tests may read it to prove that, and the mock may keep
@@ -62,6 +79,16 @@ const storageBan = {
     },
     {
       object: 'globalThis',
+      property: 'sessionStorage',
+      message: 'Nothing is kept in browser storage (ADR 0007).',
+    },
+    {
+      object: 'self',
+      property: 'localStorage',
+      message: 'Nothing is kept in browser storage (ADR 0007).',
+    },
+    {
+      object: 'self',
       property: 'sessionStorage',
       message: 'Nothing is kept in browser storage (ADR 0007).',
     },
@@ -104,9 +131,12 @@ export default tseslint.config(
     plugins: {
       'react-hooks': reactHooks,
     },
+    // The plugin's recommended set includes the React Compiler's own rules
+    // (purity, refs, set-state-in-effect and the rest). Warnings are errors:
+    // `pnpm lint` runs with --max-warnings 0.
     rules: {
-      'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
+      ...reactHooks.configs['recommended-latest'].rules,
+      'react-hooks/exhaustive-deps': 'error',
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/consistent-type-imports': 'error',
     },
@@ -136,6 +166,16 @@ export default tseslint.config(
     rules: storageBan,
   },
   {
+    // Every file in src/ starts with the memoisation ban; the layer groups
+    // below replace this with their own patterns, the ban included. main.tsx
+    // reaches the mock only through a dynamic import() behind a build-time
+    // literal, which no-restricted-imports does not inspect (ADR 0012).
+    files: ['src/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': restrict(),
+    },
+  },
+  {
     // ui/ knows tokens and nothing else. This is what makes the folder layout
     // a feature-module architecture rather than folders with nice names.
     // See BUILD-PLAN sections 4.2 and 10, and ADR 0003.
@@ -151,8 +191,19 @@ export default tseslint.config(
     },
   },
   {
-    // lib/ sits under everything; it imports nothing above it.
+    // lib/ sits under everything; it imports nothing above it, and production
+    // code in it does not reach the mock.
     files: ['src/lib/**/*.{ts,tsx}'],
+    ignores: [...TESTS, 'src/lib/testing/**'],
+    rules: {
+      'no-restricted-imports': restrict(noFeatures, noApp, noMock),
+    },
+  },
+  {
+    files: [
+      ...TESTS.map((glob) => glob.replace('src/**', 'src/lib/**')),
+      'src/lib/testing/**/*.{ts,tsx}',
+    ],
     rules: {
       'no-restricted-imports': restrict(noFeatures, noApp),
     },
@@ -173,7 +224,7 @@ export default tseslint.config(
     },
   ]),
   {
-    files: ['src/app/**/*.{ts,tsx}'],
+    files: ['src/app/**/*.{ts,tsx}', 'src/main.tsx'],
     ignores: TESTS,
     rules: {
       'no-restricted-imports': restrict(noMock),

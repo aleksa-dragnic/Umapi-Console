@@ -69,3 +69,10 @@ form of it is enforced.
 
 The decision stands. This section corrects the record; `docs/BUILD-PLAN.md`
 section 14 lists it with the other corrections of `docs/correct-drift`.
+
+## Enforced, 2026-10-18
+
+`build/enforce-documented-rules` closes the relative form: each feature's
+patterns name every other feature by alias, by `**/features/<name>` and by
+`../<name>`, so `../users/api` from `features/auth` fails lint like
+`@/features/users/api` does.
