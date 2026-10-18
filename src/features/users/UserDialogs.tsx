@@ -60,15 +60,20 @@ function OutcomeLine({ outcome }: { outcome: Outcome | null }) {
 
 /**
  * The action a dialog offers after `outcome`: none once the API has stated a
- * rule, held by the countdown after a 429, otherwise the action as given.
+ * rule, held by the countdown after a 429, held with its reason while it cannot
+ * be sent (offline, for one), otherwise the action as given.
  */
 function actionAfter(
   outcome: Outcome | null,
   action: DialogAction,
   waited: boolean,
   onWaited: () => void,
+  heldReason?: string,
 ): DialogAction | undefined {
   if (outcome?.kind === 'refused') return undefined;
+  if (heldReason !== undefined && action.disabledReason === undefined) {
+    return { ...action, disabledReason: heldReason };
+  }
   if (outcome?.kind === 'rate-limited' && !waited) {
     return {
       ...action,
@@ -85,6 +90,7 @@ export function ConfirmDialog({
   destructive,
   pending,
   outcome,
+  heldReason,
   onConfirm,
   onClose,
 }: {
@@ -94,12 +100,18 @@ export function ConfirmDialog({
   destructive: boolean;
   pending: boolean;
   outcome: Outcome | null;
+  /** Why the action cannot be sent now, as the control that opened the dialog would say. */
+  heldReason?: string | undefined;
   onConfirm: () => void;
   onClose: () => void;
 }) {
   const [waitedFor, setWaitedFor] = useState<Outcome | null>(null);
-  const action = actionAfter(outcome, { label, onConfirm, pending }, waitedFor === outcome, () =>
-    setWaitedFor(outcome),
+  const action = actionAfter(
+    outcome,
+    { label, onConfirm, pending },
+    waitedFor === outcome,
+    () => setWaitedFor(outcome),
+    heldReason,
   );
   return (
     <Dialog open title={title} destructive={destructive} onClose={onClose} action={action}>
@@ -113,12 +125,14 @@ export function AssignRoleDialog({
   user,
   pending,
   outcome,
+  heldReason,
   onAssign,
   onClose,
 }: {
   user: UserDetails;
   pending: boolean;
   outcome: Outcome | null;
+  heldReason?: string | undefined;
   onAssign: (roleId: string, name: string) => void;
   onClose: () => void;
 }) {
@@ -180,6 +194,7 @@ export function AssignRoleDialog({
       },
       waitedFor === outcome,
       () => setWaitedFor(outcome),
+      heldReason,
     );
   }
 
