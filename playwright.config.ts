@@ -1,4 +1,4 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 
 // The specs run against a production-mode bundle served by vite preview, not
 // the dev server: minified, compiled and routed as it is deployed. It is built
@@ -40,6 +40,21 @@ export default defineConfig({
     baseURL,
     trace: 'on-first-retry',
   },
+  // Every spec in Chromium; the smoke and accessibility specs in Firefox and
+  // WebKit too, where an engine difference would show first.
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    {
+      name: 'firefox',
+      testMatch: /(smoke|a11y)\.spec\.ts$/,
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      name: 'webkit',
+      testMatch: /(smoke|a11y)\.spec\.ts$/,
+      use: { ...devices['Desktop Safari'] },
+    },
+  ],
   webServer: {
     command: `pnpm exec vite build --mode e2e --outDir ${OUT_DIR} && pnpm exec vite preview --outDir ${OUT_DIR} --port ${PORT} --strictPort --host 127.0.0.1`,
     url: baseURL,

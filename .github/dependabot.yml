@@ -1,0 +1,26 @@
+# Weekly, grouped, and no version younger than a week: the same caution as
+# pnpm's release-age policy (pnpm-workspace.yaml), applied to what Dependabot
+# proposes.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      development:
+        dependency-type: development
+      production:
+        dependency-type: production
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ['*']

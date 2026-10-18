@@ -22,7 +22,21 @@ export default defineConfig({
     css: true,
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html'],
+      reporter: ['text-summary', 'html'],
+      // Application code only: not the tests, the mock, the entry point that
+      // starts it, or the development-only specimen route.
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.test.{ts,tsx}',
+        'src/**/*.d.ts',
+        'src/lib/testing/**',
+        'src/setupTests.ts',
+        'src/main.tsx',
+        'src/app/design/**',
+      ],
+      // Two points under what was measured when the floor was set (96.2, 85.8,
+      // 95.7, 96.7): a drop fails the build, a gain does not move it.
+      thresholds: { statements: 94, branches: 83, functions: 93, lines: 94 },
     },
   },
 });

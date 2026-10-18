@@ -1,0 +1,35 @@
+name: Set up Node and pnpm
+description: Node from .nvmrc, pnpm from npm, the pnpm store cached, dependencies installed.
+
+runs:
+  using: composite
+  steps:
+    # setup-node runs before pnpm is installed, so its package-manager cache
+    # is disabled explicitly: it would detect pnpm-lock.yaml and shell out to
+    # a pnpm that does not exist yet. The store is cached below instead.
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version-file: .nvmrc
+        package-manager-cache: false
+
+    # pnpm comes from npm, not corepack. The corepack bundled with Node 24
+    # does not resolve pnpm 12's bin layout, and the same choice is made on
+    # the development machine.
+    - name: Install pnpm
+      shell: bash
+      run: npm install --global pnpm@12.4.2
+
+    - name: Locate the pnpm store
+      id: store
+      shell: bash
+      run: echo "path=$(pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ steps.store.outputs.path }}
+        key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+        restore-keys: pnpm-store-${{ runner.os }}-
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
