@@ -80,3 +80,11 @@ refresh, the boot and a 401 share one, a replay refused again is not refreshed a
 second time, and an auth call's 401 never refreshes. A refresh that gets no
 answer at all rejects the waiting request like an unanswered `fetch`; the mock
 cannot make a refresh unreachable, so that branch is not yet tested.
+
+## Correction, 2026-10-18
+
+The unanswered refresh is tested. `src/lib/api/refresh.test.ts` makes the refresh
+fail with no response (MSW's `HttpResponse.error()`, once): the waiting request
+rejects like an unanswered `fetch`, the token stays, and no listener hears that
+the session ended; the next request refreshes and succeeds. `docs/BUILD-PLAN.md`
+section 14 lists it with the other changes of `fix/http-edge-cases`.

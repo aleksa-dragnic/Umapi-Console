@@ -7,7 +7,7 @@ import {
   VERSION_HEADERS,
   endpoint,
   matchesIfNoneMatch,
-  weakETag,
+  strongETag,
 } from '@/lib/testing/http';
 
 export const roleHandlers = [
@@ -20,7 +20,7 @@ export const roleHandlers = [
       permissions: [...role.permissions],
     }));
     const json = JSON.stringify(body);
-    const etag = await weakETag(json);
+    const etag = await strongETag(json);
     const headers = { ...CACHE_HEADERS, ...VERSION_HEADERS, ETag: etag };
     if (matchesIfNoneMatch(request, etag)) {
       return new HttpResponse(null, { status: 304, headers });

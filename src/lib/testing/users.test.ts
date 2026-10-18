@@ -143,14 +143,16 @@ describe('mock: the user directory (rows 12-21, 47, 67, 73)', () => {
 });
 
 describe('mock: caching and writes (rows 22-27, 49, 57, 58)', () => {
-  it('serves weak ETags and answers a matching If-None-Match with an empty 304', async () => {
+  it('serves the strong ETags a browser gets, and answers a matching If-None-Match, weak or not, with an empty 304 (rows 44, 92)', async () => {
     for (const path of ['/api/v1/users', `/api/v1/users/${MOCK_ACCOUNTS.demo.id}`]) {
       const first = await call(path, { headers: demo.auth });
       const etag = first.headers.get('ETag') ?? '';
-      expect(etag).toMatch(/^W\/"/);
-      const second = await call(path, { headers: { ...demo.auth, 'If-None-Match': etag } });
-      expect(second.status).toBe(304);
-      expect(await second.text()).toBe('');
+      expect(etag).toMatch(/^"[\w-]{43}"$/);
+      for (const sent of [etag, `W/${etag}`]) {
+        const second = await call(path, { headers: { ...demo.auth, 'If-None-Match': sent } });
+        expect(second.status).toBe(304);
+        expect(await second.text()).toBe('');
+      }
     }
   });
 

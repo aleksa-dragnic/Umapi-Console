@@ -93,7 +93,7 @@ describe('the inspector (inventory section 3.8)', () => {
     const response = codeWindow(/^200 .*· \d+ ms$/);
     // JSON is laid out, whatever its media type.
     expect(response).toHaveTextContent(`"email": "${MOCK_ACCOUNTS.demo.email}"`);
-    expect(response).toHaveTextContent(/etag: W\//i);
+    expect(response).toHaveTextContent(/etag: "[\w-]{43}"/i);
   });
 
   it('pending: the row appears at once with no duration, then settles in place', async () => {
