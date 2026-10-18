@@ -151,11 +151,22 @@ with every visitor, and spends nine of the auth limit's ten requests a minute.
 - [`docs/OBSERVED-BEHAVIOUR.md`](docs/OBSERVED-BEHAVIOUR.md) - what the API was
   measured to do, row by row; the console is written from these rows, not from
   the OpenAPI document alone.
+- [`docs/architecture.md`](docs/architecture.md) - where things are, and the path
+  of a request.
+- [`docs/TESTING.md`](docs/TESTING.md) - the test layers, the commands and the
+  rules.
+- [`SECURITY.md`](SECURITY.md) - how to report a vulnerability, and what is in
+  place.
+- [`AGENTS.md`](AGENTS.md) - instructions for coding agents. The console is
+  built with the help of AI coding agents (Claude Code); every change is
+  reviewed, and since `v1.0.0` commits written with one carry a
+  `Co-Authored-By` line.
 
 ## Known limits
 
-- **Narrow screens scroll.** Layout was checked by hand at 380px; tables scroll
-  sideways there rather than wrap. No test covers narrow viewports.
+- **Narrow screens scroll.** Tables scroll sideways at a phone's width rather
+  than wrap. The accessibility spec checks sign-in, the directory and the detail
+  at 375 px; the layout itself was checked by hand.
 - **A run of 429s on the Session screen's race** reads as "unexpected" without
   the countdown the rest of the console shows.
 - **A refused or unanswered sign-out** leaves the cookie valid, so a reload
