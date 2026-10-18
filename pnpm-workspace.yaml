@@ -4,10 +4,6 @@ allowBuilds:
 # pnpm 11 and later default to the same; it is written here so the policy does
 # not depend on the pnpm in use.
 minimumReleaseAge: 1440
-minimumReleaseAgeExclude:
-  # 24.13.6 was younger than the policy when it was installed, and pnpm wrote
-  # this exclusion rather than refuse it (build plan section 14).
-  - '@types/node@24.13.6'
 overrides:
   # GHSA-68fv-2mgg-jv7q, high: reached only through jsdom, css-tree and
   # Tailwind's build, never the bundle. 1.2.2 is the patched release.
