@@ -13,6 +13,7 @@ const APPLICATION_TYPES: Record<number, string> = {
   401: 'https://datatracker.ietf.org/doc/html/rfc9110#section-15.5.2',
   404: 'https://datatracker.ietf.org/doc/html/rfc9110#section-15.5.5',
   409: 'https://datatracker.ietf.org/doc/html/rfc9110#section-15.5.10',
+  412: 'https://datatracker.ietf.org/doc/html/rfc9110#section-15.5.13',
   422: 'https://datatracker.ietf.org/doc/html/rfc9110#section-15.5.21',
 };
 
@@ -22,6 +23,7 @@ const TITLES: Record<number, string> = {
   403: 'Forbidden',
   404: 'Not Found',
   409: 'Conflict',
+  412: 'Precondition Failed',
   422: 'Unprocessable Entity',
   429: 'Too Many Requests',
 };

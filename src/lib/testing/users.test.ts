@@ -160,25 +160,52 @@ describe('mock: caching and writes (rows 22-27, 49, 57, 58)', () => {
     expect(await response.json()).not.toHaveProperty('errorCode');
   });
 
-  it('answers an update with an empty 204, moves the ETag, and lets the last write win', async () => {
+  it('answers an update with an empty 204 and moves the ETag and the version (rows 25, 57)', async () => {
     const path = `/api/v1/users/${MOCK_ACCOUNTS.demo.id}`;
-    const before = (await call(path, { headers: admin.auth })).headers.get('ETag');
-    const write = (lastName: string) =>
-      call(path, {
-        method: 'PUT',
-        ...json(
-          { email: MOCK_ACCOUNTS.demo.email, firstName: 'Demo', lastName },
-          { ...admin.auth, 'If-Match': before ?? '' },
-        ),
-      });
-    const first = await write('First');
-    expect(first.status).toBe(204);
-    expect(await first.text()).toBe('');
-    // A stale If-Match is not read: the second write wins silently.
-    expect((await write('Second')).status).toBe(204);
+    const read = await call(path, { headers: admin.auth });
+    const before = read.headers.get('ETag');
+    const { version } = (await read.json()) as { version: string };
+    const write = await call(path, {
+      method: 'PUT',
+      ...json(
+        { email: MOCK_ACCOUNTS.demo.email, firstName: 'Demo', lastName: 'First' },
+        { ...admin.auth, 'If-Match': `"${version}"` },
+      ),
+    });
+    expect(write.status).toBe(204);
+    expect(await write.text()).toBe('');
     const after = await call(path, { headers: admin.auth });
     expect(after.headers.get('ETag')).not.toBe(before);
-    expect(await after.json()).toMatchObject({ lastName: 'Second' });
+    expect(await after.json()).toMatchObject({
+      lastName: 'First',
+      version: String(Number(version) + 1),
+    });
+  });
+
+  it('refuses a stale If-Match with 412, a malformed one with 400, and writes without one (row 96)', async () => {
+    const path = `/api/v1/users/${MOCK_ACCOUNTS.demo.id}`;
+    const { version } = (await (await call(path, { headers: admin.auth })).json()) as {
+      version: string;
+    };
+    const lock = (ifMatch?: string) =>
+      call(`${path}/lock`, {
+        method: 'POST',
+        headers: { ...admin.auth, ...(ifMatch === undefined ? {} : { 'If-Match': ifMatch }) },
+      });
+
+    const malformed = await lock(version);
+    expect(malformed.status).toBe(400);
+    expect(await malformed.json()).toMatchObject({ errorCode: 'Request.InvalidIfMatch' });
+
+    const stale = await lock(`"${Number(version) - 1}"`);
+    expect(stale.status).toBe(412);
+    expect(await stale.json()).toMatchObject({
+      title: 'Precondition Failed',
+      errorCode: 'User.VersionMismatch',
+    });
+
+    expect((await lock(`"${version}"`)).status).toBe(204);
+    expect((await lock()).status).toBe(409);
   });
 
   it('answers domain conflicts with 409 and domain refusals with 400, with their error codes', async () => {

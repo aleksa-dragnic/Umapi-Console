@@ -84,6 +84,15 @@ export interface paths {
                         "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
                     };
                 };
+                /** @description Too many requests in the policy's window. Retry-After says when to try again. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
             };
         };
         delete?: never;
@@ -117,6 +126,15 @@ export interface paths {
                     };
                     content: {
                         "application/json": unknown;
+                    };
+                };
+                /** @description Too many requests in the policy's window. Retry-After says when to try again. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
             };
@@ -185,6 +203,15 @@ export interface paths {
                     content: {
                         "application/json": components["schemas"]["ProblemDetails"];
                         "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Too many requests in the policy's window. Retry-After says when to try again. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
             };
@@ -264,6 +291,15 @@ export interface paths {
                         "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
                     };
                 };
+                /** @description Too many requests in the policy's window. Retry-After says when to try again. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
             };
         };
         patch?: never;
@@ -296,6 +332,15 @@ export interface paths {
                     };
                     content: {
                         "application/json": unknown;
+                    };
+                };
+                /** @description Too many requests in the policy's window. Retry-After says when to try again. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
             };
@@ -373,6 +418,15 @@ export interface paths {
                     content: {
                         "application/json": components["schemas"]["ProblemDetails"];
                         "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Too many requests in the policy's window. Retry-After says when to try again. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
             };
@@ -463,6 +517,15 @@ export interface paths {
                         "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
                     };
                 };
+                /** @description Too many requests in the policy's window. Retry-After says when to try again. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
             };
         };
         patch?: never;
@@ -540,6 +603,14 @@ export interface components {
             status?: null | number | string;
             detail?: null | string;
             instance?: null | string;
+            /** @description Stable code for a failure the application decided, such as User.EmailNotUnique. Absent on failures the framework writes. */
+            errorCode?: null | string;
+            /** @description The W3C trace id of the request, as it appears in the logs. */
+            traceId?: null | string;
+            /** @description On a 422: the messages for each field that failed validation. */
+            errors?: null | {
+                [key: string]: string[];
+            };
         };
         RegisterUserRequest: {
             email: string;
@@ -576,12 +647,14 @@ export interface components {
             email: string;
             firstName: string;
             lastName: string;
-            status: string;
+            /** @enum {string} */
+            status: "Pending" | "Active" | "Locked" | "Deactivated";
             roles: components["schemas"]["UserRoleResponse"][];
             /** Format: date-time */
             createdAtUtc: string;
             /** Format: date-time */
             updatedAtUtc: string;
+            version: string;
         };
         UserResponse: {
             /** Format: uuid */
@@ -589,7 +662,8 @@ export interface components {
             email: string;
             firstName: string;
             lastName: string;
-            status: string;
+            /** @enum {string} */
+            status: "Pending" | "Active" | "Locked" | "Deactivated";
         };
         UserRoleResponse: {
             /** Format: uuid */
@@ -663,6 +737,15 @@ export interface operations {
                     "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
                 };
             };
+            /** @description The request body is larger than the 256 KB the server accepts. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
             /** @description Unprocessable Entity */
             422: {
                 headers: {
@@ -671,6 +754,15 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ProblemDetails"];
                     "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too many requests in the policy's window. Retry-After says when to try again. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
         };
@@ -721,6 +813,15 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ProblemDetails"];
                     "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too many requests in the policy's window. Retry-After says when to try again. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
         };
@@ -783,6 +884,15 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ProblemDetails"];
                     "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too many requests in the policy's window. Retry-After says when to try again. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
         };
@@ -862,6 +972,15 @@ export interface operations {
                     "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
                 };
             };
+            /** @description Too many requests in the policy's window. Retry-After says when to try again. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
     };
     RegisterUserV1: {
@@ -919,6 +1038,15 @@ export interface operations {
                     "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
                 };
             };
+            /** @description The request body is larger than the 256 KB the server accepts. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
             /** @description Unprocessable Entity */
             422: {
                 headers: {
@@ -927,6 +1055,15 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ProblemDetails"];
                     "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too many requests in the policy's window. Retry-After says when to try again. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
         };
@@ -1002,12 +1139,23 @@ export interface operations {
                     "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
                 };
             };
+            /** @description Too many requests in the policy's window. Retry-After says when to try again. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
     };
     UpdateUserV1: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "If-Match"?: string;
+            };
             path: {
                 id: string;
             };
@@ -1070,6 +1218,25 @@ export interface operations {
                     "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
                 };
             };
+            /** @description Precondition Failed */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                    "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description The request body is larger than the 256 KB the server accepts. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
             /** @description Unprocessable Entity */
             422: {
                 headers: {
@@ -1080,12 +1247,23 @@ export interface operations {
                     "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
                 };
             };
+            /** @description Too many requests in the policy's window. Retry-After says when to try again. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
     };
     LockUserV1: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "If-Match"?: string;
+            };
             path: {
                 id: string;
             };
@@ -1152,12 +1330,33 @@ export interface operations {
                     "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
                 };
             };
+            /** @description Precondition Failed */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                    "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too many requests in the policy's window. Retry-After says when to try again. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
     };
     UnlockUserV1: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "If-Match"?: string;
+            };
             path: {
                 id: string;
             };
@@ -1214,12 +1413,33 @@ export interface operations {
                     "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
                 };
             };
+            /** @description Precondition Failed */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                    "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too many requests in the policy's window. Retry-After says when to try again. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
     };
     AssignRoleV1: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "If-Match"?: string;
+            };
             path: {
                 id: string;
             };
@@ -1282,6 +1502,25 @@ export interface operations {
                     "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
                 };
             };
+            /** @description Precondition Failed */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                    "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description The request body is larger than the 256 KB the server accepts. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
             /** @description Unprocessable Entity */
             422: {
                 headers: {
@@ -1292,12 +1531,23 @@ export interface operations {
                     "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
                 };
             };
+            /** @description Too many requests in the policy's window. Retry-After says when to try again. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
     };
     RemoveRoleV1: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "If-Match"?: string;
+            };
             path: {
                 id: string;
                 roleId: string;
@@ -1353,6 +1603,25 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ProblemDetails"];
                     "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Precondition Failed */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                    "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too many requests in the policy's window. Retry-After says when to try again. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
         };
