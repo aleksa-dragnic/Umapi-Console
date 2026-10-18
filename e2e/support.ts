@@ -47,3 +47,41 @@ export async function setRefreshRace(page: Page, outcome: 'conflict' | 'reuse'):
     mock.setRefreshRace(race);
   }, outcome);
 }
+
+/** One answer in place of the mock's, for the next matching request. */
+export async function respondOnce(
+  page: Page,
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  path: string,
+  status: number,
+  body?: unknown,
+  headers?: Record<string, string>,
+): Promise<void> {
+  await page.evaluate(
+    ([m, p, s, b, h]) => {
+      const mock = (
+        window as unknown as {
+          __umapiMock?: {
+            respondOnce: (
+              method: string,
+              path: string,
+              status: number,
+              body?: unknown,
+              headers?: Record<string, string>,
+            ) => void;
+          };
+        }
+      ).__umapiMock;
+      if (mock === undefined) throw new Error('The e2e build did not expose the mock controls.');
+      mock.respondOnce(m, p, s, b, h);
+    },
+    [method, path, status, body, headers] as const,
+  );
+}
+
+/** Holds the first mocked response of the next page load, the boot refresh, for `ms`. */
+export async function coldStartOnLoad(page: Page, ms: number): Promise<void> {
+  await page.addInitScript((delay) => {
+    Object.assign(window, { __umapiMockBoot: { coldStartMs: delay } });
+  }, ms);
+}

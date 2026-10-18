@@ -57,12 +57,15 @@ function formMessage(outcome: Outcome | null): string | null {
 export function ProfileForm({
   initial,
   outcome,
+  heldReason,
   onSave,
   onCancel,
 }: {
   initial: ProfileValues;
   /** Why the last save was refused, if it was. */
   outcome: Outcome | null;
+  /** Why Save cannot be sent now, as the Edit control would say: offline, for one. */
+  heldReason?: string | undefined;
   onSave: (values: ProfileValues) => void;
   onCancel: () => void;
 }) {
@@ -80,7 +83,7 @@ export function ProfileForm({
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (limited) return;
+    if (limited || heldReason !== undefined) return;
     onSave(values);
   }
 
@@ -116,7 +119,9 @@ export function ProfileForm({
           disabledReason={
             outcome?.kind === 'rate-limited' && limited ? (
               <RateLimitNotice seconds={outcome.seconds} onElapsed={() => setWaited(true)} />
-            ) : undefined
+            ) : (
+              heldReason
+            )
           }
         >
           Save

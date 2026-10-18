@@ -125,6 +125,7 @@ describe('the directory rows (inventory sections 3.3 and 4)', () => {
     const row = (await dataRows())[1] as HTMLElement;
     expect(linkOf(row)).toHaveTextContent(email);
     expect(row).toHaveAttribute('aria-current', 'true');
+    await waitFor(() => expect(linkOf(row)).toHaveFocus());
   });
 
   it('a changed filter forgets the selection', async () => {

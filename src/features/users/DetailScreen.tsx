@@ -392,6 +392,7 @@ export function DetailScreen() {
           destructive
           pending={saving}
           outcome={dialogOutcome}
+          heldReason={reasonFor('lock')}
           onConfirm={() => void confirm('lock', { kind: 'lock' })}
           onClose={() => setDialog(null)}
         />
@@ -404,6 +405,7 @@ export function DetailScreen() {
           destructive={false}
           pending={saving}
           outcome={dialogOutcome}
+          heldReason={reasonFor('lock')}
           onConfirm={() => void confirm('lock', { kind: 'unlock' })}
           onClose={() => setDialog(null)}
         />
@@ -416,6 +418,7 @@ export function DetailScreen() {
           destructive
           pending={saving}
           outcome={dialogOutcome}
+          heldReason={reasonFor('remove-role')}
           onConfirm={() =>
             void confirm('remove-role', { kind: 'remove-role', roleId: dialog.roleId })
           }
@@ -427,6 +430,7 @@ export function DetailScreen() {
           user={user}
           pending={saving}
           outcome={dialogOutcome}
+          heldReason={reasonFor('assign-role')}
           onAssign={(roleId, role) =>
             void confirm('assign-role', { kind: 'assign-role', roleId, name: role })
           }
@@ -489,6 +493,7 @@ function IdentityPanel({
           <ProfileForm
             initial={editing.values}
             outcome={editing.outcome}
+            heldReason={reasonFor('edit')}
             onSave={onSave}
             onCancel={onCancel}
           />
