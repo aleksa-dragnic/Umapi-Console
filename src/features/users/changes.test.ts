@@ -1,5 +1,5 @@
 import { RequestError, type UserDetails } from '@/features/users/api';
-import { UNCONFIRMED, applied, outcomeOf, type Outcome } from '@/features/users/changes';
+import { UNCONFIRMED, applied, ifMatch, outcomeOf, type Outcome } from '@/features/users/changes';
 import type { Problem } from '@/lib/api/problem';
 
 // What each refusal means for the screen (inventory section 3.4), by status and
@@ -28,6 +28,11 @@ describe('what a refused write means', () => {
     [
       'User.AlreadyDeactivated',
       { status: 409, title: 'Conflict', errorCode: 'User.AlreadyDeactivated' },
+      'conflict',
+    ],
+    [
+      'User.VersionMismatch',
+      { status: 412, title: 'Precondition Failed', errorCode: 'User.VersionMismatch' },
       'conflict',
     ],
     [
@@ -93,6 +98,7 @@ describe('what the screen shows before the API answers', () => {
     roles: [{ roleId: 'member', name: 'Member', assignedAtUtc: '2025-03-01T08:00:00Z' }],
     createdAtUtc: '2025-03-01T08:00:00Z',
     updatedAtUtc: '2025-03-01T08:00:00Z',
+    version: '7',
   };
 
   it('the edited profile, and not a new update time the server has not given', () => {
@@ -116,5 +122,12 @@ describe('what the screen shows before the API answers', () => {
     expect(applied(assigned, { kind: 'remove-role', roleId: 'member' }).roles).toEqual([
       { roleId: 'support', name: 'Support', assignedAtUtc: UNCONFIRMED },
     ]);
+  });
+});
+
+describe('the version a write carries (row 96)', () => {
+  it('is quoted, as If-Match carries an entity tag, and absent when the detail has none', () => {
+    expect(ifMatch('1234')).toEqual({ 'If-Match': '"1234"' });
+    expect(ifMatch(undefined)).toEqual({});
   });
 });

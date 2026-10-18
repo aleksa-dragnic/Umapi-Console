@@ -68,6 +68,8 @@ const ready = () => screen.findByRole('button', { name: 'Edit' });
 const fieldValue = (label: string) =>
   within(identity()).getByText(label, { selector: 'dt' }).nextElementSibling?.textContent;
 const etagShown = () => within(concurrency()).getByText(/^W\//).textContent;
+const STALE_DETAIL =
+  'The user was changed after the version given in If-Match. Read it again and retry.';
 
 /** A second tab, as the administrator: changes the record behind the screen's back. */
 async function elsewhere(): Promise<Session> {
@@ -276,7 +278,7 @@ describe('the user detail (inventory section 3.4)', () => {
     expect(screen.getByLabelText('Last name')).toHaveValue('Readers');
   });
 
-  it('conflict: a stale tab locking a locked user rolls back and offers Reload (rows 49, 58)', async () => {
+  it('conflict: a stale tab locking a user locked elsewhere meets 412, rolls back and offers Reload (row 96)', async () => {
     await renderDetail(MOCK_ACCOUNTS.demo.id);
     await ready();
     const other = await elsewhere();
@@ -289,7 +291,7 @@ describe('the user detail (inventory section 3.4)', () => {
     await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Lock' }));
 
     const panel = await screen.findByRole('region', { name: 'Conflict' });
-    expect(panel).toHaveTextContent('The user is already locked.');
+    expect(panel).toHaveTextContent(STALE_DETAIL);
     expect(panel).toHaveTextContent(CONFLICT_COPY);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(within(identity()).getByText('Active')).toBeInTheDocument();
@@ -299,6 +301,29 @@ describe('the user detail (inventory section 3.4)', () => {
     expect(await within(identity()).findByText('Locked')).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Conflict' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Unlock' })).toBeInTheDocument();
+  });
+
+  it('conflict: an edit saved after another tab saved is refused, not written over it (row 96)', async () => {
+    await renderDetail(MOCK_ACCOUNTS.demo.id);
+    await userEvent.click(await ready());
+    const other = await elsewhere();
+    await call(`/api/v1/users/${MOCK_ACCOUNTS.demo.id}`, {
+      method: 'PUT',
+      ...json(
+        { email: MOCK_ACCOUNTS.demo.email, firstName: 'Demo', lastName: 'Elsewhere' },
+        other.auth,
+      ),
+    });
+
+    await userEvent.type(screen.getByLabelText('Last name'), 's');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    const panel = await screen.findByRole('region', { name: 'Conflict' });
+    expect(panel).toHaveTextContent(STALE_DETAIL);
+    expect(demo().lastName).toBe('Elsewhere');
+
+    await userEvent.click(within(panel).getByRole('button', { name: 'Reload' }));
+    expect(await within(identity()).findByText('Elsewhere')).toBeInTheDocument();
   });
 
   it('forbidden: a 403 is an error in place, and the control that earned it disables (section 2.5)', async () => {
@@ -496,7 +521,7 @@ describe('assign-role (inventory section 3.5)', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Assign' }));
 
     const panel = await screen.findByRole('region', { name: 'Conflict' });
-    expect(panel).toHaveTextContent('The user already holds this role.');
+    expect(panel).toHaveTextContent(STALE_DETAIL);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(within(roles()).getAllByRole('row')).toHaveLength(2);
   });
