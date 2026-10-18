@@ -5,8 +5,9 @@ import { useEffect, useRef } from 'react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 
 import { CRASHED_COPY, ISSUES_URL } from '@/app/ErrorBoundary';
-import { OFFLINE_COPY, Shell } from '@/app/Shell';
+import { OFFLINE_COPY, SKIP_COPY, Shell } from '@/app/Shell';
 import { RequireSession, SessionBoundary } from '@/features/auth';
+import { DirectoryScreen } from '@/features/users';
 import { clearCaptures } from '@/lib/api/capture';
 import { api } from '@/lib/api/client';
 import { MOCK_ACCOUNTS, simulateColdStart } from '@/lib/testing/mock';
@@ -52,6 +53,7 @@ async function renderShell(entry = '/users') {
                 <Route path="/users" element={<Screen title="Users" />} />
                 <Route path="/roles" element={<Screen title="Roles" />} />
                 <Route path="/placing" element={<Placing />} />
+                <Route path="/directory" element={<DirectoryScreen />} />
                 <Route path="/session" element={<Crash />} />
               </Route>
             </Route>
@@ -90,6 +92,37 @@ describe('the shell', () => {
     await userEvent.click(within(nav()).getByRole('link', { name: 'Roles' }));
 
     expect(screen.getByRole('heading', { name: 'Roles' })).toHaveFocus();
+  });
+
+  it("offers Skip to content first, and it lands on the screen's h1", async () => {
+    await renderShell();
+    (document.activeElement as HTMLElement | null)?.blur();
+
+    await userEvent.tab();
+    const skip = screen.getByRole('link', { name: SKIP_COPY });
+    expect(skip).toHaveFocus();
+    await userEvent.keyboard('{Enter}');
+
+    expect(screen.getByRole('heading', { name: 'Users' })).toHaveFocus();
+  });
+
+  it('Escape closes the inspector before it clears the search (inventory section 4)', async () => {
+    await renderShell('/directory');
+    const search = await screen.findByLabelText('Search');
+    await userEvent.type(search, 'ovic');
+    await userEvent.click(screen.getByRole('button', { name: 'Inspector' }));
+    await userEvent.click(search);
+
+    await userEvent.keyboard('{Escape}');
+    expect(screen.getByRole('button', { name: 'Inspector' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    expect(search).toHaveValue('ovic');
+
+    await userEvent.click(search);
+    await userEvent.keyboard('{Escape}');
+    expect(search).toHaveValue('');
   });
 
   it('leaves focus where a screen placed it inside its main', async () => {

@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
 
 import { ErrorBoundary } from '@/app/ErrorBoundary';
@@ -26,6 +26,28 @@ import { useAfter } from '@/ui/useAfter';
  */
 
 export const OFFLINE_COPY = 'No connection. The console cannot reach the API.';
+export const SKIP_COPY = 'Skip to content';
+
+/**
+ * The first stop of the tab order, shown only when it has focus. It lands where
+ * a change of route lands: the screen's `h1`.
+ */
+function SkipLink() {
+  function skip(event: MouseEvent<HTMLAnchorElement>) {
+    event.preventDefault();
+    const main = document.querySelector('main');
+    (main?.querySelector<HTMLElement>('h1') ?? main)?.focus();
+  }
+  return (
+    <a
+      href="#content"
+      onClick={skip}
+      className="sr-only rounded-control border border-border-strong bg-lift px-app-3 py-app-1 text-fg-emphasis focus:not-sr-only focus:absolute focus:left-app-4 focus:top-app-1 focus:z-50"
+    >
+      {SKIP_COPY}
+    </a>
+  );
+}
 
 const NAVIGATION = [
   { to: USERS_PATH, label: 'Users' },
@@ -88,6 +110,7 @@ export function Shell() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <SkipLink />
       <header className="sticky top-0 z-30 border-b border-border-default bg-canvas">
         <div className="flex min-h-[var(--size-shell-header)] flex-wrap items-center gap-x-app-4 px-app-4">
           <span className="text-app-body font-semibold text-fg-emphasis">Umapi Console</span>
@@ -122,7 +145,7 @@ export function Shell() {
         <ColdStartLine />
       </header>
 
-      <div className="flex flex-1 flex-col">
+      <div id="content" className="flex flex-1 flex-col">
         <ErrorBoundary key={pathname}>
           <Outlet />
         </ErrorBoundary>
