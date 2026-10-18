@@ -94,6 +94,10 @@ export function TableHeaderCell({
           className="inline-flex items-center gap-app-1 uppercase transition-colors duration-[var(--duration-hover)] ease-standard hover:text-fg-primary"
         >
           {children}
+          {/* The direction for the eye; aria-sort already says it to a screen reader. */}
+          {sort === 'ascending' || sort === 'descending' ? (
+            <span aria-hidden="true">{sort === 'ascending' ? '↑' : '↓'}</span>
+          ) : null}
         </button>
       ) : (
         children
