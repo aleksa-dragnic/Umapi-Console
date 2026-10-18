@@ -75,3 +75,10 @@ checked, but nothing would have failed had one appeared.
 
 The decision stands. This section corrects the record; `docs/BUILD-PLAN.md`
 section 14 lists it with the other corrections of `docs/correct-drift`.
+
+## Enforced, 2026-10-18
+
+`build/enforce-documented-rules` makes the ban a lint error: `no-restricted-imports`
+refuses `memo`, `useMemo` and `useCallback` from `react` in every file under `src/`,
+and the plugin's React Compiler rules (`purity`, `refs`, `set-state-in-effect` and
+the rest) run with `exhaustive-deps`, all as errors, under `--max-warnings 0`.

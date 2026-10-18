@@ -127,3 +127,11 @@ runs on every pull request.
 
 The decision stands. This section corrects the record; `docs/BUILD-PLAN.md`
 section 14 lists it with the other corrections of `docs/correct-drift`.
+
+## Enforced, 2026-10-18
+
+`src/lib/design/usage.test.ts` replaces the grep. It reads every source file
+under `src/` except tests, the mock and `src/lib/design`, and fails on a literal
+hex colour, on any tier 1 token as a utility class or a custom property (the names
+are read from the tier 1 block of `docs/tokens.css`), and on a status token
+outside `src/ui/StatusDot.tsx` and `src/features/inspector/Inspector.tsx`.
