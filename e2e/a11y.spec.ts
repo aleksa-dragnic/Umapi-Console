@@ -16,9 +16,10 @@ const STRONG_TAG = /"[\w-]{43}"/;
 async function violations(page: Page): Promise<string[]> {
   // Screens fade in (`animate-enter`). Measured mid-fade, text is still partly
   // transparent and fails contrast - Firefox showed it - so the page is measured
-  // as it settles, not as it arrives.
+  // as it settles, not as it arrives. An animation cancelled on the way - its
+  // element replaced by the next render - rejects `finished`; that is settled too.
   await page.evaluate(() =>
-    Promise.all(document.getAnimations().map((animation) => animation.finished)),
+    Promise.allSettled(document.getAnimations().map((animation) => animation.finished)),
   );
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
