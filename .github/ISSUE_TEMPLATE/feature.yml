@@ -1,0 +1,21 @@
+name: Idea
+description: Something the console could do.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The console's scope is set by docs/BUILD-PLAN.md section 1, its
+        non-goals included. An idea is recorded here and weighed against it.
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it would matter
+    validations:
+      required: true

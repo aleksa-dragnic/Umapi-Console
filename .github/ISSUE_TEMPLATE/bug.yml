@@ -1,0 +1,25 @@
+name: Bug
+description: Something the console does that it should not, or does not do that the documentation says it does.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what the screen showed, and the request in the inspector if there was one. Remove tokens and passwords.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: Link the screen inventory section, ADR or README line that says so, if there is one.
+    validations:
+      required: true
+  - type: input
+    id: where
+    attributes:
+      label: Where
+      description: The deployed console or a local run, the browser and its version, and the commit.
+    validations:
+      required: true
