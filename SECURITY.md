@@ -50,7 +50,8 @@ Out of scope:
   `SameSite=Strict` cookie on `/api/v1/auth` only (ADR 0007).
 - **Headers.** `public/_headers` sends a Content Security Policy that allows
   scripts and styles from the console itself and connections to the API alone,
-  with HSTS, no framing and no referrer (ADR 0015).
+  and requires Trusted Types; with HSTS, no framing, no referrer, no browser
+  features and an isolated window (ADR 0015).
 - **The inspector redacts.** Authorization headers, passwords and tokens are
   replaced before a request is recorded, and `Copy as curl` uses placeholders
   (ADR 0014).
