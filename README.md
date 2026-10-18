@@ -124,12 +124,12 @@ the two are different sites.
 
 ## Testing
 
-| Layer              | Command           | What runs                                                                                                              | At v1.0.0                        |
-| ------------------ | ----------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| Unit and component | `pnpm test:run`   | Vitest in jsdom, against the mock                                                                                      | 386 tests in 52 files            |
-| End to end         | `pnpm test:e2e`   | Playwright on a production build with the mock, axe on every route, the inspector and the assign-role dialog           | 18 tests in 8 specs              |
-| Contract           | CI job `contract` | the committed API types compared with the live OpenAPI document                                                        | weekly and on every pull request |
-| Live               | `pnpm test:live`  | Playwright against the deployed console and API: one auth cycle, the directory, the read-only boundary, the cold start | 3 tests, by hand only            |
+| Layer              | Command           | What runs                                                                                                                | At v1.0.0                        |
+| ------------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------- |
+| Unit and component | `pnpm test:run`   | Vitest in jsdom, against the mock                                                                                        | 386 tests in 52 files            |
+| End to end         | `pnpm test:e2e`   | Playwright on a production build with the mock, axe at WCAG 2.2 AA on every route, dialog and error state, and at 375 px | 18 tests in 8 specs              |
+| Contract           | CI job `contract` | the committed API types compared with the live OpenAPI document                                                          | weekly and on every pull request |
+| Live               | `pnpm test:live`  | Playwright against the deployed console and API: one auth cycle, the directory, the read-only boundary, the cold start   | 3 tests, by hand only            |
 
 `build-and-test` and `e2e` are required on every pull request. The live suite
 never runs in CI: it depends on a free instance waking, shares the demo account

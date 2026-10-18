@@ -74,4 +74,25 @@ describe('Table', () => {
 
     expect(onSort).toHaveBeenCalledTimes(1);
   });
+
+  test('a sorted column shows its direction, and an unsorted one shows none', () => {
+    render(
+      <Table caption="Users">
+        <TableHead>
+          <TableRow>
+            <TableHeaderCell sort="descending" onSort={vi.fn()}>
+              Email
+            </TableHeaderCell>
+            <TableHeaderCell sort="none" onSort={vi.fn()}>
+              Status
+            </TableHeaderCell>
+          </TableRow>
+        </TableHead>
+        <TableBody />
+      </Table>,
+    );
+
+    expect(screen.getByRole('button', { name: 'Email' })).toHaveTextContent('Email↓');
+    expect(screen.getByRole('button', { name: 'Status' })).toHaveTextContent(/^Status$/);
+  });
 });

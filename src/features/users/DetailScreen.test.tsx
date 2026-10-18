@@ -253,7 +253,7 @@ describe('the user detail (inventory section 3.4)', () => {
       window.dispatchEvent(new Event('offline'));
     });
 
-    for (const name of ['Edit', 'Lock', 'Assign role']) {
+    for (const name of ['Edit', 'Lock', 'Assign role', 'Remove Member']) {
       const control = screen.getByRole('button', { name });
       expect(control).toHaveAttribute('aria-disabled', 'true');
       expect(control).toHaveAccessibleDescription(OFFLINE_REASON);
@@ -264,6 +264,52 @@ describe('the user detail (inventory section 3.4)', () => {
     });
 
     expect(screen.getByRole('button', { name: 'Edit' })).not.toHaveAttribute('aria-disabled');
+  });
+
+  it('offline: Save in an open form and the action in an open dialog are held too, and nothing is sent', async () => {
+    await renderDetail(MOCK_ACCOUNTS.demo.id);
+    await userEvent.click(await ready());
+    const requests = captured();
+    const goOffline = () =>
+      act(() => {
+        window.dispatchEvent(new Event('offline'));
+      });
+    const goOnline = () =>
+      act(() => {
+        window.dispatchEvent(new Event('online'));
+      });
+
+    // Back online whatever happens, so a failure here cannot fail the tests after it.
+    try {
+      goOffline();
+      const save = screen.getByRole('button', { name: 'Save' });
+      expect(save).toHaveAttribute('aria-disabled', 'true');
+      expect(save).toHaveAccessibleDescription(OFFLINE_REASON);
+      await userEvent.click(save);
+      goOnline();
+      await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+      await userEvent.click(screen.getByRole('button', { name: 'Lock' }));
+      goOffline();
+      const confirm = within(screen.getByRole('dialog')).getByRole('button', { name: 'Lock' });
+      expect(confirm).toHaveAttribute('aria-disabled', 'true');
+      expect(confirm).toHaveAccessibleDescription(OFFLINE_REASON);
+      await userEvent.click(confirm);
+
+      expect(requests).toEqual([]);
+    } finally {
+      goOnline();
+    }
+  });
+
+  it('cancel closes the form and gives focus back to Edit (inventory section 4)', async () => {
+    await renderDetail(MOCK_ACCOUNTS.demo.id);
+    await userEvent.click(await ready());
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.queryByRole('form', { name: 'Edit profile' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Edit' })).toHaveFocus();
   });
 
   it('a save with no answer keeps what was typed and says nothing answered', async () => {
