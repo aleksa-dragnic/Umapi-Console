@@ -80,10 +80,27 @@ describe('retryAfterSeconds', () => {
     ['60', 60],
     ['42', 42],
     [' 7 ', 7],
-    ['Wed, 21 Oct 2026 07:28:00 GMT', RETRY_AFTER_FALLBACK_SECONDS],
+    ['soon', RETRY_AFTER_FALLBACK_SECONDS],
     [undefined, RETRY_AFTER_FALLBACK_SECONDS],
   ])('Retry-After %s waits %i seconds', (header, seconds) => {
     const response = respond(429, '', header === undefined ? {} : { 'Retry-After': header });
     expect(retryAfterSeconds(response)).toBe(seconds);
+  });
+
+  it('counts an HTTP date from the response Date, and from the clock without one', () => {
+    const at = 'Wed, 21 Oct 2026 07:28:00 GMT';
+    const dated = respond(429, '', { 'Retry-After': at, Date: 'Wed, 21 Oct 2026 07:27:30 GMT' });
+    expect(retryAfterSeconds(dated)).toBe(30);
+
+    const undated = respond(429, '', { 'Retry-After': at });
+    expect(retryAfterSeconds(undated, Date.parse('Wed, 21 Oct 2026 07:27:50 GMT'))).toBe(10);
+  });
+
+  it('waits nothing for a date already past', () => {
+    const response = respond(429, '', {
+      'Retry-After': 'Wed, 21 Oct 2026 07:28:00 GMT',
+      Date: 'Wed, 21 Oct 2026 07:30:00 GMT',
+    });
+    expect(retryAfterSeconds(response)).toBe(0);
   });
 });
