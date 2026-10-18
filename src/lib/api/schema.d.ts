@@ -605,9 +605,9 @@ export interface components {
             instance?: null | string;
             /** @description Stable code for a failure the application decided, such as User.EmailNotUnique. Absent on failures the framework writes. */
             errorCode?: null | string;
-            /** @description The W3C trace id of the request, as it appears in the logs. */
+            /** @description The W3C traceparent id of the request; its trace id part is the one in the logs. */
             traceId?: null | string;
-            /** @description On a 422: the messages for each field that failed validation. */
+            /** @description On a 422, and on a 400 from model binding: the messages for each field that failed. */
             errors?: null | {
                 [key: string]: string[];
             };
