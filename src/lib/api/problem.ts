@@ -72,15 +72,19 @@ export function fieldErrors(problem: Problem, field: string): string[] {
 
 /**
  * The wait a 429 asks for, in seconds. The API sends `Retry-After` as a number
- * of seconds (row 28), and falls back to 60 itself (row 52); the console uses
- * the same fallback when the header is absent or is not a number.
+ * of seconds (row 28), and falls back to 60 itself (row 52). RFC 9110 also
+ * allows an HTTP date: the wait is then counted from the response's own `Date`
+ * when the browser lets the console read it, from the client clock otherwise
+ * (which may be minutes off, row 40), and never below zero. A header that is
+ * neither waits the same 60 seconds.
  */
 export const RETRY_AFTER_FALLBACK_SECONDS = 60;
 
-export function retryAfterSeconds(response: Response): number {
-  const header = response.headers.get('Retry-After');
-  if (header === null || !/^\d+$/.test(header.trim())) {
-    return RETRY_AFTER_FALLBACK_SECONDS;
-  }
-  return Number(header.trim());
+export function retryAfterSeconds(response: Response, now: number = Date.now()): number {
+  const header = response.headers.get('Retry-After')?.trim() ?? '';
+  if (/^\d+$/.test(header)) return Number(header);
+  const at = /[a-z]/i.test(header) ? Date.parse(header) : NaN;
+  if (Number.isNaN(at)) return RETRY_AFTER_FALLBACK_SECONDS;
+  const sent = Date.parse(response.headers.get('Date') ?? '');
+  return Math.max(0, Math.ceil((at - (Number.isNaN(sent) ? now : sent)) / 1000));
 }

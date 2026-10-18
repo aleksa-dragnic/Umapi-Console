@@ -46,7 +46,7 @@ not thirty seconds.
 | Trigger | Any request still pending after 1200 ms |
 | Renders | The screen's own loading state, plus a line beneath it: *Waking the API. The demo runs on a free instance that sleeps when idle — this can take up to a minute.* Ash gray, mono, 12px. A pending status dot, never a spinner that implies imminence. |
 | The way out | Resolves into the screen's ready or error state |
-| Note | The message appears once per session. A second slow request does not repeat it. |
+| Note | The message appears once per session. A second slow request does not repeat it, and neither does a shell mounted again in the same session: the session keeps that it was shown, and a new session starts without it. |
 | Where | Behind the login, the shell carries it beneath its header, watching every request the transport records (ADR 0014). Boot and sign-in, which have no shell, carry their own beneath their controls. |
 
 ### 2.2 `offline`
@@ -119,7 +119,7 @@ The *expected* form of this — the demo account meeting a write action — is
 
 | | |
 |---|---|
-| Trigger | 5xx, or a response that is not JSON when JSON was expected |
+| Trigger | 5xx, or a response that is not JSON when JSON was expected: a success of that kind shows its own status with the title *The response was not JSON* |
 | Renders | The screen's error state with the status and the `title` from the problem details body, plus *Open the inspector to see the full response.* A `traceId`, when the body has one, is shown in mono so it can be quoted. |
 | Note | Only `status` and `title` are present in every problem-details shape the API produces (observed row 34). Nothing on this screen depends on any other field. |
 | Note | The pointer is carried by the read states behind the login - the directory, the detail, the roles a dialog reads - and only when the API answered. Sign-in and boot have no inspector (section 3.8); a write states its failure where the action is (section 3.4), and the inspector holds it like every other request. |
@@ -307,7 +307,7 @@ once the session begins.
 | `pending` | A request in flight | The row appears at once with a pending dot and no duration, and the response pane reads *Waiting for the response.* It settles in place. Requests are not held back until they resolve. | Resolves |
 | `unanswered` | Nothing answered the request | The dot and the words *no response*, the time it took, and *No response from the API.* in the response pane | — |
 | `cancelled` | The console cancelled the request before an answer arrived: a screen that no longer needed it, or React mounting a screen twice in development | The dot and the word *cancelled*, the time it took, and *Cancelled by the console before an answer arrived: the screen that sent it no longer needed it.* in the response pane. It never sets §2.2 | — |
-| `truncated` | A body over 64 kB | The first 64 kB with *Response truncated at 64 kB.* | Copy as `curl` |
+| `truncated` | A body over 64 kB | The first 64 kB, cut before a character rather than inside one, with *Request truncated at 64 kB.* or *Response truncated at 64 kB.* for the body it was | Copy as `curl` |
 
 **Bodies and headers.** A body is rendered as JSON whenever it parses as JSON,
 whatever its media type: `application/json`, `application/problem+json` and

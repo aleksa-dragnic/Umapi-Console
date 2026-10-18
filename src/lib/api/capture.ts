@@ -183,7 +183,11 @@ const decoder = new TextDecoder();
 function bounded(text: string): CapturedBody {
   const bytes = encoder.encode(text);
   if (bytes.length <= BODY_LIMIT_BYTES) return { text, truncated: false };
-  return { text: decoder.decode(bytes.slice(0, BODY_LIMIT_BYTES)), truncated: true };
+  // Cut before a character, never inside one: a UTF-8 continuation byte at the
+  // limit means the character it belongs to started earlier.
+  let end = BODY_LIMIT_BYTES;
+  while (end > 0 && ((bytes[end] ?? 0) & 0xc0) === 0x80) end -= 1;
+  return { text: decoder.decode(bytes.slice(0, end)), truncated: true };
 }
 
 /** The body of a copy the caller made, or null when there is none to read. */

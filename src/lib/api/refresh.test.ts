@@ -1,3 +1,5 @@
+import { HttpResponse, http } from 'msw';
+
 import { currentAccessToken, setAccessToken } from '@/lib/api/access-token';
 import { authApi } from '@/lib/api/auth-client';
 import { api } from '@/lib/api/client';
@@ -13,7 +15,7 @@ import {
 } from '@/lib/api/refresh';
 import { MOCK_ACCOUNTS, advanceClock, setRefreshRace } from '@/lib/testing/mock';
 import { server } from '@/lib/testing/server';
-import { call, json, refresh, signIn } from '@/lib/testing/support';
+import { call, json, refresh, signIn, url } from '@/lib/testing/support';
 
 // Row 2: an access token lives fifteen minutes.
 const expireAccessToken = () => advanceClock(901_000);
@@ -163,6 +165,20 @@ describe('silent refresh (inventory section 2.3, ADR 0008)', () => {
     expect(response.status).toBe(401);
     expect(currentAccessToken()).toBeNull();
     expect(ends).toEqual(['ended']);
+  });
+
+  it('rejects the waiting request like an unanswered fetch when the refresh gets no answer, and keeps the session (ADR 0008)', async () => {
+    const expired = await signedIn();
+    expireAccessToken();
+    const ends = sessionEnds();
+    server.use(http.post(url('/api/v1/auth/refresh'), () => HttpResponse.error(), { once: true }));
+
+    await expect(api.GET('/api/v1/roles')).rejects.toThrow();
+
+    expect(currentAccessToken()).toBe(expired);
+    expect(ends.filter((end) => end !== null)).toEqual([]);
+    const later = await api.GET('/api/v1/roles');
+    expect(later.response.status).toBe(200);
   });
 
   it('never refreshes on the 401 of an auth call itself', async () => {

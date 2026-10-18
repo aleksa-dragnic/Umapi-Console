@@ -114,6 +114,7 @@ function Detail({ capture }: { capture: Capture }) {
       <CodeWindow
         title={`${request.method} ${pathOf(request.url)}`}
         truncatedAtKb={request.body?.truncated === true ? 64 : undefined}
+        truncatedWhat="Request"
       >
         {requestText(capture)}
       </CodeWindow>

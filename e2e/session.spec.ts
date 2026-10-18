@@ -3,6 +3,9 @@ import { expect, test } from '@playwright/test';
 import { DEMO_ACCOUNT } from '../src/lib/api/demo-account';
 import { signInAsDemo } from './support';
 
+// Row 92: a browser gets the strong tag, a quoted SHA-256 in base64url.
+const STRONG_TAG = /"[\w-]{43}"/;
+
 // Gate 3: a signed-in user who reloads never meets the sign-in form, and a user
 // who signs out is not signed back in by a reload (inventory sections 2.4 and
 // 3.1). The protected route is a user's detail, the deepest route the console
@@ -28,7 +31,7 @@ test('a reload restores the session without ever mounting the sign-in form', asy
   await page.reload();
 
   await expect(heading).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Concurrency' })).toContainText('W/');
+  await expect(page.getByRole('region', { name: 'Concurrency' })).toContainText(STRONG_TAG);
   await expect(page).toHaveURL(detail);
   const seen = await page.evaluate(
     () => (window as unknown as { __umapiSignInSeen: { signIn: boolean } }).__umapiSignInSeen,

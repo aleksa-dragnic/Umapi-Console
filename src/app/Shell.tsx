@@ -3,7 +3,7 @@ import { useEffect, useState, type MouseEvent } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
 
 import { ErrorBoundary } from '@/app/ErrorBoundary';
-import { SESSION_PATH, SignOutButton } from '@/features/auth';
+import { SESSION_PATH, SignOutButton, useSession } from '@/features/auth';
 import { Inspector } from '@/features/inspector';
 import { ROLES_PATH, USERS_PATH } from '@/features/users';
 import { useAccessToken } from '@/lib/api/access-token';
@@ -67,18 +67,23 @@ function navClass({ isActive }: { isActive: boolean }): string {
 /**
  * Section 2.1, once per session: the first request still pending after
  * 1200 ms brings the line, which stays until nothing is pending; a later slow
- * request does not bring it back. The shell is mounted once per session, so its
- * state is the session's.
+ * request does not bring it back. That it was shown is kept by the session, so
+ * a shell mounted again - after a 404 outside it, say - does not repeat it.
  */
 function ColdStartLine() {
   const pending = useCaptures().some(({ outcome }) => outcome.kind === 'pending');
-  const [phase, setPhase] = useState<'watching' | 'shown' | 'done'>('watching');
-  const slow = useAfter(COLD_START_AFTER_MS, pending && phase === 'watching');
+  const { coldStartShown, markColdStartShown } = useSession();
+  const [showing, setShowing] = useState(false);
+  const slow = useAfter(COLD_START_AFTER_MS, pending && !coldStartShown && !showing);
 
-  if (phase === 'watching' && slow) setPhase('shown');
-  if (phase === 'shown' && !pending) setPhase('done');
+  if (!showing && slow && !coldStartShown) setShowing(true);
+  if (showing && !pending) setShowing(false);
 
-  if (phase !== 'shown') return null;
+  useEffect(() => {
+    if (showing) markColdStartShown();
+  }, [showing, markColdStartShown]);
+
+  if (!showing) return null;
   return (
     <div className="px-app-4 pb-app-2">
       <ColdStartNotice pending afterMs={0} />

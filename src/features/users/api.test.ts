@@ -1,9 +1,11 @@
+import { HttpResponse, http } from 'msw';
+
 import { fetchDirectory, fetchRoles, fetchUser, paginationOf } from '@/features/users/api';
 import type { DirectoryQuery } from '@/features/users/url-state';
 import { setAccessToken } from '@/lib/api/access-token';
 import { MOCK_ACCOUNTS } from '@/lib/testing/mock';
 import { server } from '@/lib/testing/server';
-import { call, signIn } from '@/lib/testing/support';
+import { call, signIn, url } from '@/lib/testing/support';
 
 const DEFAULTS: DirectoryQuery = { page: 1, q: '', sort: null, status: null };
 
@@ -73,7 +75,7 @@ describe('conditional reads (rows 23, 24, 44; ADR 0013)', () => {
     const first = await fetchDirectory(DEFAULTS);
     const second = await fetchDirectory(DEFAULTS, undefined, first);
 
-    expect(first).toMatchObject({ status: 200, etag: expect.stringMatching(/^W\//) as string });
+    expect(first).toMatchObject({ status: 200, etag: expect.stringMatching(/^"/) as string });
     expect(sent).toEqual([null, first.etag]);
     expect(second.status).toBe(304);
     expect(second.etag).toBe(first.etag);
@@ -108,5 +110,26 @@ describe('conditional reads (rows 23, 24, 44; ADR 0013)', () => {
     expect(userAgain.user).toBe(user.user);
     expect(rolesAgain).toMatchObject({ status: 304, etag: roles.etag });
     expect(rolesAgain.roles).toBe(roles.roles);
+  });
+});
+
+describe('a success that is not JSON (inventory section 2.8)', () => {
+  it('is a server error with its status, not a request nobody answered', async () => {
+    setAccessToken((await signIn(MOCK_ACCOUNTS.demo)).accessToken);
+    server.use(
+      http.get(
+        url('/api/v1/users/:id'),
+        () =>
+          new HttpResponse('<html>An edge page</html>', {
+            status: 200,
+            headers: { 'Content-Type': 'text/html' },
+          }),
+        { once: true },
+      ),
+    );
+
+    await expect(fetchUser(MOCK_ACCOUNTS.demo.id)).rejects.toMatchObject({
+      failure: { kind: 'refused', problem: { status: 200, title: 'The response was not JSON' } },
+    });
   });
 });
