@@ -81,14 +81,14 @@ Requests that fail together wait for one refresh and replay behind it (ADR 0008)
 | Note | The intended destination is kept in the URL as `?next=` and honoured after sign-in. |
 | Note | The wording is chosen by `errorCode`, never by matching `detail` text. On `Auth.RefreshTokenReused` the session is cleared at once: access tokens stay valid until `exp` after revocation (observed row 9), so waiting for the next 401 would leave a revoked session working for up to fifteen minutes. |
 | Note | Revocation is account-wide. A second tab, or another visitor on the shared demo account, meets the generic wording at its next refresh: the API answers it with `Auth.InvalidRefreshToken` and does not say why. |
-| Note | Signing out is not this state. The API is told (observed row 54) and the session is forgotten whatever it answers; sign-in follows with no banner and no `next`. A refused or unanswered logout leaves the cookie valid, so a reload would restore the session; v1 does not surface that. The control sits on the placeholder at `/` until the shell arrives in PR 16. |
+| Note | Signing out is not this state. The API is told (observed row 54) and the session is forgotten whatever it answers; sign-in follows with no banner and no `next`. A refused or unanswered logout leaves the cookie valid, so a reload would restore the session; v1 does not surface that. The control is **Sign out** in the shell. |
 
 ### 2.5 `forbidden` — 403
 
 Never a page. A 403 from the API is a bug in the UI, because the UI knows the
 token's permissions and should not have offered the action. It is therefore
 rendered as a dismissible error in place, and the action that produced it is
-disabled afterwards. The API's 403 body has no `detail` and no `errorCode`
+disabled until the user leaves the page. The API's 403 body has no `detail` and no `errorCode`
 (observed row 34), so the message is built from the action's name and the
 `title`.
 
@@ -228,8 +228,9 @@ section 2.8; a request nothing answered has no response to point to.
 **Row states.** Default, hover (surface lift), focused (visible ring, reached by
 keyboard), and selected. A row opens the user's detail: the email is a link to
 `/users/:id`, so a row opens in a new tab or its address is copied like any
-link, and a click anywhere else on the row follows it. The table is one tab
-stop; once a row has focus, the arrow keys, Home and End move between rows.
+link, and a click anywhere else on the row follows it. The rows are one tab
+stop, after the four sort buttons in the header; once a row has focus, the arrow
+keys, Home and End move between rows.
 **Selected** is the row whose detail was just open: returning by Back, or by
 *Back to users* on the detail, lands on the same view with that row lifted and
 focused. It lives in the browser's history entry, nothing else, and a changed
@@ -388,8 +389,8 @@ Requests.* `revoked` keeps neither, because the session ends at once.
 
 The confirmation is drawn in place, not as a dialog, with **Cancel** and
 **Confirm**. It opens on **Cancel**, as a destructive dialog does (section 4),
-and closing it returns focus to the action. Until the shell arrives in PR 16 the
-screen is reached from the placeholder at `/`.
+and closing it returns focus to the action. The screen is reached from the
+shell's *Session* link.
 
 ### 3.10 `404`
 
@@ -451,19 +452,23 @@ hover alone.
 |---|---|---|
 | `page` | directory | `?page=2` |
 | `q` | directory | `?q=ovic` |
-| `sort` | directory | `?sort=email:asc` |
+| `sort` | directory | `?sort=createdAt:desc` |
 | `status` | directory | `?status=locked` |
-| `next` | sign-in | `?next=/users/7c41ab` |
+| `next` | sign-in | `?next=%2Fusers%2F7c41ab` |
 
 Rules: an absent parameter means its default and is not written; an invalid
 value falls back to the default rather than erroring; and changing a filter
 resets `page` to 1, because keeping page 7 while changing the search term is the
 most common paging bug there is.
 
-Mapping onto the API: `page` → `pageNumber`; `sort=email:asc` → `orderBy=email asc`
-(observed row 16); `status` passes through, case-insensitive (row 18), and a value
-outside the four the API accepts falls back to no filter instead of producing a
-422; `q` maps to `searchTerm` (observed row 43). The console sends one sort clause;
+The default sort, `email:asc`, is never written, so it never appears in an
+address.
+
+Mapping onto the API, under the document's PascalCase names (row 64): `page` →
+`PageNumber`; `sort=createdAt:desc` → `OrderBy=createdAt desc` (observed row 16);
+`status` → `Status`, case-insensitive (row 18), and a value outside the four the
+API accepts falls back to no filter instead of producing a 422; `q` →
+`SearchTerm` (observed row 43). The console sends one sort clause;
 the API would accept several (row 47).
 
 What is deliberately **not** in the URL: the inspector's open state and

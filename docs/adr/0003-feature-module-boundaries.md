@@ -59,3 +59,13 @@ this rule would be equipment that outweighs the job. At PR 1 `ui/` and
 `features/` do not yet exist, so the rule is stated here and asserted there -
 and this sentence exists so that the gap is on the record rather than assumed
 closed.
+
+## Correction, 2026-10-18
+
+The lint rule matches imports written through the `@/` alias. A relative import
+that climbs into another feature, `../users/...` from `features/auth`, is not
+matched and passes. None exists today, so the boundary holds, but only the alias
+form of it is enforced.
+
+The decision stands. This section corrects the record; `docs/BUILD-PLAN.md`
+section 14 lists it with the other corrections of `docs/correct-drift`.

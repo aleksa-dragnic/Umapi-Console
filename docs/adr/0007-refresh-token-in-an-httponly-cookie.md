@@ -95,3 +95,12 @@ development renders effects twice, and two refreshes sent together with one
 cookie are the race of rows 11 and 46. `src/features/auth/SessionBoundary.test.tsx`
 asserts one refresh under `StrictMode`. Refreshing on a 401 mid-session, with
 concurrent requests queued behind one refresh, is ADR 0008.
+
+## Correction, 2026-10-18
+
+`src/lib/api/auth-contract.ts` no longer exists. M5 regenerated the schema and
+deleted it, as planned above; the three auth calls now go through `authApi` in
+`src/lib/api/auth-client.ts`, typed from the generated document.
+
+The decision stands. This section corrects the record; `docs/BUILD-PLAN.md`
+section 14 lists it with the other corrections of `docs/correct-drift`.

@@ -80,3 +80,12 @@ page grows, that grep belongs in the workflow.
 Navigation primitives - links, the active state that is the one place signal
 blue appears - are not built here. They arrive with the app shell in PR 14,
 against the design decisions' navigation rules.
+
+## Correction, 2026-10-18
+
+The last paragraph is out of date: the search of `dist/` is in CI. The
+`build-and-test` job fails when the production bundle contains the specimen
+route's marker, alongside the mock's (ADR 0012).
+
+The decision stands. This section corrects the record; `docs/BUILD-PLAN.md`
+section 14 lists it with the other corrections of `docs/correct-drift`.

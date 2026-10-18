@@ -7,7 +7,7 @@ import { useSession } from '@/features/auth/session';
  * The routes that need a signed-in user. Anyone else goes to sign-in, with the
  * address they asked for kept as `next` (inventory sections 2.4, 3.1 and 5) -
  * except a user who has just signed out, who chose to leave and has nowhere
- * to return to. Permission guards on top of this arrive in PR 11.
+ * to return to. Permission guards on top of this are `RequirePermission`.
  */
 export function RequireSession() {
   const { state } = useSession();
