@@ -39,7 +39,7 @@ depend on a third party for its first paint.
 | Role | Family | Licence |
 |---|---|---|
 | Body, UI, navigation, buttons | **Inter** | OFL |
-| Display, used only on the sign-in screen and empty states | **Playfair Display** | OFL |
+| Display, used only on the sign-in screen and the 404 | **Playfair Display** | OFL |
 | Code, identifiers, status labels, table metadata | **JetBrains Mono** | OFL |
 
 Self-hosted through Fontsource, not a CDN: one less origin in the critical path,
@@ -78,7 +78,7 @@ lists a filled blue primary action. The component notes are the more specific
 description and they win. Consistency was chosen over the shortcut of having a
 loud primary button.
 
-## 3. Two colours are banned from text, and a test enforces it
+## 3. Two colours are banned from text, and a test enforces the sets
 
 Measured against the `#000000` canvas, with WCAG AA requiring 4.5:1 for body
 text and 3:1 for large text and UI components:
@@ -114,7 +114,8 @@ decorative rules. Not permitted for any text that carries information on its
 own.
 
 These ratios are asserted by a unit test over the approved pairs, not merely
-written here. The same repository this console talks to spent two weeks with a
+written here. The test holds the permission sets in `src/lib/design/tokens.ts`;
+that a component uses only a text token for text is a review rule, not a check. The same repository this console talks to spent two weeks with a
 documented architecture rule that no test enforced; the lesson transferred.
 
 ## 4. One token set, two densities
@@ -127,7 +128,7 @@ Rather than pick one, the tokens carry two densities.
 
 | | Editorial | Application |
 |---|---|---|
-| Where | Sign-in screen, empty states, the 404 | App shell, directory, detail, inspector |
+| Where | Sign-in screen, the 404 | App shell, directory and its empty states, detail, inspector |
 | Display type | 56 / 77 / 96px, negative tracking | Never |
 | Body | 16 / 18px | 12 / 14px |
 | Spacing | 32 / 48 / 96px | 8 / 12 / 16px |
@@ -152,20 +153,21 @@ mapping is fixed so a reader learns it once:
 | 5xx | `--color-crimson` | `#ff6465` |
 | pending | `--color-ash-gray` | `#a1a4a5` |
 
-Colour never carries the meaning alone. Every status dot is paired with its
-numeric code in `JetBrains Mono`, so the information survives both colour
+Colour never carries the meaning alone. Every status dot for an answered
+request is paired with its numeric code in `JetBrains Mono`, so the information survives both colour
 blindness and a monochrome screen.
 
 ## 6. Elevation is a border
 
 No drop shadows. Layers are separated by 1px `--color-graphite-hairline` against
-flat black, exactly as the reference specifies. `--surface-surface-lift`
-(`#0b0e14`) is used only for modal and panel backgrounds, where a scrim needs to
-read as above the canvas.
+flat black, exactly as the reference specifies. `--color-lift` (`#0b0e14`,
+the `surface-lift` primitive) is the one surface above the canvas: modal and
+panel backgrounds, code windows, the selected row, loading skeletons and the
+skip link.
 
-Radii are two values and never mixed on one surface: **6px** for buttons,
-inputs and badges; **16px** for cards and code windows. Large panels may use
-24px.
+Radii are four values and never mixed on one surface: **6px** for buttons,
+inputs and badges; **16px** for cards and code windows; **24px** for large
+panels; and a full pill for the small status chips.
 
 ## 7. Component mapping
 
@@ -177,8 +179,7 @@ How the reference's components become this console's parts.
 | Status Indicator Dot | HTTP status class on every captured request |
 | Email Address Badge | The email column in the directory, violet on black |
 | Section Card | Detail panels, the sign-in card, empty states |
-| Hero Announcement Pill | The API version and environment badge in the shell |
-| Icon Container | The only chromatic surface: the app mark in the shell |
+| Icon Container | The only chromatic surface: the app mark on the boot and sign-in screens |
 | Primary Button (ghost) | Every action in the application |
 
 The inspector is the reason this visual language was chosen rather than
@@ -283,5 +284,5 @@ with two values — because a screen belongs to one density for its whole life
 and a media query would make it change mid-session. Generic primitives that must
 work in both read `--density-body`, `--density-gap` and `--density-pad`, which
 resolve from a `data-density` attribute on the screen's root. Application
-density is the default; editorial is declared. There are exactly three screens
-that declare it: sign-in, the 404, and empty states rendered at full height.
+density is the default; editorial is declared. Two screens declare it, sign-in
+and the 404, and the development-only specimen route shows both.

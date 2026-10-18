@@ -31,10 +31,11 @@ src/
 ```
 
 Imports point one way: `app` → `features` → `lib`, and everything may use
-`ui`, which uses only tokens. No feature imports another, and production code
-does not import the mock. ESLint enforces each of these (ADR 0003,
-`eslint.config.js`); `src/lib/design/usage.test.ts` enforces where colours may
-appear (ADR 0004).
+`ui`. `ui` imports no feature and nothing from `app`, no feature imports
+another, and production code does not import the mock; ESLint enforces each of
+these (ADR 0003, `eslint.config.js`). `src/lib/design/usage.test.ts` enforces
+where colours may appear: no literal colour, no tier 1 token, no Tailwind
+default palette, status colours in two files only (ADR 0004).
 
 ## A request
 
