@@ -124,14 +124,18 @@ the two are different sites.
 
 ## Testing
 
-| Layer              | Command           | What runs                                                                                                                | At v1.0.0                        |
-| ------------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------- |
-| Unit and component | `pnpm test:run`   | Vitest in jsdom, against the mock                                                                                        | 386 tests in 52 files            |
-| End to end         | `pnpm test:e2e`   | Playwright on a production build with the mock, axe at WCAG 2.2 AA on every route, dialog and error state, and at 375 px | 18 tests in 8 specs              |
-| Contract           | CI job `contract` | the committed API types compared with the live OpenAPI document                                                          | weekly and on every pull request |
-| Live               | `pnpm test:live`  | Playwright against the deployed console and API: one auth cycle, the directory, the read-only boundary, the cold start   | 3 tests, by hand only            |
+| Layer              | Command           | What runs                                                                                                                                                         | At v1.0.0                        |
+| ------------------ | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| Unit and component | `pnpm test:run`   | Vitest in jsdom, against the mock; `pnpm coverage` holds it to a floor                                                                                            | 386 tests in 52 files            |
+| End to end         | `pnpm test:e2e`   | Playwright on a production build with the mock, axe at WCAG 2.2 AA on every route, dialog and error state, and at 375 px; smoke and axe in Firefox and WebKit too | 18 tests in 8 specs              |
+| Contract           | CI job `contract` | the committed API types compared with the live OpenAPI document                                                                                                   | weekly and on every pull request |
+| Live               | `pnpm test:live`  | Playwright against the deployed console and API: one auth cycle, the directory, the read-only boundary, the cold start                                            | 3 tests, by hand only            |
 
-`build-and-test` and `e2e` are required on every pull request. The live suite
+`build-and-test` and `e2e` are required on every pull request. `build-and-test`
+also fails on a high or critical advisory (`pnpm audit`), on coverage below its
+floor, and on production JavaScript over 140 kB gzipped (`pnpm budget`). CodeQL
+analyses the code on every pull request, Dependabot proposes updates weekly, and
+every action is pinned to a commit. The live suite
 never runs in CI: it depends on a free instance waking, shares the demo account
 with every visitor, and spends nine of the auth limit's ten requests a minute.
 

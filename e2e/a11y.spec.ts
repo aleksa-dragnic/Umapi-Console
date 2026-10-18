@@ -14,6 +14,12 @@ const STRONG_TAG = /"[\w-]{43}"/;
 // read, a 429, a conflict - and the main screens at a phone's width.
 
 async function violations(page: Page): Promise<string[]> {
+  // Screens fade in (`animate-enter`). Measured mid-fade, text is still partly
+  // transparent and fails contrast - Firefox showed it - so the page is measured
+  // as it settles, not as it arrives.
+  await page.evaluate(() =>
+    Promise.all(document.getAnimations().map((animation) => animation.finished)),
+  );
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze();
