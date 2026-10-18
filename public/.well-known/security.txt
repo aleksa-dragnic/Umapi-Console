@@ -1,0 +1,4 @@
+Contact: https://github.com/aleksa-dragnic/Umapi-Console/security/advisories/new
+Expires: 2027-10-18T00:00:00.000Z
+Preferred-Languages: en, sr
+Canonical: https://console.aleksadragnic.com/.well-known/security.txt

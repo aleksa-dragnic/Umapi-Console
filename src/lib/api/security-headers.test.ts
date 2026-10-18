@@ -30,6 +30,19 @@ function contentSecurityPolicy(): Map<string, string[]> {
   return directives;
 }
 
+/** The header lines under one path rule of `public/_headers`. */
+function headersFor(path: string): string[] {
+  const lines = readFileSync(resolve(process.cwd(), 'public', '_headers'), 'utf8').split('\n');
+  const start = lines.findIndex((line) => line.trim() === path);
+  if (start < 0) throw new Error(`public/_headers has no rule for ${path}.`);
+  const rule: string[] = [];
+  for (const line of lines.slice(start + 1)) {
+    if (!/^\s+\S/.test(line)) break;
+    rule.push(line.trim());
+  }
+  return rule;
+}
+
 describe('the console security headers (public/_headers)', () => {
   test('connect only to the deployed API, which the client also targets', () => {
     expect(contentSecurityPolicy().get('connect-src')).toEqual([DEPLOYED_API_ORIGIN]);
@@ -41,5 +54,13 @@ describe('the console security headers (public/_headers)', () => {
     expect(policy.get('script-src')).toEqual(["'self'"]);
     expect(policy.get('style-src')).toEqual(["'self'"]);
     expect(policy.get('frame-ancestors')).toEqual(["'none'"]);
+  });
+
+  test('allow images from the console itself, for the favicon', () => {
+    expect(contentSecurityPolicy().get('img-src')).toEqual(["'self'"]);
+  });
+
+  test('cache the hashed assets for a year, as immutable', () => {
+    expect(headersFor('/assets/*')).toEqual(['Cache-Control: public, max-age=31536000, immutable']);
   });
 });
