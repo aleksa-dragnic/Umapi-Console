@@ -24,6 +24,10 @@ import type { Problem } from '@/lib/api/problem';
  *
  * The change is shown at once and rolled back if the API refuses it
  * (inventory section 3.4, `saving`).
+ *
+ * Every write carries the `version` of the detail it was made from in
+ * `If-Match` (row 96, the API's ADR 0021), so a write made from a stale read is
+ * refused with 412 instead of overwriting someone else's.
  */
 
 export type Change =
@@ -76,8 +80,14 @@ export function applied(user: UserDetails, change: Change): UserDetails {
   }
 }
 
-async function request(id: string, change: Change) {
-  const path = { params: { path: { id } } };
+/** Row 96: the version quoted, as `If-Match` carries an entity tag. */
+export function ifMatch(version: string | undefined): { 'If-Match'?: string } {
+  return version === undefined ? {} : { 'If-Match': `"${version}"` };
+}
+
+async function request(id: string, change: Change, version: string | undefined) {
+  const header = ifMatch(version);
+  const path = { params: { path: { id }, header } };
   switch (change.kind) {
     case 'update': {
       const { email, firstName, lastName } = change;
@@ -91,13 +101,17 @@ async function request(id: string, change: Change) {
       return api.POST('/api/v1/users/{id}/roles', { ...path, body: { roleId: change.roleId } });
     case 'remove-role':
       return api.DELETE('/api/v1/users/{id}/roles/{roleId}', {
-        params: { path: { id, roleId: change.roleId } },
+        params: { path: { id, roleId: change.roleId }, header },
       });
   }
 }
 
-export async function sendChange(id: string, change: Change): Promise<void> {
-  const { error, response } = await send(() => request(id, change));
+export async function sendChange(
+  id: string,
+  change: Change,
+  version: string | undefined,
+): Promise<void> {
+  const { error, response } = await send(() => request(id, change, version));
   if (!response.ok) throw refused(response, error);
 }
 
@@ -105,7 +119,10 @@ export async function sendChange(id: string, change: Change): Promise<void> {
 export type Outcome =
   /** 422, or an email another user holds: the message belongs on a field. */
   | { kind: 'invalid'; problem: Problem }
-  /** 409 with a domain code: the record is not what this tab thinks it is. */
+  /**
+   * 409 with a domain code, or 412 for a stale version: the record is not what
+   * this tab thinks it is.
+   */
   | { kind: 'conflict'; problem: Problem }
   /** 400 with a domain code: a rule of the API, stated as it was returned. */
   | { kind: 'refused'; problem: Problem }
@@ -129,7 +146,7 @@ export function outcomeOf(error: unknown): Outcome {
       problem: { ...problem, errors: { Email: [problem.detail ?? problem.title] } },
     };
   }
-  if (problem.status === 409) return { kind: 'conflict', problem };
+  if (problem.status === 409 || problem.status === 412) return { kind: 'conflict', problem };
   if (problem.status === 400) return { kind: 'refused', problem };
   if (problem.status === 403) return { kind: 'forbidden', problem };
   if (problem.status === 429) {
@@ -141,7 +158,9 @@ export function outcomeOf(error: unknown): Outcome {
 export function useChangeUser(id: string) {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (change: Change) => sendChange(id, change),
+    // The cached detail's version: the optimistic copy keeps it unchanged.
+    mutationFn: (change: Change) =>
+      sendChange(id, change, client.getQueryData<UserRead>(detailKey(id))?.user.version),
     onMutate: async (change: Change) => {
       await client.cancelQueries({ queryKey: detailKey(id) });
       const before = client.getQueryData<UserRead>(detailKey(id));

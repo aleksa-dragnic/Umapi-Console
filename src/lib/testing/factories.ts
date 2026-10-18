@@ -41,6 +41,8 @@ export interface MockUser {
   roles: MockRoleAssignment[];
   createdAtUtc: string;
   updatedAtUtc: string;
+  /** Row 96: moves on every write; the detail sends it as a string. */
+  version: number;
 }
 
 // Row 20: the demo user's one role is Member. Row 48: what each permission
@@ -239,6 +241,7 @@ export function buildUsers(seed: number = DEFAULT_SEED): MockUser[] {
       roles: [{ roleId: roleId('Administrator'), assignedAtUtc: created }],
       createdAtUtc: created,
       updatedAtUtc: created,
+      version: 1,
     },
     {
       id: MOCK_ACCOUNTS.demo.id,
@@ -250,6 +253,7 @@ export function buildUsers(seed: number = DEFAULT_SEED): MockUser[] {
       roles: [{ roleId: roleId('Member'), assignedAtUtc: created }],
       createdAtUtc: created,
       updatedAtUtc: created,
+      version: 1,
     },
   ];
 
@@ -284,6 +288,7 @@ export function buildUsers(seed: number = DEFAULT_SEED): MockUser[] {
       roles: roleNames.map((name) => ({ roleId: roleId(name), assignedAtUtc: isoAt(createdMs) })),
       createdAtUtc: isoAt(createdMs),
       updatedAtUtc: isoAt(updatedMs),
+      version: 1,
     });
   }
   return users;

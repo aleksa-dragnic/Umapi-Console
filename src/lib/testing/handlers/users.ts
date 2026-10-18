@@ -53,6 +53,7 @@ function toDetails(user: MockUser): Schema<'UserDetailsResponse'> {
     })),
     createdAtUtc: user.createdAtUtc,
     updatedAtUtc: user.updatedAtUtc,
+    version: String(user.version),
   };
 }
 
@@ -121,6 +122,41 @@ function fold(value: string): string {
 
 function touch(user: MockUser): void {
   user.updatedAtUtc = new Date(now()).toISOString();
+  user.version += 1;
+}
+
+const MALFORMED = Symbol('malformed');
+
+/**
+ * Row 96: a write may carry the detail's `version` in `If-Match`, quoted. Absent
+ * or `*`, the write is unconditional; anything else that is not one quoted
+ * number is refused with 400 before the command runs.
+ */
+function expectedVersion(request: Request): number | null | typeof MALFORMED {
+  const header = request.headers.get('If-Match')?.trim();
+  if (header === undefined || header === '' || header === '*') return null;
+  const match = /^"(\d+)"$/.exec(header);
+  return match ? Number(match[1]) : MALFORMED;
+}
+
+function invalidIfMatch(request: Request) {
+  return applicationProblem(
+    request,
+    400,
+    'Request.InvalidIfMatch',
+    'If-Match must be one quoted version as the user\'s version field gives it, for example "1234".',
+  );
+}
+
+/** Row 96: checked once the user is read, before any rule of the domain. */
+function stale(request: Request, user: MockUser, expected: number | null) {
+  if (expected === null || expected === user.version) return undefined;
+  return applicationProblem(
+    request,
+    412,
+    'User.VersionMismatch',
+    'The user was changed after the version given in If-Match. Read it again and retry.',
+  );
 }
 
 async function conditional(request: Request, body: unknown, extra: Record<string, string> = {}) {
@@ -236,6 +272,7 @@ export const userHandlers = [
       roles: memberRoleId ? [{ roleId: memberRoleId, assignedAtUtc: stamp }] : [],
       createdAtUtc: stamp,
       updatedAtUtc: stamp,
+      version: 1,
     };
     db().users.set(user.id, user);
     return HttpResponse.json({ id: user.id } satisfies Schema<'UserCreatedResponse'>, {
@@ -248,6 +285,8 @@ export const userHandlers = [
     const access = await guard(request, 'users.write', 'write');
     if (!access.ok) return access.response;
     if (await bodyTooLarge(request)) return new HttpResponse(null, { status: 413 });
+    const expected = expectedVersion(request);
+    if (expected === MALFORMED) return invalidIfMatch(request);
     const user = findUser(params['id']);
     if (!user) return notFound(request);
     // Row 55: all three fields required.
@@ -257,6 +296,8 @@ export const userHandlers = [
     const lastName = stringField(body, 'lastName')?.trim() ?? '';
     const errors = requiredFields({ Email: email, FirstName: firstName, LastName: lastName });
     if (errors) return validationProblem(request, errors);
+    const refusal = stale(request, user, expected);
+    if (refusal) return refusal;
     if (user.status === 'Deactivated') return deactivated(request);
     const owner = findUserByEmail(email);
     if (owner && owner.id !== user.id) {
@@ -267,7 +308,6 @@ export const userHandlers = [
         'A user with this email already exists.',
       );
     }
-    // Rows 26 and 45: no concurrency token and no `If-Match`: last write wins.
     user.email = email;
     user.firstName = firstName;
     user.lastName = lastName;
@@ -278,6 +318,8 @@ export const userHandlers = [
   http.post(endpoint('/api/v1/users/{id}/lock'), async ({ request, params }) => {
     const access = await guard(request, 'users.lock', 'write');
     if (!access.ok) return access.response;
+    const expected = expectedVersion(request);
+    if (expected === MALFORMED) return invalidIfMatch(request);
     if (params['id'] === access.user.id) {
       // Row 72: refused before the user is read, so it outranks every other rule.
       return applicationProblem(
@@ -289,6 +331,8 @@ export const userHandlers = [
     }
     const user = findUser(params['id']);
     if (!user) return notFound(request);
+    const refusal = stale(request, user, expected);
+    if (refusal) return refusal;
     if (user.status === 'Deactivated') return deactivated(request);
     if (user.status === 'Locked') {
       return applicationProblem(request, 409, 'User.AlreadyLocked', 'The user is already locked.'); // Row 49.
@@ -303,8 +347,12 @@ export const userHandlers = [
   http.delete(endpoint('/api/v1/users/{id}/lock'), async ({ request, params }) => {
     const access = await guard(request, 'users.lock', 'write');
     if (!access.ok) return access.response;
+    const expected = expectedVersion(request);
+    if (expected === MALFORMED) return invalidIfMatch(request);
     const user = findUser(params['id']);
     if (!user) return notFound(request);
+    const refusal = stale(request, user, expected);
+    if (refusal) return refusal;
     if (user.status === 'Deactivated') return deactivated(request);
     if (user.status !== 'Locked') {
       return applicationProblem(request, 400, 'User.NotLocked', 'The user is not locked.'); // Row 49.
@@ -317,11 +365,15 @@ export const userHandlers = [
   http.post(endpoint('/api/v1/users/{id}/roles'), async ({ request, params }) => {
     const access = await guard(request, 'roles.manage', 'write');
     if (!access.ok) return access.response;
+    const expected = expectedVersion(request);
+    if (expected === MALFORMED) return invalidIfMatch(request);
     const user = findUser(params['id']);
     if (!user) return notFound(request);
     const roleId = stringField(await readJson(request), 'roleId') ?? '';
     if (roleId === '')
       return validationProblem(request, { RoleId: ["'Role Id' must not be empty."] });
+    const refusal = stale(request, user, expected);
+    if (refusal) return refusal;
     if (!db().roles.has(roleId)) {
       return applicationProblem(request, 404, 'Role.NotFound', 'The role was not found.');
     }
@@ -343,8 +395,12 @@ export const userHandlers = [
   http.delete(endpoint('/api/v1/users/{id}/roles/{roleId}'), async ({ request, params }) => {
     const access = await guard(request, 'roles.manage', 'write');
     if (!access.ok) return access.response;
+    const expected = expectedVersion(request);
+    if (expected === MALFORMED) return invalidIfMatch(request);
     const user = findUser(params['id']);
     if (!user) return notFound(request);
+    const refusal = stale(request, user, expected);
+    if (refusal) return refusal;
     if (user.status === 'Deactivated') return deactivated(request);
     const roleId = params['roleId'];
     if (!user.roles.some((assignment) => assignment.roleId === roleId)) {

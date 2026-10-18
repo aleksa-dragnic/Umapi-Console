@@ -40,8 +40,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } fro
  * idea of the record: a Deactivated user is offered every action, and the
  * API's 400 is shown as the rule it is; a stale tab meets the API's 409 as a
  * conflict with Reload, not a toast; a 403 disables the control that earned it
- * (section 2.5). Profile edits are last-write-wins, and the concurrency panel
- * says so (decision 12).
+ * (section 2.5). Every write sends the record's version, so a stale one meets
+ * the same conflict as a 412 (decision 12, done in v1.1.0).
  */
 
 export const NOT_FOUND_COPY = 'No user with that id.';
@@ -49,7 +49,7 @@ export const BACK_COPY = 'Back to users';
 export const CONFLICT_COPY =
   'This record changed since it was read. Reload to see the current version, then apply the change again.';
 export const CONCURRENCY_COPY =
-  'This tag lets the console ask whether the record changed. It does not protect an edit: the API does not check versions, so the last save wins.';
+  'This tag lets the console ask whether the record changed. Every save also sends the version the record was read at, and the API refuses a save made from an older one.';
 export const NO_ETAG_COPY = 'The response carried no ETag.';
 export const NOT_MODIFIED_COPY =
   'The last read answered 304 Not Modified: the record has not changed since this tag.';

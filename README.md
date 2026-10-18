@@ -41,14 +41,14 @@ with the permission it needs; the API would refuse it anyway.
 
 ## What it shows
 
-| Screen      | What it makes visible                                                                                                                                         |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Sign in     | The boot refresh that restores a session from the cookie alone; the cold-start state; a refusal in the one wording the API allows                             |
-| Users       | Search, status filter, sort and page held in the URL; every read conditional, so returning to a page answers 304                                              |
-| User detail | Identity, status and roles; each write gated by the permission it needs, with the reason written under it; the record's ETag                                  |
-| Roles       | Roles and the permissions each one grants                                                                                                                     |
-| Session     | The access token's claims, the permissions read from them, and a race of two refreshes against one cookie                                                     |
-| Inspector   | Every request at the transport: method, path, status, timing, request and response headers, body, Copy as curl. The token is written as `$TOKEN`, never shown |
+| Screen      | What it makes visible                                                                                                                                                                            |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Sign in     | The boot refresh that restores a session from the cookie alone; the cold-start state; a refusal in the one wording the API allows                                                                |
+| Users       | Search, status filter, sort and page held in the URL; every read conditional, so returning to a page answers 304                                                                                 |
+| User detail | Identity, status and roles; each write gated by the permission it needs, with the reason written under it; the record's ETag, and its version sent with every write so a stale one is a conflict |
+| Roles       | Roles and the permissions each one grants                                                                                                                                                        |
+| Session     | The access token's claims, the permissions read from them, and a race of two refreshes against one cookie                                                                                        |
+| Inspector   | Every request at the transport: method, path, status, timing, request and response headers, body, Copy as curl. The token is written as `$TOKEN`, never shown                                    |
 
 <table>
   <tr>
@@ -152,8 +152,6 @@ with every visitor, and spends nine of the auth limit's ten requests a minute.
 
 - **Narrow screens scroll.** Layout was checked by hand at 380px; tables scroll
   sideways there rather than wrap. No test covers narrow viewports.
-- **The ETag is shown, not enforced.** The API does not check versions on
-  writes, so the last save wins; the detail screen says so.
 - **A run of 429s on the Session screen's race** reads as "unexpected" without
   the countdown the rest of the console shows.
 - **A refused or unanswered sign-out** leaves the cookie valid, so a reload
