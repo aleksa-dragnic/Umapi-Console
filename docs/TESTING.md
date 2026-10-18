@@ -14,8 +14,8 @@ this is the practical guide.
 | Contract | CI job `contract` | `pnpm api:generate` and a diff | The deployed OpenAPI document |
 | Live | `e2e/live/*.spec.ts` | Playwright, `playwright.live.config.ts` | The deployed console and API |
 
-On 2026-10-18: 408 unit and component tests in 53 files; 23 end-to-end tests
-in 8 specs, run as 41 because the smoke and accessibility specs also run in
+On 2026-10-18: 413 unit and component tests in 53 files; 24 end-to-end tests
+in 9 specs, run as 42 because the smoke and accessibility specs also run in
 Firefox and WebKit; 3 live tests.
 
 ## Commands
@@ -43,6 +43,13 @@ firefox webkit`. To run Chromium alone, `pnpm test:e2e --project=chromium`.
   weekly. It is not required because the document lives on a free instance that
   can be asleep or down, and a merge does not wait on it (ADR 0006).
 - `analyze` (CodeQL, not required).
+- `headers` (its own workflow, weekly and on demand): what Cloudflare Pages
+  serves, compared with `public/_headers`. Not on pull requests, because a pull
+  request has not changed the deployed site yet.
+
+`e2e/csp.spec.ts` is the one spec that runs the console under its own Content
+Security Policy, Trusted Types included: `vite preview` does not read
+`public/_headers`, so the spec puts the policy on the document itself.
 
 The live suite never runs in CI. It depends on a free instance waking, shares
 the demo account with every visitor, and spends nine of the auth limit's ten
