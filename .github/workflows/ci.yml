@@ -25,6 +25,7 @@ jobs:
     name: build-and-test
     if: github.event_name != 'schedule'
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -59,6 +60,9 @@ jobs:
     name: e2e
     if: github.event_name != 'schedule'
     runs-on: ubuntu-24.04
+    # A hung step fails the job instead of holding the check for hours:
+    # a Playwright worker once failed to exit and the job ran 44 minutes.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -90,6 +94,7 @@ jobs:
   contract:
     name: contract
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     env:
       API_ORIGIN: https://api.aleksadragnic.com
     steps:
