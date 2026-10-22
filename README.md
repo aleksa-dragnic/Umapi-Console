@@ -159,10 +159,6 @@ with every visitor, and spends nine of the auth limit's ten requests a minute.
   rules.
 - [`SECURITY.md`](SECURITY.md) - how to report a vulnerability, and what is in
   place.
-- [`AGENTS.md`](AGENTS.md) - instructions for coding agents. The console is
-  built with the help of AI coding agents (Claude Code); every change is
-  reviewed, and since `v1.0.0` commits written with one carry a
-  `Co-Authored-By` line.
 
 ## Known limits
 
