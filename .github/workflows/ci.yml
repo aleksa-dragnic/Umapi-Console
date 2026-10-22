@@ -25,6 +25,7 @@ jobs:
     name: build-and-test
     if: github.event_name != 'schedule'
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -59,6 +60,9 @@ jobs:
     name: e2e
     if: github.event_name != 'schedule'
     runs-on: ubuntu-24.04
+    # A hung step fails the job instead of holding the check for hours:
+    # a Playwright worker once failed to exit and the job ran 44 minutes.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -67,7 +71,16 @@ jobs:
 
       # Chromium runs every spec; Firefox and WebKit the smoke and accessibility
       # specs (playwright.config.ts).
+      # The runner's Azure apt mirror has gone unreachable and left apt waiting
+      # until the job timed out. Use the main Ubuntu archive, and give apt short
+      # timeouts and retries, before Playwright installs its system packages.
+      - name: Point apt at a reachable mirror
+        run: |
+          sudo sed -i 's|http://azure.archive.ubuntu.com|https://archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources
+          printf '%s\n' 'Acquire::Retries "3";' 'Acquire::http::Timeout "30";' 'Acquire::https::Timeout "30";' | sudo tee /etc/apt/apt.conf.d/99timeouts > /dev/null
+
       - name: Install the browsers
+        timeout-minutes: 10
         run: pnpm exec playwright install --with-deps chromium firefox webkit
 
       # The Playwright web server builds the bundle and serves it over
@@ -90,6 +103,7 @@ jobs:
   contract:
     name: contract
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     env:
       API_ORIGIN: https://api.aleksadragnic.com
     steps:
