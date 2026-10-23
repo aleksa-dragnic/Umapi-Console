@@ -63,25 +63,27 @@ jobs:
     # A hung step fails the job instead of holding the check for hours:
     # a Playwright worker once failed to exit and the job ran 44 minutes.
     timeout-minutes: 20
+    # Chromium, Firefox and WebKit, with their system libraries, come in the
+    # official image at the version the tests use. Installing them on the runner
+    # depended on its apt mirror, which stopped answering and hung the job.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --user 1001
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # Node, pnpm, the cached store and the install: .github/actions/setup.
       - uses: ./.github/actions/setup
 
-      # Chromium runs every spec; Firefox and WebKit the smoke and accessibility
-      # specs (playwright.config.ts).
-      # The runner's Azure apt mirror has gone unreachable and left apt waiting
-      # until the job timed out. Use the main Ubuntu archive, and give apt short
-      # timeouts and retries, before Playwright installs its system packages.
-      - name: Point apt at a reachable mirror
+      # The image carries one Playwright version's browsers. When Dependabot
+      # moves @playwright/test, this fails until the image above moves with it.
+      - name: The image matches @playwright/test
         run: |
-          sudo sed -i 's|http://azure.archive.ubuntu.com|https://archive.ubuntu.com|g' /etc/apt/sources.list.d/ubuntu.sources
-          printf '%s\n' 'Acquire::Retries "3";' 'Acquire::http::Timeout "30";' 'Acquire::https::Timeout "30";' | sudo tee /etc/apt/apt.conf.d/99timeouts > /dev/null
-
-      - name: Install the browsers
-        timeout-minutes: 10
-        run: pnpm exec playwright install --with-deps chromium firefox webkit
+          wanted="$(node -p "require('./package.json').devDependencies['@playwright/test']")"
+          if [ "$wanted" != "1.64.0" ]; then
+            echo "::error::package.json has @playwright/test $wanted; move the e2e image in ci.yml to v$wanted."
+            exit 1
+          fi
 
       # The Playwright web server builds the bundle and serves it over
       # vite preview, so this step needs no separate build.
