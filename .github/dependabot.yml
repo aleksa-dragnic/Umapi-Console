@@ -22,6 +22,10 @@ updates:
       # newest Node.
       - dependency-name: '@types/node'
         update-types: ['version-update:semver-major']
+      # Firefox crashes in the a11y specs with 1.65.1 (#66). Playwright stays
+      # on 1.64.0 until a release passes them; this goes when it does.
+      - dependency-name: '@playwright/test'
+        versions: ['1.65.x']
 
   - package-ecosystem: github-actions
     directory: /
