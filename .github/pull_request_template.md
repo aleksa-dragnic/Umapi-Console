@@ -11,6 +11,19 @@ The reasoning. Link the ADR if this implements a decision.
 Trade-offs, anything deliberately left out, anything the next pull request picks
 up. For a bug fix: the test that failed first.
 
+## AI assistance
+
+<!-- Exactly one. docs/AI-WORKFLOW.md says what each means. -->
+
+- [ ] none
+- [ ] drafted (an agent wrote a first version; I reviewed and changed it)
+- [ ] reviewed-by-agent (I wrote it; an agent reviewed it)
+
+**What I verified myself:**
+
+<!-- What you checked by hand, not what CI ran: the tests' assertions read,
+     the screen at 375 px, a keyboard pass, a failure provoked through the mock. -->
+
 <!--
 Definition of done (docs/BUILD-PLAN.md section 11):
 - Typecheck, lint, unit tests and build pass
