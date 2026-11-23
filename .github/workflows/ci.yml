@@ -67,7 +67,7 @@ jobs:
     # official image at the version the tests use. Installing them on the runner
     # depended on its apt mirror, which stopped answering and hung the job.
     container:
-      image: mcr.microsoft.com/playwright:v1.65.1-noble
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
       options: --user 1001
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -80,7 +80,7 @@ jobs:
       - name: The image matches @playwright/test
         run: |
           wanted="$(node -p "require('./package.json').devDependencies['@playwright/test']")"
-          if [ "$wanted" != "1.65.1" ]; then
+          if [ "$wanted" != "1.64.0" ]; then
             echo "::error::package.json has @playwright/test $wanted; move the e2e image in ci.yml to v$wanted."
             exit 1
           fi
