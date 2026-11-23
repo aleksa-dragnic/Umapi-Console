@@ -12,7 +12,8 @@ runs against the live API at **https://console.aleksadragnic.com**, signed in
 with a published read-only account.
 
 It is a personal project built to a production standard, the front end of a
-pair whose back end is the API above.
+pair whose back end is the API above. It is built with a coding agent under a
+written process ([How this was built](#how-this-was-built)).
 
 ![The directory read again: the inspector shows the conditional request and its 304](docs/images/inspector.png)
 
@@ -143,7 +144,7 @@ with every visitor, and spends nine of the auth limit's ten requests a minute.
 
 ## Documentation
 
-- [`docs/adr/`](docs/adr/README.md) - fifteen architecture decision records.
+- [`docs/adr/`](docs/adr/README.md) - sixteen architecture decision records.
 - [`docs/BUILD-PLAN.md`](docs/BUILD-PLAN.md) - the plan, its invariants and,
   in section 14, every place the build departed from it.
 - [`docs/SCREEN-INVENTORY.md`](docs/SCREEN-INVENTORY.md) - every screen and
@@ -157,8 +158,23 @@ with every visitor, and spends nine of the auth limit's ten requests a minute.
   of a request.
 - [`docs/TESTING.md`](docs/TESTING.md) - the test layers, the commands and the
   rules.
+- [`docs/AI-WORKFLOW.md`](docs/AI-WORKFLOW.md) - how changes are made with a
+  coding agent, and how they are checked; [`AGENTS.md`](AGENTS.md) holds the
+  agent's rules.
 - [`SECURITY.md`](SECURITY.md) - how to report a vulnerability, and what is in
   place.
+
+## How this was built
+
+With the help of an AI coding agent, Claude Code, under a written process
+([ADR 0016](docs/adr/0016-working-with-a-coding-agent.md)). Every change starts
+as an issue and a plan, the agent drafts it on a branch, and I review it, and
+run it when it is something a visitor sees, before CI and the merge.
+Architecture decisions, the visual system, anything security-sensitive, merges
+and releases stay with me. Commits the agent co-wrote carry a `Co-Authored-By`
+line, and every pull request says how it was made and what I verified myself.
+[`docs/AI-WORKFLOW.md`](docs/AI-WORKFLOW.md) describes the flow and what is
+delegated.
 
 ## Known limits
 
