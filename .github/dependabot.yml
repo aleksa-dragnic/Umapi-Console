@@ -29,6 +29,14 @@ updates:
       interval: weekly
     cooldown:
       default-days: 7
+    # CodeQL's init and analyze actions are one release and must move
+    # together, majors included, or each pull request runs a different version
+    # of the two. Every other action is grouped for minor and patch, the same
+    # rule as npm above; a major comes on its own.
     groups:
+      codeql:
+        patterns: ['github/codeql-action*']
       actions:
+        update-types: [minor, patch]
         patterns: ['*']
+        exclude-patterns: ['github/codeql-action*']
