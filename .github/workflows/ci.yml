@@ -66,9 +66,12 @@ jobs:
     # Chromium, Firefox and WebKit, with their system libraries, come in the
     # official image at the version the tests use. Installing them on the runner
     # depended on its apt mirror, which stopped answering and hung the job.
+    # --ipc=host gives the browsers the host's shared memory instead of
+    # Docker's 64 MB /dev/shm, as Playwright's Docker guide recommends: with
+    # 1.65.1, Firefox crashed ("Page crashed") while axe ran on every a11y spec.
     container:
       image: mcr.microsoft.com/playwright:v1.65.1-noble
-      options: --user 1001
+      options: --user 1001 --ipc=host
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
