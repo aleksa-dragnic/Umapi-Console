@@ -799,7 +799,7 @@ API repository — where a promised architecture test turned out not to exist.
 | Text colours meet WCAG AA on their surface | Unit test over every approved pair; `Charcoal` and `Iron` are excluded from the text set by construction. That components keep to the set is reviewed, not checked |
 | `ui/` does not import from `features/` | ESLint `no-restricted-imports`, by alias and by path (section 14) |
 | No feature imports another feature | Same rule, boundary per feature, relative imports included |
-| The access token is never written to storage | Lint rule banning `localStorage` and `sessionStorage` outside tests and one mock file, `src/lib/testing/persistence.ts` (section 14, PR 10) |
+| The access token is never written to storage | Lint rule banning `localStorage` and `sessionStorage` outside tests, one mock file, `src/lib/testing/persistence.ts` (section 14, PR 10), and the session hint, `src/lib/api/session-hint.ts`, which holds one boolean (ADR 0017). A test asserts that no storage entry contains the access token after sign-in |
 | The generated schema matches the deployed document | CI regenerates and diffs |
 | No manual memoisation if the compiler is on | `no-restricted-imports` on `memo`, `useMemo` and `useCallback` from `react`, `no-restricted-properties` on `React.*`, and the React Compiler lint rules at `--max-warnings 0` |
 | Status colour is never applied to an entity status | `src/lib/design/usage.test.ts`: the status tokens appear only in `StatusDot.tsx` and `Inspector.tsx` |
