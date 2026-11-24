@@ -45,6 +45,12 @@ firefox webkit`. To run Chromium alone, `pnpm test:e2e --project=chromium`.
 - `audit` (weekly and on demand, not on pull requests, where `build-and-test`
   already runs it): `pnpm audit --audit-level high` alone, so an advisory
   published between pushes is a red run on `main` (#60).
+- `web-vitals` (weekly and on demand, not on pull requests): Lighthouse 13 on
+  its default mobile profile against sign-in, the directory and a user's
+  detail, signed in as the demo account, through
+  `playwright.lighthouse.config.ts` (`pnpm test:vitals`). Budgets: LCP
+  ≤ 2.5 s, CLS ≤ 0.1, TBT ≤ 200 ms, the thresholds of "good" Core Web Vitals.
+  The measured values are kept as the `web-vitals` artifact (#63).
 - `analyze` (CodeQL, not required).
 - `headers` (its own workflow, weekly and on demand): what Cloudflare Pages
   serves, compared with `public/_headers`. Not on pull requests, because a pull
@@ -88,3 +94,20 @@ all three browsers (#61).
   raised to chase a number.
 - Vitest counts each `.each` row as a test. State the expected count before a
   run that changes it.
+
+## Web Vitals
+
+First measured 2026-11-24 on a Windows workstation, Lighthouse 13.6, default
+mobile profile, production build with the mock:
+
+| Screen | LCP | CLS | TBT |
+|---|---|---|---|
+| sign-in | 3.16–3.50 s, **over the 2.5 s budget** | 0 | 51–77 ms |
+| directory | 1.68–1.73 s | 0 | 27–162 ms |
+| detail | 1.68–1.74 s | 0 | 53–110 ms |
+
+Sign-in misses LCP because the first paint is the boot screen and the sign-in
+content renders only after the session check (#76, with the options). TBT
+moves by a factor of six between runs, which is why the job is not a check on
+pull requests.
+
