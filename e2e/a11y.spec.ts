@@ -94,6 +94,33 @@ test('every dialog open: assign, remove, lock, unlock', async ({ page }) => {
   expect(await violations(page)).toEqual([]);
 });
 
+// docs/tokens.css removes every transition and animation under
+// prefers-reduced-motion (#62). Asserted on both sides, so the test cannot pass
+// because the sign-in screen stopped animating for some other reason.
+test('reduced motion removes the sign-in entrance and every transition', async ({ page }) => {
+  const motionOf = () =>
+    page.evaluate(() => {
+      const entering = document.querySelector('.animate-enter');
+      const button = document.querySelector('button');
+      return {
+        animation: entering === null ? null : getComputedStyle(entering).animationName,
+        transition: button === null ? null : getComputedStyle(button).transitionDuration,
+      };
+    });
+
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/sign-in');
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+  const moving = await motionOf();
+  expect(moving.animation).toBe('enter');
+  expect(moving.transition).not.toBe('0s');
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+  expect(await motionOf()).toEqual({ animation: 'none', transition: '0s' });
+});
+
 test('the boot screen while the API wakes', async ({ page }) => {
   await signInAsDemo(page, '/users');
   await coldStartOnLoad(page, 5000);
