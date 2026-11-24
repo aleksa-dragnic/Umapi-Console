@@ -80,3 +80,14 @@ places them on `window.__umapiMock` (`src/lib/testing/browser.ts`), and
 
 The decision stands. This section corrects the record; `docs/BUILD-PLAN.md`
 section 14 lists it with the other corrections of `docs/correct-drift`.
+
+## Update, 2026-11-24
+
+The worker is no longer deployed. Copied into the production build it stayed
+inert, but it was the one piece of the mock that reached `dist`, and CodeQL
+flagged its message handler (`js/missing-origin-check`). The build now removes
+it from every build but the `e2e` one (`vite.config.ts`), and the CI search
+covers the whole of `dist` and fails if the file is there.
+
+The decision stands: the `e2e` build still serves the worker, and the dev
+server too.
