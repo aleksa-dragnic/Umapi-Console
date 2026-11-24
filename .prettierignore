@@ -1,5 +1,6 @@
 dist
 dist-e2e
+dist-readme
 coverage
 node_modules
 pnpm-lock.yaml

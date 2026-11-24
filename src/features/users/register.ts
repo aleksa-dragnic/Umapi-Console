@@ -54,7 +54,9 @@ export function check(values: Registration): RegistrationErrors {
   }
 
   if (values.password.length < LIMITS.passwordMin) {
-    errors.password = `At least ${LIMITS.passwordMin} characters.`;
+    // What went wrong; the field's hint already says what is expected, and
+    // repeating it read the same sentence twice (found in the README's screenshot).
+    errors.password = 'Too short.';
   } else if (values.password.length > LIMITS.passwordMax) {
     errors.password = `At most ${LIMITS.passwordMax} characters.`;
   }

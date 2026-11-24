@@ -27,6 +27,12 @@ export interface ButtonProps extends Omit<
   disabledReason?: ReactNode | undefined;
   /** A request is in flight. The control is busy and refuses a second activation. */
   pending?: boolean | undefined;
+  /**
+   * Where a disabled control and its reason line up: `start` (the default), or
+   * `end` for a control at the right edge of a row, so the reason does not push
+   * it towards the middle.
+   */
+  align?: 'start' | 'end' | undefined;
   children: ReactNode;
 }
 
@@ -49,6 +55,7 @@ export function Button({
   variant = 'ghost',
   disabledReason,
   pending = false,
+  align = 'start',
   children,
   className,
   type = 'button',
@@ -87,7 +94,9 @@ export function Button({
   }
 
   return (
-    <span className="inline-flex flex-col items-start gap-app-1">
+    <span
+      className={`inline-flex flex-col gap-app-1 ${align === 'end' ? 'items-end text-right' : 'items-start'}`}
+    >
       {control}
       <span id={reasonId} className="font-mono text-app-meta text-fg-muted">
         {disabledReason}

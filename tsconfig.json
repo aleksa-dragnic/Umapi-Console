@@ -35,6 +35,7 @@
     "playwright.config.ts",
     "playwright.live.config.ts",
     "playwright.lighthouse.config.ts",
-    "playwright.visual.config.ts"
+    "playwright.visual.config.ts",
+    "playwright.readme.config.ts"
   ]
 }

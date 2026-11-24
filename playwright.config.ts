@@ -33,7 +33,9 @@ export default defineConfig({
   // runs it: it depends on a free instance waking (build plan section 9).
   // e2e/lighthouse/ measures Web Vitals through its own configuration
   // (playwright.lighthouse.config.ts, #63): one browser, one worker.
-  testIgnore: ['**/live/**', '**/lighthouse/**', '**/visual/**'],
+  // e2e/readme/ draws the README's screenshots (playwright.readme.config.ts)
+  // and must not run here: it would rewrite docs/images on every run.
+  testIgnore: ['**/live/**', '**/lighthouse/**', '**/visual/**', '**/readme/**'],
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,

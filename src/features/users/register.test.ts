@@ -21,7 +21,7 @@ describe('the checks made before sending (the rules of the API)', () => {
       email: 'Enter an email address.',
       firstName: 'Enter a first name.',
       lastName: 'Enter a last name.',
-      password: 'At least 8 characters.',
+      password: 'Too short.',
     });
     expect(check({ ...VALID, email: 'no-at-sign' }).email).toBe(
       'Enter an email address like name@example.com.',

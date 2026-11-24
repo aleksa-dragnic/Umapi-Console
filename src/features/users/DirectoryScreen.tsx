@@ -231,6 +231,7 @@ export function DirectoryScreen() {
         </h1>
         {/* Gated like every write (section 2.6): the reason shows, nothing is sent. */}
         <Button
+          align="end"
           disabledReason={register.allowed ? undefined : register.reason}
           onClick={() => setRegistering(true)}
         >
