@@ -24,7 +24,7 @@ test.afterAll(() => {
   writeFileSync('test-results/lighthouse/web-vitals.json', JSON.stringify(results, null, 2));
 });
 
-test('sign-in, the directory and a user detail stay within their Web Vitals budgets', async ({
+test('the landing page, sign-in, the directory and a user detail stay within their Web Vitals budgets', async ({
   browser,
   baseURL,
 }) => {
@@ -69,7 +69,9 @@ test('sign-in, the directory and a user detail stay within their Web Vitals budg
     }
   }
 
-  // Sign-in first, as a visitor meets it: signed in, it would send them on.
+  // The landing page and sign-in first, as a visitor meets them: signed in,
+  // sign-in would send them on.
+  await measure('landing', '/');
   await measure('sign-in', '/sign-in');
 
   // Then sign in, in the same tab, with the demo account the screen prints.

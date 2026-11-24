@@ -31,7 +31,11 @@ async function violations(page: Page): Promise<string[]> {
 
 const DETAIL = `/users/${MOCK_ACCOUNTS.demo.id}`;
 
-test('sign-in and 404, without a session', async ({ page }) => {
+test('the landing page, sign-in and 404, without a session', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('link', { name: 'Try the demo' })).toBeVisible();
+  expect(await violations(page)).toEqual([]);
+
   await page.goto('/sign-in');
   await expect(page.getByRole('form', { name: 'Sign in' })).toBeVisible();
   expect(await violations(page)).toEqual([]);

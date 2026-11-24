@@ -1,9 +1,14 @@
 import { cleanup, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router';
 
 import { AppRoutes } from '@/app/AppRoutes';
+import { OPEN_CONSOLE, TRY_DEMO } from '@/app/LandingRoute';
 import { NOT_FOUND_HEADING } from '@/app/NotFound';
+import { LANDING_TITLE } from '@/features/landing/LandingPage';
+import { rememberSession } from '@/lib/api/session-hint';
 import { MOCK_ACCOUNTS } from '@/lib/testing/mock';
+import { server } from '@/lib/testing/server';
 import { signIn } from '@/lib/testing/support';
 
 // Row 92: a browser gets the strong tag, a quoted SHA-256 in base64url.
@@ -15,18 +20,42 @@ function Where() {
 }
 
 describe('AppRoutes', () => {
-  it('sends an anonymous visitor at the root path to sign-in', async () => {
+  it('shows the landing page at the root path at once, and offers the demo to a new visitor (ADR 0018)', async () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <AppRoutes />
       </MemoryRouter>,
     );
 
-    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: LANDING_TITLE }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: TRY_DEMO })).toHaveAttribute('href', '/sign-in');
+    expect(screen.queryByRole('link', { name: OPEN_CONSOLE })).not.toBeInTheDocument();
   });
 
-  it('takes a signed-in user at the root path to the directory (build plan decision 1)', async () => {
+  it('offers the console to a browser that had a session, without asking the API first', async () => {
+    rememberSession(true);
+    const seen: string[] = [];
+    server.events.on('request:start', ({ request }) => seen.push(new URL(request.url).pathname));
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('link', { name: OPEN_CONSOLE })).toHaveAttribute(
+      'href',
+      '/users',
+    );
+    expect(seen).toEqual([]);
+    server.events.removeAllListeners();
+    rememberSession(false);
+  });
+
+  it('Open console takes a signed-in user to the directory', async () => {
     await signIn();
+    rememberSession(true);
     render(
       <MemoryRouter initialEntries={['/']}>
         <AppRoutes />
@@ -34,8 +63,11 @@ describe('AppRoutes', () => {
       </MemoryRouter>,
     );
 
+    await userEvent.click(await screen.findByRole('link', { name: OPEN_CONSOLE }));
+
     expect(await screen.findByRole('heading', { name: 'Users' })).toBeInTheDocument();
     expect(screen.getByTestId('where')).toHaveTextContent(/^\/users$/);
+    rememberSession(false);
   });
 
   it('renders the read-only roles for an account that holds roles.read', async () => {

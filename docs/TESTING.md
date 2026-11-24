@@ -46,8 +46,8 @@ firefox webkit`. To run Chromium alone, `pnpm test:e2e --project=chromium`.
   already runs it): `pnpm audit --audit-level high` alone, so an advisory
   published between pushes is a red run on `main` (#60).
 - `web-vitals` (weekly and on demand, not on pull requests): Lighthouse 13 on
-  its default mobile profile against sign-in, the directory and a user's
-  detail, signed in as the demo account, through
+  its default mobile profile against the landing page, sign-in, the directory
+  and a user's detail, the last two signed in as the demo account, through
   `playwright.lighthouse.config.ts` (`pnpm test:vitals`). Budgets: LCP
   ≤ 2.5 s, CLS ≤ 0.1, TBT ≤ 200 ms, the thresholds of "good" Core Web Vitals.
   The measured values are kept as the `web-vitals` artifact (#63).

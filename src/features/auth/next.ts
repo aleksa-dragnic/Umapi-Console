@@ -6,7 +6,10 @@
  */
 
 export const SIGN_IN_PATH = '/sign-in';
-const DEFAULT_DESTINATION = '/';
+// The directory. `/` was the directory until it became the public landing page
+// (ADR 0018); a visitor who signs in is going to the console, not back to it.
+// A path, not an import: one feature does not import another (ADR 0003).
+const DEFAULT_DESTINATION = '/users';
 
 /** The sign-in URL that returns to `path`. The default is not written. */
 export function signInPathFor(path: string): string {
@@ -16,7 +19,7 @@ export function signInPathFor(path: string): string {
 }
 
 /**
- * `next` if it is a path on this origin, `/` otherwise. Rejected: anything not
+ * `next` if it is a path on this origin, the directory otherwise. Rejected: anything not
  * starting with one slash (`https://…`, `//host`, `/\host`, which browsers
  * treat as another origin), and the sign-in route itself, which would loop.
  */

@@ -455,6 +455,20 @@ From the directory (section 3.3), for an account holding `users.write` (#82).
 | `forbidden` / `refused` | 403, or a 400 with a domain `errorCode` | The API's `detail` inside the dialog | Cancel |
 | `gated` | §2.6: the demo account | The control in the directory is disabled with *Requires users.write.*; the dialog never opens | Sign in as administrator |
 
+### 3.14 `landing` — the public page at `/`
+
+ADR 0018. Outside the session boundary: no boot screen, no request to the API.
+Editorial density, like sign-in.
+
+| State | Trigger | Renders | The way out |
+|---|---|---|---|
+| `new-visitor` | `/`, the browser had no session (ADR 0017) | The mark and *Umapi Console*, links to the *Console* and *API* repositories; the `h1` *An admin console that does not hide HTTP*; a lede; **Try the demo** (to sign-in) and **Read the code**; the directory screenshot; *What it makes visible*, three cards — Inspector, Conditional reads, Permissions; *On the wire*, a conditional read answered 304 in a code window; footer *Built by Aleksa Dragnić* and *MIT licence* | Try the demo |
+| `returning` | `/`, the browser had a session | As above, with **Open console** (to `/users`) in place of **Try the demo** | Open console |
+
+The call to action is a ghost control with the strong border; there is no
+filled button (DESIGN-DECISIONS section 2). Sign-in's default destination is
+`/users` (section 5).
+
 ---
 
 ## 4. Focus and keyboard contract
@@ -489,7 +503,7 @@ hover alone.
 | `q` | directory | `?q=ovic` |
 | `sort` | directory | `?sort=createdAt:desc` |
 | `status` | directory | `?status=locked` |
-| `next` | sign-in | `?next=%2Fusers%2F7c41ab` |
+| `next` | sign-in | `?next=%2Fusers%2F7c41ab`; absent, the directory (`/` is the landing page, ADR 0018) |
 
 Rules: an absent parameter means its default and is not written; an invalid
 value falls back to the default rather than erroring; and changing a filter
