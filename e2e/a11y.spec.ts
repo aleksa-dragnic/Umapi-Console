@@ -94,6 +94,41 @@ test('every dialog open: assign, remove, lock, unlock', async ({ page }) => {
   expect(await violations(page)).toEqual([]);
 });
 
+// The page behind an open dialog is inert (#61): not reached by Tab, not by a
+// pointer. jsdom cannot show this, so it is proven here, in every browser.
+test('an open dialog leaves the page behind it unreachable', async ({ page }) => {
+  await signInAsAdmin(page, DETAIL);
+  // Opened from the keyboard: WebKit does not focus a button a pointer clicks,
+  // so only a keyboard opening has a control to return focus to.
+  await page.getByRole('button', { name: 'Lock' }).focus();
+  await page.keyboard.press('Enter');
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+
+  for (let step = 0; step < 8; step += 1) {
+    await page.keyboard.press('Tab');
+    // Focus is in the dialog, or has left the page for the browser's own UI;
+    // never on the page behind.
+    const where = await page.evaluate(() => {
+      const active = document.activeElement;
+      if (active === null || active === document.body) return 'outside the page';
+      return document.querySelector('dialog[open]')?.contains(active)
+        ? 'in the dialog'
+        : 'behind it';
+    });
+    expect(where).not.toBe('behind it');
+  }
+
+  // A pointer meets the dialog's backdrop, not the control behind it.
+  await expect(
+    page.locator('nav[aria-label="Console"] a').first().click({ trial: true, timeout: 1000 }),
+  ).rejects.toThrow();
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Lock' })).toBeFocused();
+});
+
 test('the boot screen while the API wakes', async ({ page }) => {
   await signInAsDemo(page, '/users');
   await coldStartOnLoad(page, 5000);
