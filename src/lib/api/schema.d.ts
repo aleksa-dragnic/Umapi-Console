@@ -986,7 +986,9 @@ export interface operations {
     RegisterUserV1: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "Idempotency-Key"?: string;
+            };
             path?: never;
             cookie?: never;
         };
@@ -1006,6 +1008,16 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["UserCreatedResponse"];
                     "application/vnd.umapi.hateoas+json": components["schemas"]["UserCreatedResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProblemDetails"];
+                    "application/vnd.umapi.hateoas+json": components["schemas"]["ProblemDetails"];
                 };
             };
             /** @description Unauthorized */
