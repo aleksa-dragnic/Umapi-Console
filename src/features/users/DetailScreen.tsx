@@ -12,6 +12,8 @@ import {
   type Outcome,
 } from '@/features/users/changes';
 import { Failure } from '@/features/users/Failure';
+import { formatUtc } from '@/features/users/format';
+import { HistoryPanel } from '@/features/users/HistoryPanel';
 import { detailEntryOf, USERS_PATH, type DirectoryReturn } from '@/features/users/paths';
 import { ProfileForm, type ProfileValues } from '@/features/users/ProfileForm';
 import {
@@ -66,12 +68,7 @@ const ACTION_NAME: Record<Action, string> = {
   'remove-role': 'Removing a role',
 };
 
-/** A server timestamp as the server wrote it, to the minute, in UTC. */
-export function formatUtc(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return `${date.toISOString().slice(0, 16).replace('T', ' ')} UTC`;
-}
+export { formatUtc };
 
 type Dialogs =
   | { kind: 'lock' }
@@ -339,6 +336,7 @@ export function DetailScreen() {
           onAssign={() => open({ kind: 'assign' })}
           onRemove={(roleId, role) => open({ kind: 'remove', roleId, role })}
         />
+        <HistoryPanel id={id} />
         <Card title="Concurrency">
           <div className="mt-app-2 flex flex-col gap-app-2">
             {saving ? <Saving /> : null}

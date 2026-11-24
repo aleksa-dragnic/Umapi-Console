@@ -42,14 +42,14 @@ with the permission it needs; the API would refuse it anyway.
 
 ## What it shows
 
-| Screen      | What it makes visible                                                                                                                                                                                                                                              |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Sign in     | The boot refresh that restores a session from the cookie alone; the cold-start state; a refusal in the one wording the API allows                                                                                                                                  |
-| Users       | Search, status filter, sort and page held in the URL; every repeated read conditional, so returning to a page answers 304; Register a user, with each refusal on its field and a retry that sends the same Idempotency-Key, so a lost answer never registers twice |
-| User detail | Identity, status and roles; each write gated by the permission it needs, with the reason written under it; the record's ETag, and its version sent with every write so a stale one is a conflict                                                                   |
-| Roles       | Roles and the permissions each one grants                                                                                                                                                                                                                          |
-| Session     | The access token's claims, the permissions read from them, and a race of two refreshes against one cookie                                                                                                                                                          |
-| Inspector   | Every request at the transport: method, path, status, timing, request and response headers, body, Copy as curl. The token is written as `$TOKEN`, never shown                                                                                                      |
+| Screen      | What it makes visible                                                                                                                                                                                                                                                                             |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sign in     | The boot refresh that restores a session from the cookie alone; the cold-start state; a refusal in the one wording the API allows                                                                                                                                                                 |
+| Users       | Search, status filter, sort and page held in the URL; every repeated read conditional, so returning to a page answers 304; Register a user, with each refusal on its field and a retry that sends the same Idempotency-Key, so a lost answer never registers twice                                |
+| User detail | Identity, status and roles; each write gated by the permission it needs, with the reason written under it; the record's ETag, and its version sent with every write so a stale one is a conflict; the user's history, who changed what and when, read from the API's audit log by field name only |
+| Roles       | Roles and the permissions each one grants                                                                                                                                                                                                                                                         |
+| Session     | The access token's claims, the permissions read from them, and a race of two refreshes against one cookie                                                                                                                                                                                         |
+| Inspector   | Every request at the transport: method, path, status, timing, request and response headers, body, Copy as curl. The token is written as `$TOKEN`, never shown                                                                                                                                     |
 
 <table>
   <tr>
@@ -193,6 +193,8 @@ delegated.
   another site, outside the API's CORS list.
 - **The mock sends no `X-Correlation-Id`**; the inspector shows it against the
   API only.
+- **The history is the API's audit log, by field name.** It says that a status
+  or a name changed, not from what to what: the API does not keep values.
 - **Registering is not measured live yet.** The mock's idempotency follows the
   API's ADR 0023 and its tests; measuring it needs the administrator account
   (#82).

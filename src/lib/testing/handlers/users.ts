@@ -1,6 +1,7 @@
 import { HttpResponse, http } from 'msw';
 import type { Schema } from '@/lib/api/client';
-import { db, findUserByEmail } from '@/lib/testing/db';
+import { db, findUserByEmail, recordChange } from '@/lib/testing/db';
+import type { MockHistoryEntry } from '@/lib/testing/db';
 import { USER_STATUSES } from '@/lib/testing/factories';
 import type { MockUser, UserStatus } from '@/lib/testing/factories';
 import { guard } from '@/lib/testing/handlers/guard';
@@ -172,6 +173,41 @@ async function conditional(request: Request, body: unknown, extra: Record<string
   });
 }
 
+/** The API's limit on a history (its ADR 0025). */
+const HISTORY_LIMIT = 100;
+
+/**
+ * Not measured on the deployed instance: the shape follows the API's
+ * `UserHistoryEntryResponse` and its `UserHistoryTests` (UserManagementAPI#133).
+ */
+function toHistoryEntry(entry: MockHistoryEntry): Schema<'UserHistoryEntryResponse'> {
+  return {
+    occurredAtUtc: entry.occurredAtUtc,
+    action: entry.action,
+    fields: entry.fields,
+    roleId: entry.roleId,
+    roleName: entry.roleId === null ? null : (db().roles.get(entry.roleId)?.name ?? null),
+    actorId: entry.actorId,
+    actorEmail: entry.actorId === null ? null : (db().users.get(entry.actorId)?.email ?? null),
+  };
+}
+
+/** A change by the signed-in caller, stamped by the mock's clock. */
+function change(
+  userId: string,
+  actorId: string,
+  action: MockHistoryEntry['action'],
+  detail: { fields?: string[]; roleId?: string } = {},
+): void {
+  recordChange(userId, {
+    occurredAtUtc: new Date(now()).toISOString(),
+    action,
+    fields: detail.fields ?? [],
+    roleId: detail.roleId ?? null,
+    actorId,
+  });
+}
+
 function findUser(id: unknown): MockUser | undefined {
   return typeof id === 'string' ? db().users.get(id) : undefined;
 }
@@ -233,6 +269,18 @@ export const userHandlers = [
     const user = findUser(params['id']);
     if (!user) return notFound(request);
     return conditional(request, toDetails(user)); // Rows 21 and 24.
+  }),
+
+  http.get(endpoint('/api/v1/users/{id}/history'), async ({ request, params }) => {
+    const access = await guard(request, 'users.read', 'read');
+    if (!access.ok) return access.response;
+    const user = findUser(params['id']);
+    if (!user) return notFound(request);
+    const entries = [...(db().history.get(user.id) ?? [])]
+      .reverse()
+      .slice(0, HISTORY_LIMIT)
+      .map(toHistoryEntry);
+    return conditional(request, entries);
   }),
 
   http.post(endpoint('/api/v1/users'), async ({ request }) => {
@@ -309,6 +357,8 @@ export const userHandlers = [
       version: 1,
     };
     db().users.set(user.id, user);
+    change(user.id, access.user.id, 'registered');
+    if (memberRoleId) change(user.id, access.user.id, 'roleAssigned', { roleId: memberRoleId });
     if (registration !== null) db().registrations.set(registration, { body: raw, userId: user.id });
     return HttpResponse.json({ id: user.id } satisfies Schema<'UserCreatedResponse'>, {
       status: 201,
@@ -343,10 +393,17 @@ export const userHandlers = [
         'A user with this email already exists.',
       );
     }
+    // The API records only the fields whose value moved, and nothing for none.
+    const fields = [
+      user.email.toLowerCase() === email.toLowerCase() ? null : 'email',
+      user.firstName === firstName ? null : 'firstName',
+      user.lastName === lastName ? null : 'lastName',
+    ].filter((field): field is string => field !== null);
     user.email = email;
     user.firstName = firstName;
     user.lastName = lastName;
     touch(user);
+    if (fields.length > 0) change(user.id, access.user.id, 'updated', { fields });
     return new HttpResponse(null, { status: 204 }); // Row 57.
   }),
 
@@ -376,6 +433,7 @@ export const userHandlers = [
     // Row 51: locking revokes no session.
     user.status = 'Locked';
     touch(user);
+    change(user.id, access.user.id, 'updated', { fields: ['status'] });
     return new HttpResponse(null, { status: 204 });
   }),
 
@@ -394,6 +452,7 @@ export const userHandlers = [
     }
     user.status = 'Active';
     touch(user);
+    change(user.id, access.user.id, 'updated', { fields: ['status'] });
     return new HttpResponse(null, { status: 204 });
   }),
 
@@ -424,6 +483,7 @@ export const userHandlers = [
     }
     user.roles.push({ roleId, assignedAtUtc: new Date(now()).toISOString() });
     touch(user);
+    change(user.id, access.user.id, 'roleAssigned', { roleId });
     return new HttpResponse(null, { status: 204 });
   }),
 
@@ -457,6 +517,7 @@ export const userHandlers = [
     }
     user.roles = user.roles.filter((assignment) => assignment.roleId !== roleId);
     touch(user);
+    change(user.id, access.user.id, 'roleRemoved', { roleId: String(roleId) });
     return new HttpResponse(null, { status: 204 });
   }),
 ];
