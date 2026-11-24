@@ -94,6 +94,32 @@ test('every dialog open: assign, remove, lock, unlock', async ({ page }) => {
   expect(await violations(page)).toEqual([]);
 });
 
+test('the register dialog: open, refused before sending, and refused by the API', async ({
+  page,
+}) => {
+  await signInAsAdmin(page, '/users');
+  await page.getByRole('button', { name: 'Register a user' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Register a user' });
+  await expect(dialog.getByLabel('Email')).toBeFocused();
+  expect(await violations(page)).toEqual([]);
+
+  // By Enter, so each browser shows the form submitting through the footer's
+  // button, which is outside the form and tied to it by its form attribute.
+  await dialog.getByLabel('Email').press('Enter');
+  await expect(dialog.getByLabel('Email')).toHaveAttribute('aria-invalid', 'true');
+  expect(await violations(page)).toEqual([]);
+
+  await dialog.getByLabel('Email').fill(MOCK_ACCOUNTS.demo.email);
+  await dialog.getByLabel('First name').fill('Nova');
+  await dialog.getByLabel('Last name').fill('Korisnica');
+  await dialog.getByLabel('Password').fill('Dobra-Lozinka-1');
+  await dialog.getByRole('button', { name: 'Register' }).click();
+  await expect(dialog.getByLabel('Email')).toHaveAccessibleDescription(
+    'A user with this email already exists.',
+  );
+  expect(await violations(page)).toEqual([]);
+});
+
 // The page behind an open dialog is inert (#61): not reached by Tab, not by a
 // pointer. jsdom cannot show this, so it is proven here, in every browser.
 test('an open dialog leaves the page behind it unreachable', async ({ page }) => {

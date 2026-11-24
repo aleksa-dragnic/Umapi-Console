@@ -239,6 +239,40 @@ export const userHandlers = [
     const access = await guard(request, 'users.write', 'write'); // Row 27: 403 before validation.
     if (!access.ok) return access.response;
     if (await bodyTooLarge(request)) return new HttpResponse(null, { status: 413 });
+
+    // Not measured on the deployed instance: this follows the API's ADR 0023
+    // and its IdempotencyTests. Registering there needs the administrator
+    // account, which is the maintainer's (#82); a row is added once measured.
+    const key = request.headers.get('Idempotency-Key');
+    const registration = key === null ? null : `${access.user.id} ${key}`;
+    const raw = key === null ? '' : await request.clone().text();
+    if (key !== null && !/^[!-~]{1,255}$/.test(key)) {
+      return applicationProblem(
+        request,
+        400,
+        'Request.InvalidIdempotencyKey',
+        'Idempotency-Key must be one value of 1 to 255 visible ASCII characters.',
+      );
+    }
+    const remembered = registration === null ? undefined : db().registrations.get(registration);
+    if (remembered !== undefined) {
+      if (remembered.body !== raw) {
+        return applicationProblem(
+          request,
+          422,
+          'Idempotency.KeyReused',
+          'This Idempotency-Key was already used for a request with a different body.',
+        );
+      }
+      return HttpResponse.json({ id: remembered.userId } satisfies Schema<'UserCreatedResponse'>, {
+        status: 201,
+        headers: {
+          Location: `/api/v1/users/${remembered.userId}`,
+          'Idempotency-Replayed': 'true',
+        },
+      });
+    }
+
     const body = await readJson(request);
     const email = stringField(body, 'email')?.trim() ?? '';
     const firstName = stringField(body, 'firstName')?.trim() ?? '';
@@ -275,6 +309,7 @@ export const userHandlers = [
       version: 1,
     };
     db().users.set(user.id, user);
+    if (registration !== null) db().registrations.set(registration, { body: raw, userId: user.id });
     return HttpResponse.json({ id: user.id } satisfies Schema<'UserCreatedResponse'>, {
       status: 201,
       headers: { Location: `/api/v1/users/${user.id}` },

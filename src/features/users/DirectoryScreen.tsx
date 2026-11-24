@@ -1,10 +1,12 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 
 import { useDirectory, type DirectoryPage } from '@/features/users/api';
 import { DirectoryRows } from '@/features/users/DirectoryRows';
 import { Failure } from '@/features/users/Failure';
 import { Footer } from '@/features/users/Footer';
+import { RegisterUserDialog } from '@/features/users/RegisterUserDialog';
+import { userPath } from '@/features/users/paths';
 import { Toolbar } from '@/features/users/Toolbar';
 import {
   effectiveSort,
@@ -15,6 +17,7 @@ import {
   type SortField,
   type UserStatus,
 } from '@/features/users/url-state';
+import { useCan } from '@/lib/api/permissions';
 import { Button } from '@/ui/Button';
 import { SkeletonRow } from '@/ui/SkeletonRow';
 import { Table, TableBody, TableHead, TableHeaderCell, TableRow } from '@/ui/Table';
@@ -105,6 +108,9 @@ function Empty({
 
 export function DirectoryScreen() {
   const [params, setParams] = useSearchParams();
+  const navigate = useNavigate();
+  const register = useCan('users.write');
+  const [registering, setRegistering] = useState(false);
   const search = params.toString();
   const query = readQuery(params);
   const directory = useDirectory(query);
@@ -219,9 +225,27 @@ export function DirectoryScreen() {
       aria-busy={directory.isFetching}
       className="mx-auto flex w-full max-w-5xl flex-col gap-app-4 p-app-4"
     >
-      <h1 tabIndex={-1} className="text-app-title text-fg-emphasis">
-        Users
-      </h1>
+      <div className="flex flex-wrap items-start justify-between gap-app-3">
+        <h1 tabIndex={-1} className="text-app-title text-fg-emphasis">
+          Users
+        </h1>
+        {/* Gated like every write (section 2.6): the reason shows, nothing is sent. */}
+        <Button
+          disabledReason={register.allowed ? undefined : register.reason}
+          onClick={() => setRegistering(true)}
+        >
+          Register a user
+        </Button>
+      </div>
+      {registering ? (
+        <RegisterUserDialog
+          onClose={() => setRegistering(false)}
+          onRegistered={(id) => {
+            setRegistering(false);
+            void navigate(userPath(id));
+          }}
+        />
+      ) : null}
       <Toolbar
         term={term}
         onTermChange={setTerm}

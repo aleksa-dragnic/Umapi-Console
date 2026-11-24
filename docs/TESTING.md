@@ -85,6 +85,11 @@ jsdom has no `showModal()`, so `src/lib/testing/dialog.ts`, installed in
 top layer or the inert page behind a modal; `e2e/a11y.spec.ts` proves those in
 all three browsers (#61).
 
+user-event follows Enter to a submit button inside the form only, not to one
+tied to it by the `form` attribute, as the register dialog's **Register** is.
+Browsers do follow it, so `e2e/a11y.spec.ts` submits that dialog by Enter in
+all three.
+
 ## Rules
 
 - Test behaviour through the DOM as a user meets it: roles, names, text. No
