@@ -4,9 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
-  # Weekly, so a change to the deployed API, or a new advisory, is noticed even
-  # when nothing here changes. Only the contract and audit jobs run on the
-  # schedule.
+  # Weekly, so a change to the deployed API, a new advisory or a slower page is
+  # noticed even when nothing here changes. Only the contract, audit and
+  # web-vitals jobs run on the schedule.
   schedule:
     - cron: '0 6 * * 1'
   workflow_dispatch:
@@ -72,6 +72,34 @@ jobs:
       # Node, pnpm, the cached store and the install: .github/actions/setup.
       - uses: ./.github/actions/setup
       - run: pnpm audit --audit-level high
+
+  # Lab Web Vitals against budgets (#63): Lighthouse on the mobile profile,
+  # through playwright.lighthouse.config.ts. Weekly and on demand, not on pull
+  # requests: lab numbers on a shared runner move between runs, and a check that
+  # is red for a reason nobody can fix in the pull request trains people to
+  # ignore red. A missed budget is a red run on main, and the numbers are kept.
+  web-vitals:
+    name: web-vitals
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --user 1001
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Node, pnpm, the cached store and the install: .github/actions/setup.
+      - uses: ./.github/actions/setup
+      - run: mkdir -p test-results/lighthouse && pnpm test:vitals
+
+      - name: Upload the measured values
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-vitals
+          path: test-results/lighthouse/web-vitals.json
+          retention-days: 30
 
   e2e:
     name: e2e
