@@ -65,6 +65,7 @@ pnpm budget            # production JavaScript at most 140 kB gzipped
 pnpm exec playwright install chromium firefox webkit   # once
 pnpm test:e2e          # production build with the mock, every browser project
 pnpm test:e2e --project=chromium
+pnpm docs:screenshots  # redraw docs/images after a visible change
 
 pnpm api:generate      # regenerate src/lib/api/schema.d.ts from the deployed API
 ```

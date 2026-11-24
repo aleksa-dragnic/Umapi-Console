@@ -105,9 +105,10 @@ describe('register-user (inventory section 3.13)', () => {
     expect(within(dialog).getByLabelText('First name')).toHaveAccessibleDescription(
       'Enter a first name.',
     );
-    // The error first, then the hint: what went wrong, then what is expected.
+    // The error first, then the hint: what went wrong, then what is expected,
+    // each said once.
     expect(within(dialog).getByLabelText('Password')).toHaveAccessibleDescription(
-      `At least 8 characters. ${PASSWORD_HINT}`,
+      `Too short. ${PASSWORD_HINT}`,
     );
     expect(seen.keys).toEqual([]);
   });

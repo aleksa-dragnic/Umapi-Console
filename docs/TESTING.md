@@ -26,6 +26,7 @@ pnpm test:run       # Vitest once
 pnpm coverage       # Vitest once, with the coverage floor (vite.config.ts)
 pnpm test:e2e       # Playwright: builds the e2e bundle, serves it, runs every project
 pnpm test:live      # Playwright against the deployed pair - by hand only
+pnpm docs:screenshots  # redraws docs/images from the e2e bundle - not a test
 ```
 
 `pnpm test:e2e` needs the browsers once: `pnpm exec playwright install chromium

@@ -54,14 +54,22 @@ with the permission it needs; the API would refuse it anyway.
 
 <table>
   <tr>
-    <td><img src="docs/images/directory.png" alt="The user directory, page 1 of 14, with names carrying diacritics"></td>
-    <td><img src="docs/images/detail.png" alt="The demo account's detail: Edit, Lock, Remove and Assign role disabled, each with the permission it requires"></td>
+    <td><img src="docs/images/landing.png" alt="The public landing page: what the console makes visible, with Try the demo and Read the code"></td>
+    <td><img src="docs/images/directory.png" alt="The user directory as the demo account sees it: page 1 of 13, names carrying diacritics, and Register a user disabled with the permission it needs"></td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/detail.png" alt="The demo account's detail: every write disabled with the permission it requires, and the History panel listing who changed what and when"></td>
+    <td><img src="docs/images/register.png" alt="Registering a user as the administrator: a password refused before sending, Too short under its hint"></td>
   </tr>
   <tr>
     <td><img src="docs/images/sign-in.png" alt="The sign-in screen with the demo account printed under the form"></td>
     <td></td>
   </tr>
 </table>
+
+The screenshots are drawn from the production build with the mock by
+`pnpm docs:screenshots` (`e2e/readme/`), not taken by hand: run it after a
+visible change and commit what it writes to `docs/images`.
 
 ## Architecture
 
