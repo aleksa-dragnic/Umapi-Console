@@ -1,5 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitForElementToBeRemoved,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useEffect, useRef } from 'react';
 import { Link, MemoryRouter, Route, Routes } from 'react-router';
@@ -69,6 +76,11 @@ async function renderShell(entry = '/users') {
   // The boot refresh goes through the mock in real time. On a loaded machine it
   // has taken longer than findBy's default second, so the wait is stated.
   await screen.findByRole('navigation', { name: 'Console' }, { timeout: 3000 });
+  // findBy resolves once the navigation is in the DOM, which can be before React
+  // has run the effects of that render: the shell's focus placement, its
+  // subscriptions, a screen's handlers. A test that acted in that gap raced
+  // them and failed now and then (#65). An empty act flushes them first.
+  await act(async () => {});
 }
 
 const nav = () => screen.getByRole('navigation', { name: 'Console' });
@@ -114,6 +126,11 @@ describe('the shell', () => {
     await renderShell('/directory');
     const search = await screen.findByLabelText('Search');
     await userEvent.type(search, 'ovic');
+    // The term reaches the address bar after a debounce. Landing between the
+    // two Escapes, that commit reset the field and failed the test now and then
+    // (#65); this test is about the order of Escape, so the commit lands first.
+    await screen.findByText('Search pending');
+    await waitForElementToBeRemoved(() => screen.queryByText('Search pending'));
     await userEvent.click(screen.getByRole('button', { name: 'Inspector' }));
     await userEvent.click(search);
 
