@@ -15,10 +15,12 @@ import {
  * the record and not in the command.
  */
 
-// One pass, longest first: `$TOKEN` is also the end of `$REFRESH_TOKEN`.
+// One pass, longest first: `$TOKEN` is also the end of `$REFRESH_TOKEN`. Each
+// name is escaped whole, every character a pattern reads as syntax, not only
+// its leading `$`.
 const VARIABLE = new RegExp(
   [REFRESH_TOKEN_PLACEHOLDER, PASSWORD_PLACEHOLDER, TOKEN_PLACEHOLDER]
-    .map((name) => name.replace('$', '\\$'))
+    .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
     .join('|'),
   'g',
 );
