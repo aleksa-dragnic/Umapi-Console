@@ -19,25 +19,9 @@ const BUDGET = {
 type Measured = Record<keyof typeof BUDGET, number>;
 
 const results: Record<string, Measured> = {};
-// Which element was the largest paint, and what its time was spent on: the
-// first thing to read when a budget is missed.
-const lcpOf: Record<string, unknown> = {};
-
-function lcpElement(lhr: { audits: Record<string, { details?: unknown }> }): unknown {
-  const details = lhr.audits['largest-contentful-paint-element']?.details as
-    | { items?: { items?: { node?: { snippet?: string }; phase?: string; timing?: number }[] }[] }
-    | undefined;
-  return {
-    element: details?.items?.[0]?.items?.[0]?.node?.snippet,
-    phases: details?.items?.[1]?.items?.map(({ phase, timing }) => ({ phase, timing })),
-  };
-}
 
 test.afterAll(() => {
-  writeFileSync(
-    'test-results/lighthouse/web-vitals.json',
-    JSON.stringify({ measured: results, largestPaint: lcpOf }, null, 2),
-  );
+  writeFileSync('test-results/lighthouse/web-vitals.json', JSON.stringify(results, null, 2));
 });
 
 test('sign-in, the directory and a user detail stay within their Web Vitals budgets', async ({
@@ -67,7 +51,6 @@ test('sign-in, the directory and a user detail stay within their Web Vitals budg
       Object.keys(BUDGET).map((id) => [id, audits[id]!.numericValue ?? Number.NaN]),
     ) as Measured;
     results[name] = measured;
-    lcpOf[name] = lcpElement(run!.lhr);
 
     for (const [id, limit] of Object.entries(BUDGET) as [keyof typeof BUDGET, number][]) {
       expect.soft(measured[id], `${name}: ${id}`).toBeLessThanOrEqual(limit);
