@@ -1,7 +1,11 @@
 import '@testing-library/jest-dom/vitest';
 import { setAccessToken } from '@/lib/api/access-token';
+import { installDialogStandIn } from '@/lib/testing/dialog';
 import { resetMock } from '@/lib/testing/mock';
 import { server } from '@/lib/testing/server';
+
+// jsdom has no showModal(); the stand-in says what it does and does not do.
+installDialogStandIn();
 
 // Every test runs against the mock, and a request nothing handles fails the test
 // rather than reaching the network (build plan Gate 2).
