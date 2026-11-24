@@ -143,6 +143,35 @@ jobs:
           path: test-results/
           retention-days: 14
 
+  # Screenshots of the specimen route against committed baselines (#64). Not a
+  # required check: an intended visual change fails it until the baselines are
+  # regenerated (scripts/update-specimen-snapshots.sh), and that is a review
+  # step, not a merge gate. The image is the one the baselines were made in;
+  # when @playwright/test moves, the baselines are regenerated with it.
+  visual:
+    name: visual
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+      options: --user 1001
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Node, pnpm, the cached store and the install: .github/actions/setup.
+      - uses: ./.github/actions/setup
+      - run: pnpm test:visual
+
+      # The expected, actual and diff images of every failed comparison.
+      - name: Upload the differences
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: visual-diff
+          path: test-results/visual/
+          retention-days: 14
+
   # Regenerates src/lib/api/schema.d.ts from the deployed document and fails if
   # it differs from what is committed. Deliberately not a required check: the
   # document lives on a free instance that sleeps and can be down, and a merge

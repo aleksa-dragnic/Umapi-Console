@@ -134,6 +134,7 @@ the two are different sites.
 | Contract           | CI job `contract`  | the committed API types compared with the live OpenAPI document                                                                                                                                                                                  | weekly and on every pull request               |
 | Live               | `pnpm test:live`   | Playwright against the deployed console and API: one auth cycle, the directory, the read-only boundary, the cold start                                                                                                                           | 3 tests, by hand only                          |
 | Web Vitals         | `pnpm test:vitals` | Lighthouse on the mobile profile: LCP ≤ 2.5 s, CLS ≤ 0.1, TBT ≤ 200 ms on sign-in, the directory and a detail                                                                                                                                    | weekly in CI; sign-in over budget, #76         |
+| Visual             | `pnpm test:visual` | Screenshots of every specimen section in both densities against baselines made in the CI image                                                                                                                                                   | 28, on pull requests                           |
 
 `build-and-test` and `e2e` are required on every pull request. `build-and-test`
 also fails on a high or critical advisory (`pnpm audit`), on coverage below its

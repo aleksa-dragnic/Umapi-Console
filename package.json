@@ -23,6 +23,7 @@
     "test:e2e": "playwright test",
     "test:live": "playwright test --config playwright.live.config.ts",
     "test:vitals": "playwright test --config playwright.lighthouse.config.ts",
+    "test:visual": "playwright test --config playwright.visual.config.ts",
     "coverage": "vitest run --coverage",
     "budget": "node scripts/bundle-budget.mjs",
     "api:generate": "openapi-typescript https://api.aleksadragnic.com/openapi/v1.json -o src/lib/api/schema.d.ts",
