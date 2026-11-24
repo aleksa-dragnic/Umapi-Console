@@ -3,6 +3,7 @@ import { createContext, use, useEffect, useRef, useState, type ReactNode } from 
 import { setAccessToken } from '@/lib/api/access-token';
 import { onRefresh, refreshAccessToken, sessionEndOf, type SessionEnd } from '@/lib/api/refresh';
 import { requestSignOut, type AuthFailure, type AuthResult } from '@/features/auth/api';
+import { hadSession, rememberSession } from '@/lib/api/session-hint';
 
 /**
  * The session: whether anyone is signed in, and the access token if so. The
@@ -14,6 +15,11 @@ import { requestSignOut, type AuthFailure, type AuthResult } from '@/features/au
  * `boot` screen (inventory section 3.1). After that, a 401 on any request is
  * met by a silent refresh in the client (inventory section 2.3); the provider
  * hears every refresh answer and ends the session on a 401 (section 2.4).
+ *
+ * The boot screen is for a browser that had a session (ADR 0017). Anyone else
+ * starts `anonymous`, so sign-in renders at once, and the same refresh runs
+ * behind it: a 200 still signs them in, anything else leaves them where they
+ * are, since there was no session to wait for.
  */
 
 export type SessionState =
@@ -82,7 +88,11 @@ export interface SessionValue {
 const SessionContext = createContext<SessionValue | null>(null);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<SessionState>({ status: 'checking' });
+  // Read once: whether to wait for the check, or to show sign-in while it runs.
+  const [expectingSession] = useState(hadSession);
+  const [state, setState] = useState<SessionState>(() =>
+    expectingSession ? { status: 'checking' } : { status: 'anonymous' },
+  );
   // Development renders twice under StrictMode, and two refreshes sent together
   // with one cookie are exactly the race of observed rows 11 and 46. The boot
   // refresh is therefore guarded, not merely deduplicated by timing, and it
@@ -96,13 +106,20 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     () =>
       onRefresh((result) => {
         setState((current) => sessionAfterRefresh(current, result));
-        if (sessionEndOf(result) !== null) setColdStartShown(false);
+        if (sessionEndOf(result) !== null) {
+          setColdStartShown(false);
+          rememberSession(false);
+        }
       }),
     [],
   );
 
   function adopt(next: SessionState) {
     setAccessToken(next.status === 'authenticated' ? next.accessToken : null);
+    // Only a definite answer moves the hint; a 429 or no answer says nothing.
+    if (next.status === 'authenticated' || next.status === 'anonymous') {
+      rememberSession(next.status === 'authenticated');
+    }
     if (next.status !== 'authenticated') setColdStartShown(false);
     setState(next);
   }
@@ -117,19 +134,40 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     });
   }
 
+  // The check behind sign-in: a session it finds is adopted; anything else
+  // changes nothing on screen, because nobody was waiting for it.
+  function refreshBehindSignIn() {
+    generation.current += 1;
+    const current = generation.current;
+    void refreshAccessToken().then((result) => {
+      if (current === generation.current && result.kind === 'token') {
+        adopt({ status: 'authenticated', accessToken: result.accessToken });
+      }
+    });
+  }
+
   const value: SessionValue = {
     state,
     boot: () => {
       if (booted.current) return;
       booted.current = true;
-      refresh();
+      if (expectingSession) {
+        refresh();
+      } else {
+        refreshBehindSignIn();
+      }
     },
     retry: () => {
       setState({ status: 'checking' });
       refresh();
     },
-    signIn: (accessToken) => adopt({ status: 'authenticated', accessToken }),
+    // A check still in flight must not overrule what the user just did.
+    signIn: (accessToken) => {
+      generation.current += 1;
+      adopt({ status: 'authenticated', accessToken });
+    },
     signOut: async () => {
+      generation.current += 1;
       await requestSignOut();
       adopt({ status: 'anonymous', reason: 'signed-out' });
     },

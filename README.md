@@ -71,7 +71,9 @@ with the permission it needs; the API would refuse it anyway.
   and the refresh cookie needs the same site, so a copy served from anywhere
   else cannot sign in.
 - **Tokens.** The access token lives in memory and is never written to
-  storage. The refresh token never reaches JavaScript: it travels as an
+  storage; the only thing stored is a boolean hint that this browser had a
+  session, so a visitor without one sees sign-in at once
+  ([ADR 0017](docs/adr/0017-sign-in-renders-before-the-session-check.md)). The refresh token never reaches JavaScript: it travels as an
   `HttpOnly`, `SameSite=Strict` cookie on `/api/v1/auth` only. A 401 triggers
   one refresh, shared by every request waiting on it
   ([ADR 0007](docs/adr/0007-refresh-token-in-an-httponly-cookie.md),
@@ -133,7 +135,7 @@ the two are different sites.
 | End to end         | `pnpm test:e2e`    | Playwright on a production build with the mock, axe at WCAG 2.2 AA on every route and dialog, the boot screen, the error boundary, a failed, empty or rate-limited directory, a conflict, and at 375 px; smoke and axe in Firefox and WebKit too | 24 tests in 9 specs, 42 runs in three browsers |
 | Contract           | CI job `contract`  | the committed API types compared with the live OpenAPI document                                                                                                                                                                                  | weekly and on every pull request               |
 | Live               | `pnpm test:live`   | Playwright against the deployed console and API: one auth cycle, the directory, the read-only boundary, the cold start                                                                                                                           | 3 tests, by hand only                          |
-| Web Vitals         | `pnpm test:vitals` | Lighthouse on the mobile profile: LCP ≤ 2.5 s, CLS ≤ 0.1, TBT ≤ 200 ms on sign-in, the directory and a detail                                                                                                                                    | weekly in CI; sign-in over budget, #76         |
+| Web Vitals         | `pnpm test:vitals` | Lighthouse on the mobile profile: LCP ≤ 2.5 s, CLS ≤ 0.1, TBT ≤ 200 ms on sign-in, the directory and a detail                                                                                                                                    | weekly in CI                                   |
 | Visual             | `pnpm test:visual` | Screenshots of every specimen section in both densities against baselines made in the CI image                                                                                                                                                   | 28, on pull requests                           |
 
 `build-and-test` and `e2e` are required on every pull request. `build-and-test`
@@ -146,7 +148,7 @@ with every visitor, and spends nine of the auth limit's ten requests a minute.
 
 ## Documentation
 
-- [`docs/adr/`](docs/adr/README.md) - sixteen architecture decision records.
+- [`docs/adr/`](docs/adr/README.md) - seventeen architecture decision records.
 - [`docs/BUILD-PLAN.md`](docs/BUILD-PLAN.md) - the plan, its invariants and,
   in section 14, every place the build departed from it.
 - [`docs/SCREEN-INVENTORY.md`](docs/SCREEN-INVENTORY.md) - every screen and

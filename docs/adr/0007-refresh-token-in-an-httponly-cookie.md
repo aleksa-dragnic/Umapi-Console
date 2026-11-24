@@ -3,6 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-09-25
 - **PR:** #9
+- **Amended by:** [0017](0017-sign-in-renders-before-the-session-check.md) - storage may hold one boolean session hint, never a credential
 
 ## Context
 

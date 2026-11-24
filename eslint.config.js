@@ -108,6 +108,11 @@ const TESTS = ['src/**/*.test.ts', 'src/**/*.test.tsx', 'src/setupTests.ts'];
 // production bundle (build plan Gate 2); the access token is not in it.
 const MOCK_PERSISTENCE = 'src/lib/testing/persistence.ts';
 
+// The one production file allowed to touch storage: a boolean that says this
+// browser had a session, so sign-in can render before the session check (ADR
+// 0017). It holds no token; a test asserts that after sign-in.
+const SESSION_HINT = 'src/lib/api/session-hint.ts';
+
 export default tseslint.config(
   {
     ignores: [
@@ -174,7 +179,7 @@ export default tseslint.config(
   },
   {
     files: ['src/**/*.{ts,tsx}'],
-    ignores: [...TESTS, MOCK_PERSISTENCE],
+    ignores: [...TESTS, MOCK_PERSISTENCE, SESSION_HINT],
     rules: storageBan,
   },
   {

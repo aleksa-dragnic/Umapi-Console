@@ -1,5 +1,6 @@
 import { API_BASE_URL } from '@/lib/api/client';
 import { MOCK_ACCOUNTS } from '@/lib/testing/factories';
+import { rememberSession } from '@/lib/api/session-hint';
 
 /**
  * Plain HTTP against the mock, for tests that assert on the wire: statuses,
@@ -37,6 +38,9 @@ export async function signIn(
     throw new Error(`sign-in as ${account.email} answered ${response.status}`);
   }
   const { accessToken } = (await response.json()) as { accessToken: string };
+  // What a real sign-in leaves behind besides the cookie: the hint that this
+  // browser has a session, so the next mount waits for the check (ADR 0017).
+  rememberSession(true);
   return { accessToken, auth: { Authorization: `Bearer ${accessToken}` } };
 }
 

@@ -149,7 +149,8 @@ flash of the sign-in form for a user who is signed in.
 
 | State | Trigger | Renders | The way out |
 |---|---|---|---|
-| `checking` | Application mount, always | The app mark, centred on black, and nothing else. No spinner before 400 ms. | Refresh resolves |
+| `checking` | Application mount, in a browser with the session hint (ADR 0017) | The app mark, centred on black, and nothing else. No spinner before 400 ms. | Refresh resolves |
+| `anonymous`, at once | Application mount without the session hint | Sign-in, rendered before the check answers; the same refresh runs behind it. A token sends the visitor on; anything else leaves sign-in as it is | Sign in |
 | `checking-slow` | Still checking after 1200 ms | Adds `cold-start` copy | Resolves |
 | `authenticated` | Refresh returned an access token | Router proceeds to the requested route | — |
 | `anonymous` | Refresh returned 401 | Router navigates to `/sign-in?next=<path>` | Sign in |

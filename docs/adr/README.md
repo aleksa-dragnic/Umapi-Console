@@ -21,3 +21,4 @@ One file per decision. Format and rules are the same as in
 | [0014](0014-the-inspector-records-at-the-transport.md) | The inspector records at the transport, keeps no credential, and belongs to one session | Accepted | 15 |
 | [0015](0015-the-console-sends-its-own-security-headers.md) | The console sends its own security headers, from a file in the repository | Accepted | 26 |
 | [0016](0016-working-with-a-coding-agent.md) | Working with a coding agent: the agent drafts, the maintainer decides and merges | Accepted | 70 |
+| [0017](0017-sign-in-renders-before-the-session-check.md) | Sign-in renders before the session check, for a browser that had no session; amends 0007 | Accepted | 81 |

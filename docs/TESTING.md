@@ -101,19 +101,27 @@ all three browsers (#61).
 
 ## Web Vitals
 
-First measured 2026-11-24 on a Windows workstation, Lighthouse 13.6, default
-mobile profile, production build with the mock:
+Measured 2026-11-24 on a Windows workstation, Lighthouse 13.6, default mobile
+profile, production build with the mock; the directory and the detail signed
+in, in the tab Lighthouse navigates (#80):
 
-| Screen | LCP | CLS | TBT |
-|---|---|---|---|
-| sign-in | 3.16–3.50 s, **over the 2.5 s budget** | 0 | 51–77 ms |
-| directory | 1.68–1.73 s | 0 | 27–162 ms |
-| detail | 1.68–1.74 s | 0 | 53–110 ms |
+| Screen | LCP before ADR 0017 | LCP after | CLS | TBT |
+|---|---|---|---|---|
+| sign-in | 3.24 s, over the 2.5 s budget | **0.76–0.78 s** | 0 | 17–32 ms |
+| directory, signed in | 1.69 s | 1.69–1.70 s | 0.01 | 21–115 ms |
+| detail, signed in | 1.68 s | 1.69 s | 0 | 17–21 ms |
 
-Sign-in misses LCP because the first paint is the boot screen and the sign-in
-content renders only after the session check (#76, with the options). TBT
-moves by a factor of six between runs, which is why the job is not a check on
-pull requests.
+Sign-in waited for the session check behind the boot screen; since ADR 0017 a
+browser without a session sees it at once (#76). The directory and the detail
+still wait for the check, on purpose.
+
+**A correction.** The first numbers recorded here for the directory and the
+detail (1.68–1.74 s) were sign-in's after a redirect: Lighthouse opened a tab
+of its own, where the mock had no session. #80 measures in one tab and fails
+when the page measured is not the page asked for.
+
+TBT moves by a factor of five between runs, which is why the job is not a check
+on pull requests.
 
 ## Visual baselines
 

@@ -13,6 +13,8 @@ beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 afterEach(async () => {
   server.resetHandlers();
   setAccessToken(null);
+  // The session hint belongs to one test (ADR 0017).
+  localStorage.removeItem('umapi.session');
   // A test that takes the browser offline cannot leave the next one offline.
   window.dispatchEvent(new Event('online'));
   await resetMock();
