@@ -27,10 +27,13 @@ import {
 export type User = Schema<'UserResponse'>;
 export type UserDetails = Schema<'UserDetailsResponse'>;
 export type Role = Schema<'RoleResponse'>;
+export type HistoryEntry = Schema<'UserHistoryEntryResponse'>;
 
 export const USERS_KEY = ['users'] as const;
 export const DIRECTORY_KEY = ['users', 'directory'] as const;
 export const detailKey = (id: string) => ['users', 'detail', id] as const;
+/** Under the detail's key, so every write that reads the detail again reads this too. */
+export const historyKey = (id: string) => [...detailKey(id), 'history'] as const;
 export const ROLES_KEY = ['roles'] as const;
 
 /** Row 13: the pagination header, camelCase JSON. */
@@ -59,6 +62,10 @@ export interface DirectoryPage extends Validated {
 /** A user's detail as read, with the validator it came with. */
 export interface UserRead extends Validated {
   user: UserDetails;
+}
+
+export interface HistoryRead extends Validated {
+  entries: HistoryEntry[];
 }
 
 export interface RolesRead extends Validated {
@@ -226,6 +233,37 @@ export function useUser(id: string) {
     queryKey: detailKey(id),
     queryFn: ({ signal, client, queryKey }) =>
       fetchUser(id, signal, client.getQueryData<UserRead>(queryKey)),
+  });
+}
+
+/**
+ * `GET /api/v1/users/{id}/history`: a user's changes, newest first, at most a
+ * hundred, by field name and never by value (the API's ADR 0025).
+ */
+export async function fetchHistory(
+  id: string,
+  signal?: AbortSignal,
+  previous?: HistoryRead,
+): Promise<HistoryRead> {
+  const { data, error, response } = await send(
+    () =>
+      api.GET('/api/v1/users/{id}/history', {
+        params: { path: { id } },
+        ...validating(previous),
+        ...withSignal(signal),
+      }),
+    signal,
+  );
+  if (response.status === 304 && previous !== undefined) return confirmed(previous, response);
+  if (!response.ok || data === undefined) throw refused(response, error);
+  return { entries: data, status: response.status, etag: response.headers.get('ETag') };
+}
+
+export function useHistory(id: string) {
+  return useQuery({
+    queryKey: historyKey(id),
+    queryFn: ({ signal, client, queryKey }) =>
+      fetchHistory(id, signal, client.getQueryData<HistoryRead>(queryKey)),
   });
 }
 

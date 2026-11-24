@@ -262,6 +262,19 @@ disabled with its reason (§2.6), and nothing opens.
 | `rate-limited` | 429 on a write (row 52: thirty a minute per user) | The rollback; the action's confirm control, or **Save**, is held by the shared countdown of §2.7 | Wait |
 | `error` | §2.8 | Panel-level error with **Retry**. A write with no answer, or a 5xx, rolls back and says so where the action is: *No response from the API.*, or the status and title. | Retry |
 
+**History panel** (#87). Below *Roles*, the user's changes from
+`GET /api/v1/users/{id}/history`, newest first, as the API's audit log recorded
+them (its ADR 0025). Read with `users.read`, so the demo account sees it.
+
+| State | Trigger | Renders | The way out |
+|---|---|---|---|
+| `loading` | Route entry | A skeleton of three lines in the panel; the other panels do not wait for it | Data |
+| `ready` | Data | An ordered list, one change per item: a sentence — *Registered*, *Profile changed: email and last name*, *Status changed*, *Password changed*, *Role Support assigned*, *Role Support removed* — then the actor and the time, `admin@umapi.local · 2026-11-24 14:02 UTC`. A change with no actor reads *system*; an actor who no longer exists, *a removed user*; a role that no longer exists, *Role that no longer exists removed*. Under the list: *Field names only: the API does not keep values.* and the footer `200 · 4 changes`, with *(the latest 100)* when the API's limit is reached. | — |
+| `empty` | `[]` | *No changes recorded.* and `200 · 0 changes` | — |
+| `not-modified` | §2.9: read again with nothing changed | Unchanged list, footer `304 · 4 changes` | — |
+| `refreshed` | A write on this detail | The history is read again with the detail (its query sits under the detail's key); the change appears at the top | — |
+| `error` / `rate-limited` | §2.8, §2.7 | §2.8's failure inside the panel, with **Retry**, held by the countdown for a 429. The rest of the detail is unaffected. | Retry |
+
 ### 3.5 `assign-role` — dialog
 
 | State | Trigger | Renders | The way out |

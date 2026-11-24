@@ -77,3 +77,20 @@ test('the demo account reads why Remove is disabled, whole, at desktop width', a
   const overflow = await scroller.evaluate((element) => element.scrollWidth - element.clientWidth);
   expect(overflow).toBe(0);
 });
+
+test('the history reports a lock as the newest change, by the administrator', async ({ page }) => {
+  await signInAsAdmin(page, '/users?q=reader');
+  await page.getByRole('link', { name: DEMO_ACCOUNT.email }).click();
+  const history = page.getByRole('region', { name: 'History' });
+  await expect(history.getByText('Registered')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Lock' }).click();
+  await page
+    .getByRole('dialog', { name: 'Lock Demo Reader' })
+    .getByRole('button', { name: 'Lock' })
+    .click();
+
+  const newest = history.getByRole('listitem').first();
+  await expect(newest).toContainText('Status changed');
+  await expect(newest).toContainText('admin@');
+});

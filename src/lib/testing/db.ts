@@ -12,6 +12,18 @@ export interface MockRefreshToken {
   rotation?: Promise<void>;
 }
 
+/**
+ * One change to a user, as the API's audit log reports it (its ADR 0025): field
+ * names, never values; the actor's id, null for a system write.
+ */
+export interface MockHistoryEntry {
+  occurredAtUtc: string;
+  action: 'registered' | 'updated' | 'deleted' | 'roleAssigned' | 'roleRemoved';
+  fields: string[];
+  roleId: string | null;
+  actorId: string | null;
+}
+
 /** A registration sent with an Idempotency-Key: the body it was sent with, and the user it made. */
 export interface MockRegistration {
   body: string;
@@ -24,15 +36,46 @@ interface Database {
   refreshTokens: Map<string, MockRefreshToken>;
   /** Keyed by the caller's id and the key, as the API scopes them (its ADR 0023). */
   registrations: Map<string, MockRegistration>;
+  /** Each user's changes, oldest first. */
+  history: Map<string, MockHistoryEntry[]>;
+}
+
+/** A seeded user's history: registered by the seeder, with the roles it holds. */
+function seeded(user: MockUser): MockHistoryEntry[] {
+  return [
+    {
+      occurredAtUtc: user.createdAtUtc,
+      action: 'registered',
+      fields: [],
+      roleId: null,
+      actorId: null,
+    },
+    ...user.roles.map((assignment) => ({
+      occurredAtUtc: assignment.assignedAtUtc,
+      action: 'roleAssigned' as const,
+      fields: [],
+      roleId: assignment.roleId,
+      actorId: null,
+    })),
+  ];
 }
 
 function fresh(seed: number): Database {
+  const users = buildUsers(seed);
   return {
-    users: new Map(buildUsers(seed).map((user) => [user.id, user])),
+    users: new Map(users.map((user) => [user.id, user])),
     roles: new Map(ROLES.map((role) => [role.id, { ...role, permissions: [...role.permissions] }])),
     refreshTokens: new Map(),
     registrations: new Map(),
+    history: new Map(users.map((user) => [user.id, seeded(user)])),
   };
+}
+
+/** Appends a change to a user's history, at the mock's clock. */
+export function recordChange(userId: string, change: MockHistoryEntry): void {
+  const entries = database.history.get(userId) ?? [];
+  entries.push(change);
+  database.history.set(userId, entries);
 }
 
 let database = fresh(DEFAULT_SEED);

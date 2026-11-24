@@ -229,6 +229,7 @@ Incognito window, as the demo account.
 |---|---|---|---|
 | - | Query parameters in the document's PascalCase, live (row 64) | Any probe session | Nothing; binding ignores case |
 | - | `Idempotency-Key` on `POST /api/v1/users`, live: the same key and body replay 201 with `Idempotency-Replayed: true`; the same key with another body is 422 `Idempotency.KeyReused`; a key outside printable ASCII or past 255 characters is 400 `Request.InvalidIdempotencyKey` (the API's ADR 0023 and `IdempotencyTests`) | Two registrations as the administrator, the maintainer's (#82) | Nothing; the mock follows the API's source and tests until measured |
+| - | `GET /api/v1/users/{id}/history`, live: the entries for a register, an edit, a lock and a role change, their order, the actor's email, and a 304 on a second read (the API's ADR 0025 and `UserHistoryTests`) | One session as the administrator, the maintainer's (#87) | Nothing; the mock follows the API's tests until measured |
 | - | The status a user registered by an administrator starts in; the mock says `Pending` | One registration as the administrator, the maintainer's (#82) | Nothing; the detail shows whatever the API answers |
 
 Row 26 needs no probe any more: the source settles it (row 45). Probe 10a ran
