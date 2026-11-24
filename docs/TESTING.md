@@ -69,6 +69,12 @@ through MSW's Node server (`src/lib/testing/server.ts`); the dev server and the
 matching request (`respondOnce`), or a cold start set before the page loads.
 The production bundle never contains any of it.
 
+jsdom has no `showModal()`, so `src/lib/testing/dialog.ts`, installed in
+`setupTests.ts`, stands in for it in unit tests: it opens and closes a
+`<dialog>` and turns Escape into the `cancel` event. It does not emulate the
+top layer or the inert page behind a modal; `e2e/a11y.spec.ts` proves those in
+all three browsers (#61).
+
 ## Rules
 
 - Test behaviour through the DOM as a user meets it: roles, names, text. No
