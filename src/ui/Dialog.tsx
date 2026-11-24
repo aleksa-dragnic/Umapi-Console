@@ -46,6 +46,12 @@ export interface DialogAction {
   pending?: boolean | undefined;
   /** Why the action cannot be taken; present means disabled, with the reason shown. */
   disabledReason?: ReactNode | undefined;
+  /**
+   * The id of a form in the dialog's body. The action becomes that form's
+   * submit button, so Enter in any of its fields confirms, and the form's own
+   * submit handler runs instead of `onConfirm`.
+   */
+  form?: string | undefined;
 }
 
 export interface DialogProps {
@@ -151,7 +157,9 @@ export function Dialog({
             variant={destructive ? 'destructive' : 'ghost'}
             pending={holding}
             disabledReason={action.disabledReason}
-            onClick={action.onConfirm}
+            {...(action.form === undefined
+              ? { onClick: action.onConfirm }
+              : { type: 'submit' as const, form: action.form })}
           >
             {action.label}
           </Button>

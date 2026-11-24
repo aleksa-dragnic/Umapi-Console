@@ -240,6 +240,10 @@ filter forgets it. Entity status — Active, Pending, Locked,
 Deactivated — renders as neutral text, with a glyph for Locked and another for
 Deactivated. See the design decisions, section 10.
 
+**Register a user.** Beside the `h1`, a **Register a user** control opens the
+dialog of section 3.13. It needs `users.write`; for the demo account it is
+disabled with its reason (§2.6), and nothing opens.
+
 ### 3.4 `users/:id` — user detail
 
 | State | Trigger | Renders | The way out |
@@ -422,6 +426,22 @@ Every primitive from `ui/` in every state listed in this document, on one page,
 in both densities. It is where the design is reviewed for the rest of the
 project, and where a new state is drawn before it is wired to anything.
 
+### 3.13 `register-user` — dialog
+
+From the directory (section 3.3), for an account holding `users.write` (#82).
+
+| State | Trigger | Renders | The way out |
+|---|---|---|---|
+| `open` | **Register a user** | Titled *Register a user*. Four fields, all required by the API: **Email**, **First name**, **Last name**, **Password**, focus on *Email*. The password is `autocomplete="new-password"`, with the hint *At least 8 characters.* tied to it, and a **Show password** toggle (`aria-pressed`). **Register** sits in the footer and submits the form; Enter in any field does the same. `Escape` and **Cancel** close it, and focus returns to **Register a user**. | Register or cancel |
+| `invalid-before-sending` | **Register** with a field the API would refuse | Each field says what is wrong on the field: *Enter an email address.*, *Enter an email address like name@example.com.*, *Enter a first name.*, *Enter a last name.*, *At least 8 characters.*, *At most N characters.* (the API's own limits: email 256, names 100, password 8 to 128). Focus goes to the first. Nothing is sent. A message goes as its field is corrected. | Correct |
+| `submitting` | **Register** with every field acceptable | Names and email are sent trimmed, the password as typed, with an `Idempotency-Key` (the API's ADR 0023). **Register** is pending, the fields are read-only, and neither **Cancel** nor `Escape` closes the dialog until the answer arrives. | Response |
+| `registered` | 201 | The dialog closes, the directory's pages are marked stale, and the new user's detail opens (section 3.4). | — |
+| `invalid` | 422 on fields, or 409 `User.EmailNotUnique` | Each message on its field, whatever the casing of its key (row 19); a taken email reads *A user with this email already exists.* on *Email* (row 74). Focus on the first. | Correct |
+| `error` | No answer, or a 5xx | Inside the dialog: *No response from the API.*, or the status and title. **Register** again sends the same body with the same key, so a registration the API made but could not report is answered by it rather than made twice; a changed body gets a new key. | Register again, or cancel |
+| `rate-limited` | 429 (row 52) | **Register** held by the shared countdown of §2.7 | Wait |
+| `forbidden` / `refused` | 403, or a 400 with a domain `errorCode` | The API's `detail` inside the dialog | Cancel |
+| `gated` | §2.6: the demo account | The control in the directory is disabled with *Requires users.write.*; the dialog never opens | Sign in as administrator |
+
 ---
 
 ## 4. Focus and keyboard contract
@@ -433,7 +453,7 @@ Asserted in component tests, not left to review.
 | Route change | The `h1` of the new screen, which is `tabindex="-1"` - unless the screen has already placed focus inside its `main`, as the next two rows do | `src/app/Shell.test.tsx` |
 | Dialog open | The first interactive control, or **Cancel** for a destructive dialog | `src/ui/Dialog.test.tsx`, `DetailScreen.test.tsx` |
 | Dialog close | The control that opened it | `src/ui/Dialog.test.tsx`, `DetailScreen.test.tsx` |
-| Validation failure | The first invalid field | `SignInScreen.test.tsx`, `DetailScreen.test.tsx` |
+| Validation failure | The first invalid field | `SignInScreen.test.tsx`, `DetailScreen.test.tsx`, `RegisterUserDialog.test.tsx` |
 | Row activation | The detail screen's `h1` | `DirectoryRows.test.tsx` |
 | Return to the directory, by Back or by *Back to users* | The row that was opened, if it is on the page | `DirectoryRows.test.tsx` |
 | **Edit** | The *Email* field | `DetailScreen.test.tsx` |
@@ -492,6 +512,7 @@ selection, which are per-session and would make every link carry debug state.
 | `not-modified` | 14 |
 | `inspector`, and the pointer of §2.8 in `error` and `rate-limited` | 15 |
 | `roles`, `404`, `error-boundary`, `cold-start` shown once per session, `offline`, narrow viewport | 16 |
+| `register-user` and all its states | #82 |
 
 A pull request is not done until every state this document lists for its screens
 either exists or is deferred by name in the PR's Notes.

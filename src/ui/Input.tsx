@@ -10,6 +10,8 @@ export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 
   label: string;
   /** Field-level message, taken from the problem details errors object. */
   error?: string | undefined;
+  /** What the field expects, shown under it before anything goes wrong. */
+  hint?: string | undefined;
 }
 
 const FIELD = [
@@ -20,10 +22,16 @@ const FIELD = [
   'focus-visible:border-border-strong aria-invalid:border-border-danger',
 ].join(' ');
 
-export function Input({ label, error, className, ...rest }: InputProps) {
+export function Input({ label, error, hint, className, ...rest }: InputProps) {
   const id = useId();
   const errorId = `${id}-error`;
+  const hintId = `${id}-hint`;
   const invalid = error !== undefined;
+  // The hint stays while the error is shown: the error says what went wrong,
+  // the hint what is expected. A screen reader hears both, error first.
+  const describedBy = [invalid ? errorId : null, hint === undefined ? null : hintId]
+    .filter((part) => part !== null)
+    .join(' ');
 
   return (
     <div className="flex flex-col gap-app-1">
@@ -35,8 +43,13 @@ export function Input({ label, error, className, ...rest }: InputProps) {
         id={id}
         className={[FIELD, className].filter(Boolean).join(' ')}
         aria-invalid={invalid ? true : undefined}
-        {...(invalid ? { 'aria-describedby': errorId } : {})}
+        {...(describedBy === '' ? {} : { 'aria-describedby': describedBy })}
       />
+      {hint === undefined ? null : (
+        <span id={hintId} className="font-mono text-app-meta text-fg-secondary">
+          {hint}
+        </span>
+      )}
       {invalid ? (
         <span id={errorId} className="font-mono text-app-meta text-fg-danger">
           {error}

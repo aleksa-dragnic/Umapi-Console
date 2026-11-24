@@ -12,10 +12,18 @@ export interface MockRefreshToken {
   rotation?: Promise<void>;
 }
 
+/** A registration sent with an Idempotency-Key: the body it was sent with, and the user it made. */
+export interface MockRegistration {
+  body: string;
+  userId: string;
+}
+
 interface Database {
   users: Map<string, MockUser>;
   roles: Map<string, MockRole>;
   refreshTokens: Map<string, MockRefreshToken>;
+  /** Keyed by the caller's id and the key, as the API scopes them (its ADR 0023). */
+  registrations: Map<string, MockRegistration>;
 }
 
 function fresh(seed: number): Database {
@@ -23,6 +31,7 @@ function fresh(seed: number): Database {
     users: new Map(buildUsers(seed).map((user) => [user.id, user])),
     roles: new Map(ROLES.map((role) => [role.id, { ...role, permissions: [...role.permissions] }])),
     refreshTokens: new Map(),
+    registrations: new Map(),
   };
 }
 

@@ -89,6 +89,9 @@ function Gallery({ density }: { density: 'application' | 'editorial' }) {
         <div className="w-64">
           <Input label="Search" placeholder="Filter by name or email" />
         </div>
+        <div className="w-64">
+          <Input label="Password" type="password" hint="At least 8 characters." />
+        </div>
       </Specimens>
 
       <Specimens label="Card">
