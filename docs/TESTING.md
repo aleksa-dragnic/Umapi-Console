@@ -51,6 +51,10 @@ firefox webkit`. To run Chromium alone, `pnpm test:e2e --project=chromium`.
   `playwright.lighthouse.config.ts` (`pnpm test:vitals`). Budgets: LCP
   ≤ 2.5 s, CLS ≤ 0.1, TBT ≤ 200 ms, the thresholds of "good" Core Web Vitals.
   The measured values are kept as the `web-vitals` artifact (#63).
+- `visual` (on pull requests, not required): `pnpm test:visual`, screenshots
+  of the specimen route's 14 sections in both densities, 28 in all, compared
+  with `e2e/visual/__screenshots__` at a 0.2 % pixel tolerance, Chromium only.
+  A failure uploads the expected, actual and diff images (#64).
 - `analyze` (CodeQL, not required).
 - `headers` (its own workflow, weekly and on demand): what Cloudflare Pages
   serves, compared with `public/_headers`. Not on pull requests, because a pull
@@ -110,4 +114,24 @@ Sign-in misses LCP because the first paint is the boot screen and the sign-in
 content renders only after the session check (#76, with the options). TBT
 moves by a factor of six between runs, which is why the job is not a check on
 pull requests.
+
+## Visual baselines
+
+The specimen screenshots depend on the platform's fonts and rendering, so the
+baselines are made in the Playwright image CI uses, never on a workstation.
+After an intended visual change, a changed token or primitive, regenerate
+them and review the PNG diff before committing it:
+
+```bash
+bash scripts/update-specimen-snapshots.sh
+```
+
+The script copies the working tree into
+`mcr.microsoft.com/playwright:v<version>-noble` (the version in
+`package.json`), installs there, runs the specimens with `--update-snapshots`
+and copies `e2e/visual/__screenshots__` back. When Dependabot moves
+`@playwright/test`, the baselines are regenerated in the same pull request.
+The clock is frozen right after the page renders, and the test checks that
+the rate-limit notices still show their starting value, so a slow machine
+fails clearly instead of producing a screenshot of the wrong second.
 
