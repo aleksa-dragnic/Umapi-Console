@@ -4,8 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
-  # Weekly, so a change to the deployed API is noticed even when nothing here
-  # changes. Only the contract job runs on the schedule.
+  # Weekly, so a change to the deployed API, or a new advisory, is noticed even
+  # when nothing here changes. Only the contract and audit jobs run on the
+  # schedule.
   schedule:
     - cron: '0 6 * * 1'
   workflow_dispatch:
@@ -55,6 +56,22 @@ jobs:
             exit 1
           fi
           echo "dist/assets is free of the mock and the specimen route."
+
+  # The weekly run skips build-and-test, so the audit inside it only ran when
+  # something was pushed. Five high advisories once sat on main for weeks and
+  # surfaced only as failing Dependabot pull requests (#60). This job runs the
+  # same audit on the schedule, alone, so a new advisory is a red run on main.
+  audit:
+    name: audit
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Node, pnpm, the cached store and the install: .github/actions/setup.
+      - uses: ./.github/actions/setup
+      - run: pnpm audit --audit-level high
 
   e2e:
     name: e2e
