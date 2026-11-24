@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 // into the form, and the address that was asked for honoured afterwards
 // (inventory sections 3.2 and 5).
 test('the printed demo account signs in and returns to the requested page', async ({ page }) => {
-  await page.goto('/sign-in?next=%2F');
+  await page.goto('/sign-in?next=%2Fusers%3Fq%3Dreader');
 
   const demo = page.getByRole('region', { name: 'Demo account' });
   const email = (await demo.locator('dd').nth(0).textContent()) ?? '';
@@ -15,9 +15,8 @@ test('the printed demo account signs in and returns to the requested page', asyn
   await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: 'Sign in' }).click();
 
-  // The root is the directory (build plan decision 1).
   await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible();
-  await expect(page).toHaveURL(/\/users$/);
+  await expect(page).toHaveURL(/\/users\?q=reader$/);
 });
 
 test('a wrong password is refused with the one message the inventory allows', async ({ page }) => {

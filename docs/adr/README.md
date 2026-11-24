@@ -22,3 +22,4 @@ One file per decision. Format and rules are the same as in
 | [0015](0015-the-console-sends-its-own-security-headers.md) | The console sends its own security headers, from a file in the repository | Accepted | 26 |
 | [0016](0016-working-with-a-coding-agent.md) | Working with a coding agent: the agent drafts, the maintainer decides and merges | Accepted | 70 |
 | [0017](0017-sign-in-renders-before-the-session-check.md) | Sign-in renders before the session check, for a browser that had no session; amends 0007 | Accepted | 81 |
+| [0018](0018-a-public-landing-page-at-the-root.md) | A public landing page at the root; amends build plan decision 1 | Accepted | 89 |

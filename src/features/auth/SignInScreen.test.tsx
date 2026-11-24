@@ -116,7 +116,7 @@ describe('sign-in (inventory section 3.2)', () => {
     await renderSignIn(`${SIGN_IN_PATH}?next=${encodeURIComponent('//evil.example/steal')}`);
     await submit(DEMO_ACCOUNT.email, DEMO_ACCOUNT.password);
 
-    expect(await screen.findByRole('heading', { name: 'Arrived at /' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Arrived at /users' })).toBeInTheDocument();
   });
 
   it('sends a signed-in user on instead of showing the form', async () => {
@@ -132,7 +132,7 @@ describe('sign-in (inventory section 3.2)', () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByRole('heading', { name: 'Arrived at /' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Arrived at /users' })).toBeInTheDocument();
     expect(screen.queryByRole('form', { name: 'Sign in' })).not.toBeInTheDocument();
   });
 
@@ -146,7 +146,7 @@ describe('sign-in (inventory section 3.2)', () => {
     expect(screen.getByRole('button', { name: 'Sign in' })).toHaveAttribute('aria-busy', 'true');
     expect(await screen.findByText(COLD_START_COPY, {}, { timeout: 4000 })).toBeInTheDocument();
     expect(
-      await screen.findByRole('heading', { name: 'Arrived at /' }, { timeout: 4000 }),
+      await screen.findByRole('heading', { name: 'Arrived at /users' }, { timeout: 4000 }),
     ).toBeInTheDocument();
   });
 
@@ -236,7 +236,7 @@ describe('sign-in (inventory section 3.2)', () => {
     });
     await renderSignIn();
     await submit(MOCK_ACCOUNTS.admin.email, MOCK_ACCOUNTS.admin.password);
-    await screen.findByRole('heading', { name: 'Arrived at /' });
+    await screen.findByRole('heading', { name: 'Arrived at /users' });
 
     const { response } = await api.GET('/api/v1/roles');
 

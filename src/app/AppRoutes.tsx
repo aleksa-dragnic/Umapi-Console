@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react';
-import { Navigate, Route, Routes } from 'react-router';
+import { Route, Routes } from 'react-router';
 
+import { LandingRoute } from '@/app/LandingRoute';
 import { NotFound } from '@/app/NotFound';
 import { QueryProvider } from '@/app/query-client';
 import { Shell } from '@/app/Shell';
@@ -29,12 +30,12 @@ import {
  * which renders the boot screen until the API has answered the refresh
  * (inventory section 3.1). Sign-in is inside it, so a signed-in user who opens
  * it is sent on rather than shown the form; everything else is also inside
- * `RequireSession`. The session screen needs no permission beyond a session
+ * `RequireSession`. `/` is the public landing page (ADR 0018), outside the
+ * boundary, so it renders without waiting for the API. The session screen needs no permission beyond a session
  * (decision 5); a route that does wraps itself in `RequirePermission`. Every
  * screen behind the login sits in the shell, with the inspector docked beneath
- * it (inventory section 3.8); sign-in, boot and `404` do not. `/` is the
- * directory (build plan decision 1), and an address nothing matches is the
- * `404` screen, for a visitor with a session or without.
+ * it (inventory section 3.8); sign-in, boot and `404` do not. An address
+ * nothing matches is the `404` screen, for a visitor with a session or without.
  *
  * /_design is the specimen route and exists in development only. It sits
  * outside the boundary: reviewing the primitives needs no session and makes no
@@ -60,10 +61,10 @@ export function AppRoutes() {
             }
           />
         )}
+        <Route path="/" element={<LandingRoute />} />
         <Route element={<SessionBoundary />}>
           <Route path={SIGN_IN_PATH} element={<SignInScreen />} />
           <Route element={<RequireSession />}>
-            <Route path="/" element={<Navigate to={USERS_PATH} replace />} />
             <Route element={<Shell />}>
               <Route path={SESSION_PATH} element={<SessionScreen />} />
               <Route element={<RequirePermission permission="users.read" />}>

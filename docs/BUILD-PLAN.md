@@ -573,7 +573,7 @@ on 13 September 2026.
 | PR | Branch | Contents |
 |---|---|---|
 | 15 | `feat/inspector` | Capture store, dockable panel, status dots, request/response rendering, copy as `curl`. |
-| 16 | `feat/app-shell` | Navigation, the editorial sign-in screen at display type sizes, cold-start handling, the 404 route, the error boundary, the narrow-viewport layout, and the read-only `roles` screen (decision 17). `/` redirects to `/users` (decision 1). |
+| 16 | `feat/app-shell` | Navigation, the editorial sign-in screen at display type sizes, cold-start handling, the 404 route, the error boundary, the narrow-viewport layout, and the read-only `roles` screen (decision 17). `/` redirects to `/users` (decision 1; since 2026-11-24 `/` is the public landing page, ADR 0018). |
 
 After PR 16, two pull requests the plan does not count come before its PR 17:
 the directory fix of section 14 as GitHub #17, and the format fix as its own
