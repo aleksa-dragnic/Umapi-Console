@@ -49,13 +49,20 @@ jobs:
       # (build plan Gate 2, ADR 0005). The e2e job builds a second bundle that
       # does carry the mock (ADR 0012), so this is asserted on every run rather
       # than by hand: each string below exists only in code that must be gone.
-      - name: Production bundle carries no mock and no specimen
+      # The whole of dist, not only dist/assets: MSW's worker sits in public/
+      # and was copied to the root of every production build until it was
+      # removed by the build itself (vite.config.ts).
+      - name: Production build carries no mock and no specimen
         run: |
-          if grep -rlF -e '[MSW]' -e 'Design specimen' -e 'mock-admin-password' -e '__umapiMock' dist/assets; then
-            echo "::error::The production bundle contains the mock or the specimen route."
+          if grep -rlF -e '[MSW]' -e 'Design specimen' -e 'mock-admin-password' -e '__umapiMock' dist; then
+            echo "::error::The production build contains the mock or the specimen route."
             exit 1
           fi
-          echo "dist/assets is free of the mock and the specimen route."
+          if [ -e dist/mockServiceWorker.js ]; then
+            echo "::error::The production build contains MSW's worker."
+            exit 1
+          fi
+          echo "dist is free of the mock and the specimen route."
 
   # The weekly run skips build-and-test, so the audit inside it only ran when
   # something was pushed. Five high advisories once sat on main for weeks and

@@ -131,3 +131,9 @@ section 14 lists it with the other corrections of `docs/correct-drift`.
   workflow, weekly and on demand, compares what Pages serves for `/`, a route,
   `og.png` and a hashed asset with this file (`scripts/compare-headers.mjs`), and
   `src/lib/api/security-headers.test.ts` asserts every header the file sends.
+
+## Update, 2026-11-24
+
+`mockServiceWorker.js` no longer ships in `dist` (ADR 0012, update of the same
+date). `worker-src 'none'` stays: the production bundle registers no worker,
+and the policy says so whatever the build contains.

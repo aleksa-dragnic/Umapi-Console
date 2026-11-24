@@ -70,9 +70,9 @@ pnpm api:generate      # regenerate src/lib/api/schema.d.ts from the deployed AP
 ```
 
 `build-and-test` in `.github/workflows/ci.yml` runs typecheck, lint, format,
-audit, coverage, build and budget, then checks that `dist/assets` holds neither
-the mock nor the specimen route. `e2e` runs in the official Playwright image,
-which must match `@playwright/test` in `package.json`. `pnpm test:live` runs
+audit, coverage, build and budget, then checks that `dist` holds neither the
+mock, nor MSW's worker, nor the specimen route. `e2e` runs in the official
+Playwright image, which must match `@playwright/test` in `package.json`. `pnpm test:live` runs
 against the deployed pair and is the maintainer's, by hand only.
 
 ## Conventions

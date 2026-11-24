@@ -35,8 +35,8 @@ firefox webkit`. To run Chromium alone, `pnpm test:e2e --project=chromium`.
 
 - `build-and-test` (required): typecheck, lint at zero warnings, Prettier,
   `pnpm audit --audit-level high`, `pnpm coverage`, the production build, the
-  bundle budget, and a search of `dist/assets` that fails if the mock or the
-  specimen route reached the production bundle.
+  bundle budget, and a search of `dist` that fails if the mock, MSW's worker or
+  the specimen route reached the production build.
 - `e2e` (required): every spec in Chromium, the smoke and accessibility specs
   in Firefox and WebKit. A failed run uploads its traces.
 - `contract` (not required): on every pull request, every push to `main` and
