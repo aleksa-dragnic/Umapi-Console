@@ -42,6 +42,9 @@ firefox webkit`. To run Chromium alone, `pnpm test:e2e --project=chromium`.
 - `contract` (not required): on every pull request, every push to `main` and
   weekly. It is not required because the document lives on a free instance that
   can be asleep or down, and a merge does not wait on it (ADR 0006).
+- `audit` (weekly and on demand, not on pull requests, where `build-and-test`
+  already runs it): `pnpm audit --audit-level high` alone, so an advisory
+  published between pushes is a red run on `main` (#60).
 - `analyze` (CodeQL, not required).
 - `headers` (its own workflow, weekly and on demand): what Cloudflare Pages
   serves, compared with `public/_headers`. Not on pull requests, because a pull
