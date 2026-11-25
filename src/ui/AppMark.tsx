@@ -1,10 +1,13 @@
+import { MARK_PATHS, MARK_VIEWBOX } from '@/ui/mark';
+
 /**
  * The app mark: the one chromatic surface in the application (DESIGN-DECISIONS
  * section 7). Its gradient runs between the two mark tokens and nowhere else.
- * The glyph is a prompt, for a console that shows its HTTP.
+ * The glyph is a U whose right stem returns as an arrow: a request goes in, a
+ * response comes back (`mark.ts`, DESIGN-DECISIONS section 12).
  */
 
-export type AppMarkSize = 'md' | 'lg';
+export type AppMarkSize = 'sm' | 'md' | 'lg';
 
 export interface AppMarkProps {
   size?: AppMarkSize | undefined;
@@ -12,11 +15,13 @@ export interface AppMarkProps {
 }
 
 const FRAME: Record<AppMarkSize, string> = {
+  sm: 'size-7 rounded-control',
   md: 'size-10 rounded-control',
   lg: 'size-16 rounded-card',
 };
 
 const GLYPH: Record<AppMarkSize, string> = {
+  sm: 'size-4',
   md: 'size-5',
   lg: 'size-8',
 };
@@ -37,7 +42,7 @@ export function AppMark({ size = 'md', className }: AppMarkProps) {
     >
       <svg
         aria-hidden="true"
-        viewBox="0 0 16 16"
+        viewBox={MARK_VIEWBOX}
         className={GLYPH[size]}
         fill="none"
         stroke="currentColor"
@@ -45,8 +50,9 @@ export function AppMark({ size = 'md', className }: AppMarkProps) {
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        <path d="M3 4.5 7 8l-4 3.5" />
-        <path d="M8.5 12H13" />
+        {MARK_PATHS.map((d) => (
+          <path key={d} d={d} />
+        ))}
       </svg>
     </span>
   );
