@@ -10,6 +10,7 @@ import { useAccessToken } from '@/lib/api/access-token';
 import { useCaptures } from '@/lib/api/capture';
 import { decodeClaims } from '@/lib/api/claims';
 import { useOffline } from '@/lib/api/connection';
+import { AppMark } from '@/ui/AppMark';
 import { COLD_START_AFTER_MS, ColdStartNotice } from '@/ui/ColdStartNotice';
 import { useAfter } from '@/ui/useAfter';
 
@@ -118,7 +119,12 @@ export function Shell() {
       <SkipLink />
       <header className="sticky top-0 z-30 border-b border-border-default bg-canvas">
         <div className="flex min-h-[var(--size-shell-header)] flex-wrap items-center gap-x-app-4 px-app-4">
-          <span className="text-app-body font-semibold text-fg-emphasis">Umapi Console</span>
+          <span className="flex items-center gap-app-2">
+            <AppMark size="sm" />
+            <span aria-hidden="true" className="text-app-body font-semibold text-fg-emphasis">
+              Umapi Console
+            </span>
+          </span>
           <nav aria-label="Console" className="order-last w-full md:order-none md:w-auto">
             <ul className="flex gap-app-4">
               {NAVIGATION.map(({ to, label }) => (

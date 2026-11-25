@@ -179,7 +179,7 @@ How the reference's components become this console's parts.
 | Status Indicator Dot | HTTP status class on every captured request |
 | Email Address Badge | The email column in the directory, violet on black |
 | Section Card | Detail panels, the sign-in card, empty states |
-| Icon Container | The only chromatic surface: the app mark on the boot, sign-in and landing screens |
+| Icon Container | The only chromatic surface: the app mark on the boot, sign-in and landing screens and in the shell header |
 | Primary Button (ghost) | Every action in the application |
 
 The inspector is the reason this visual language was chosen rather than
@@ -286,3 +286,28 @@ work in both read `--density-body`, `--density-gap` and `--density-pad`, which
 resolve from a `data-density` attribute on the screen's root. Application
 density is the default; editorial is declared. Two screens declare it, sign-in
 and the 404, and the development-only specimen route shows both.
+
+## 12. The mark is a round trip
+
+**The glyph is a U whose right stem returns as an arrow.** A request goes down
+one side and the response comes back up the other: the console's name and its
+one idea, that nothing on the wire is hidden, in two strokes. It replaced a
+terminal prompt (`>_`), which said "console" but not whose, and which the
+favicon, a plain U, never matched.
+
+**One source, every surface.** The paths live in `src/ui/mark.ts`. `AppMark`
+draws them on the boot, sign-in and landing screens and in the shell's header;
+`pnpm brand` (`scripts/brand.mjs`) draws `public/favicon.svg`,
+`public/apple-touch-icon.png` and `public/og.png` from the same paths and from
+the mark tokens in `docs/tokens.css`. None of those files is edited by hand, and
+the mark's test fails when the favicon's paths drift from the component's.
+
+**The rules of use:**
+
+| Rule | Value |
+|---|---|
+| Surface | Always on the iris-to-plum gradient (`--color-mark-from` to `--color-mark-to`), the glyph in `--color-fg-emphasis`; never the glyph alone on the canvas |
+| Smallest | 16 px (the favicon); in the interface, `sm` at 28 px |
+| Clear space | At least a quarter of the mark's side on every edge |
+| Beside the name | The name in Inter, semibold, to the right, with `--spacing-app-2` between them |
+| Never | Recoloured, outlined, rotated, stretched, or given a shadow; the gradient appears on no other element (section 7) |
