@@ -138,9 +138,9 @@ the two are different sites.
 
 ## Testing
 
-| Layer              | Command            | What runs                                                                                                                                                                                                                                        | At v1.2.0                                       |
+| Layer              | Command            | What runs                                                                                                                                                                                                                                        | At v1.3.0                                       |
 | ------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------- |
-| Unit and component | `pnpm test:run`    | Vitest in jsdom, against the mock; `pnpm coverage` holds it to a floor                                                                                                                                                                           | 449 tests in 57 files                           |
+| Unit and component | `pnpm test:run`    | Vitest in jsdom, against the mock; `pnpm coverage` holds it to a floor                                                                                                                                                                           | 450 tests in 57 files                           |
 | End to end         | `pnpm test:e2e`    | Playwright on a production build with the mock, axe at WCAG 2.2 AA on every route and dialog, the boot screen, the error boundary, a failed, empty or rate-limited directory, a conflict, and at 375 px; smoke and axe in Firefox and WebKit too | 30 tests in 10 specs, 54 runs in three browsers |
 | Contract           | CI job `contract`  | the committed API types compared with the live OpenAPI document                                                                                                                                                                                  | weekly and on every pull request                |
 | Live               | `pnpm test:live`   | Playwright against the deployed console and API: one auth cycle, the directory, the read-only boundary, the cold start                                                                                                                           | 3 tests, by hand only                           |
@@ -187,7 +187,9 @@ as an issue and a plan, the agent drafts it on a branch, and I review it, and
 run it when it is something a visitor sees, before CI and the merge.
 Architecture decisions, the visual system, anything security-sensitive, merges
 and releases stay with me. Commits the agent co-wrote carry a `Co-Authored-By`
-line, and every pull request says how it was made and what I verified myself.
+line, and every pull request since #70 says how it was made. Where I checked
+something by hand, its "What I verified myself" says what; where that is empty,
+I relied on reading the diff and on CI.
 [`docs/AI-WORKFLOW.md`](docs/AI-WORKFLOW.md) describes the flow and what is
 delegated.
 

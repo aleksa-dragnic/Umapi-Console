@@ -14,7 +14,7 @@ this is the practical guide.
 | Contract | CI job `contract` | `pnpm api:generate` and a diff | The deployed OpenAPI document |
 | Live | `e2e/live/*.spec.ts` | Playwright, `playwright.live.config.ts` | The deployed console and API |
 
-On 2026-11-25: 449 unit and component tests in 57 files; 30 end-to-end tests
+On 2026-11-25: 450 unit and component tests in 57 files; 30 end-to-end tests
 in 10 specs, run as 54 because the smoke and accessibility specs also run in
 Firefox and WebKit; 3 live tests.
 
