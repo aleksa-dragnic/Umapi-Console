@@ -21,8 +21,9 @@ src/
 ├── app/         Routes, providers, the shell, the error boundary
 ├── features/
 │   ├── auth/       Sign-in, the session, the boot screen, permission gates
-│   ├── users/      The directory, the detail and its writes, the roles
-│   └── inspector/  The docked panel that shows every request
+│   ├── users/      The directory, the detail, its writes and history, the roles
+│   ├── inspector/  The docked panel that shows every request
+│   └── landing/    The public page at `/`
 ├── lib/
 │   ├── api/        The clients, refresh, the request record, problem details
 │   ├── design/     Token permission sets and the contrast and usage tests
@@ -59,9 +60,11 @@ default palette, status colours in two files only (ADR 0004).
 
 The access token lives in memory only (`lib/api/access-token.ts`, the session
 provider in `features/auth/session.tsx`). The refresh token never reaches
-JavaScript: it is an `HttpOnly` cookie on `/api/v1/auth` (ADR 0007). On load,
-the boot screen asks the API for a token with that cookie before any route
-decides who the user is. Permissions come from the token's claims, the same
+JavaScript: it is an `HttpOnly` cookie on `/api/v1/auth` (ADR 0007). On load, the
+console asks the API for a token with that cookie: a browser that had a
+session waits on the boot screen for the answer, and one that had none sees
+sign-in at once while the same check runs behind it (ADR 0017). The landing
+page at `/` sits outside that boundary and asks the API nothing (ADR 0018). Permissions come from the token's claims, the same
 ones the API checks (ADR 0009).
 
 ## Where to look

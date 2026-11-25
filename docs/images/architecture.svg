@@ -46,7 +46,7 @@
   <rect x="224" y="318" width="160" height="74" rx="8" fill="#ecfeff" stroke="#0891b2" stroke-width="1.5"/>
   <text x="304" y="346" font-size="14" font-weight="600" fill="#083344" text-anchor="middle">features/</text>
   <text x="304" y="366" font-size="11" fill="#0e7490" text-anchor="middle">auth, users,</text>
-  <text x="304" y="380" font-size="11" fill="#0e7490" text-anchor="middle">inspector</text>
+  <text x="304" y="380" font-size="11" fill="#0e7490" text-anchor="middle">inspector, landing</text>
 
   <rect x="424" y="318" width="140" height="74" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
   <text x="494" y="346" font-size="14" font-weight="600" fill="#052e16" text-anchor="middle">lib/</text>
