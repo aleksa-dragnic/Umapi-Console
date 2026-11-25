@@ -63,7 +63,8 @@ The agent's report is where checking starts, not where it ends.
 - **The pull request records it.** The template's AI assistance section says
   how the change was made, and "What I verified myself" lists what the
   maintainer checked by hand: a screen at 375 px, a keyboard pass, a request in
-  the inspector, a failure provoked through the mock.
+  the inspector, a failure provoked through the mock. Pull requests before #70
+  predate the template's AI assistance section.
 
 ## Marking the work
 

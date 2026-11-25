@@ -39,7 +39,7 @@ depend on a third party for its first paint.
 | Role | Family | Licence |
 |---|---|---|
 | Body, UI, navigation, buttons | **Inter** | OFL |
-| Display, used only on the sign-in screen and the 404 | **Playfair Display** | OFL |
+| Display, used only on the sign-in screen, the landing page and the 404 | **Playfair Display** | OFL |
 | Code, identifiers, status labels, table metadata | **JetBrains Mono** | OFL |
 
 Self-hosted through Fontsource, not a CDN: one less origin in the critical path,
@@ -179,7 +179,7 @@ How the reference's components become this console's parts.
 | Status Indicator Dot | HTTP status class on every captured request |
 | Email Address Badge | The email column in the directory, violet on black |
 | Section Card | Detail panels, the sign-in card, empty states |
-| Icon Container | The only chromatic surface: the app mark on the boot and sign-in screens |
+| Icon Container | The only chromatic surface: the app mark on the boot, sign-in and landing screens |
 | Primary Button (ghost) | Every action in the application |
 
 The inspector is the reason this visual language was chosen rather than

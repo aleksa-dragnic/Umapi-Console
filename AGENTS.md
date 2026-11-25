@@ -36,7 +36,7 @@ Read before changing anything:
 ```
 src/
 ├── app/         routes, providers, the shell, the error boundary
-├── features/    auth, users, inspector: one folder per feature
+├── features/    auth, users, inspector, landing: one folder per feature
 ├── lib/         api (clients, refresh, problem details), design, testing (the mock)
 └── ui/          components on design tokens only
 e2e/             Playwright specs

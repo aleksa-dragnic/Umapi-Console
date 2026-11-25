@@ -157,7 +157,7 @@ with every visitor, and spends nine of the auth limit's ten requests a minute.
 
 ## Documentation
 
-- [`docs/adr/`](docs/adr/README.md) - seventeen architecture decision records.
+- [`docs/adr/`](docs/adr/README.md) - eighteen architecture decision records.
 - [`docs/BUILD-PLAN.md`](docs/BUILD-PLAN.md) - the plan, its invariants and,
   in section 14, every place the build departed from it.
 - [`docs/SCREEN-INVENTORY.md`](docs/SCREEN-INVENTORY.md) - every screen and
@@ -174,13 +174,15 @@ with every visitor, and spends nine of the auth limit's ten requests a minute.
 - [`docs/AI-WORKFLOW.md`](docs/AI-WORKFLOW.md) - how changes are made with a
   coding agent, and how they are checked; [`AGENTS.md`](AGENTS.md) holds the
   agent's rules.
+- [`docs/ROADMAP.md`](docs/ROADMAP.md) - what comes next, and what each item
+  would take.
 - [`SECURITY.md`](SECURITY.md) - how to report a vulnerability, and what is in
   place.
 
 ## How this was built
 
 With the help of an AI coding agent, Claude Code, under a written process
-([ADR 0016](docs/adr/0016-working-with-a-coding-agent.md)). Every change starts
+([ADR 0016](docs/adr/0016-working-with-a-coding-agent.md)). Every feature starts
 as an issue and a plan, the agent drafts it on a branch, and I review it, and
 run it when it is something a visitor sees, before CI and the merge.
 Architecture decisions, the visual system, anything security-sensitive, merges
@@ -190,6 +192,8 @@ line, and every pull request says how it was made and what I verified myself.
 delegated.
 
 ## Known limits
+
+Each of these is on the [roadmap](docs/ROADMAP.md), with what it would take.
 
 - **Narrow screens scroll.** Tables scroll sideways at a phone's width rather
   than wrap. The accessibility spec checks sign-in, the directory and the detail
@@ -205,8 +209,7 @@ delegated.
 - **The history is the API's audit log, by field name.** It says that a status
   or a name changed, not from what to what: the API does not keep values.
 - **Registering is not measured live yet.** The mock's idempotency follows the
-  API's ADR 0023 and its tests; measuring it needs the administrator account
-  (#82).
+  API's ADR 0023 and its tests; measuring it needs the administrator account.
 
 ## License
 

@@ -1,6 +1,6 @@
 # umapi-console — Screen and state inventory
 
-Twelve screens, and every state each of them can be in. This document is written
+Fourteen screens, and every state each of them can be in. This document is written
 before the code and is what the pull requests are built from. It lives in the
 repository at `docs/SCREEN-INVENTORY.md`.
 
@@ -539,7 +539,9 @@ selection, which are per-session and would make every link carry debug state.
 | `not-modified` | 14 |
 | `inspector`, and the pointer of §2.8 in `error` and `rate-limited` | 15 |
 | `roles`, `404`, `error-boundary`, `cold-start` shown once per session, `offline`, narrow viewport | 16 |
-| `register-user` and all its states | #82 |
+| `register-user` and all its states | 83 |
+| The history panel on `users/:id` and all its states | 88 |
+| `landing` and all its states | 90 |
 
 A pull request is not done until every state this document lists for its screens
 either exists or is deferred by name in the PR's Notes.
